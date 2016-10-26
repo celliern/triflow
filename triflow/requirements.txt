@@ -1,0 +1,7 @@
+appdirs==1.4.0
+numpy==1.11.2
+matplotlib==1.5.3
+scipy==0.18.1
+seaborn==0.7.1
+sympy==1.0
+forked_path==0.2.3

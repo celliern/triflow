@@ -1,0 +1,5 @@
+PWD /home/nicolas/Documents/01-these/02-repository/triflow/triflow
+INPUT /usr/share/texmf-dist/web2c/texmf.cnf
+INPUT /var/lib/texmf/web2c/pdftex/pdflatex.fmt
+INPUT /home/nicolas/Documents/01-these/02-repository/triflow/triflow/post_traitement_freq.py
+OUTPUT /home/nicolas/Documents/01-these/02-repository/triflow/triflow/post_traitement_freq.log
