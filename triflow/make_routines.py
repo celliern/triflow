@@ -22,10 +22,18 @@ from triflow.path_project import fmodel_dir
 
 def make_routines_fortran(model, boundary):
     """
-    Permet de génerer les fonctions binaires directement utilisable par la
-    classe Solver. La fonction en entrée doit générer les vecteurs symboliques
-    U (avec les variables discrètes), F et J respectivement le membre de droite
-    et le jacobien du modèle.
+
+    Parameters
+    ----------
+    model :
+
+    boundary :
+
+
+    Returns
+    -------
+
+
     """
     U, F, J, pars, Helps = model()
     fields_order = order_field(U)
@@ -90,10 +98,22 @@ def make_routines_fortran(model, boundary):
                                                      bdc_parameters)
 
 
-def load_routines_fortran(folder):
+def load_routines_fortran(folder: str):
     """
-    Si un modèle est déjà sauvegardé, il est possible de le charger sous
-    une forme accepté par le solver via cette fonction.
+
+    Parameters
+    ----------
+    folder : str :
+
+    folder : str :
+
+    folder: str :
+
+
+    Returns
+    -------
+
+
     """
 
     working_dir = fmodel_dir / folder
@@ -184,7 +204,30 @@ def load_routines_fortran(folder):
                                                      bdc_parameters)
 
 
-def comp_function(routine, working_dir=Path('.')):
+def comp_function(routine, working_dir: (str, Path) = Path('.')):
+    """
+
+    Parameters
+    ----------
+    routine :
+
+    working_dir :
+        Path:  (Default value = Path('.')
+    working_dir : (str :
+
+    Path :
+
+    working_dir : (str :
+
+    working_dir: (str :
+
+
+    Returns
+    -------
+
+
+    """
+
     fnull = open(os.devnull, 'w')
     with cd(working_dir):
         subprocess.call(["f2py", "-c", "-m",
@@ -192,12 +235,27 @@ def comp_function(routine, working_dir=Path('.')):
                         stdout=fnull)
 
 
-def compile_routines_fortran(folder):
-    """
-    Permet de compiler les fonctions fortran contenu dans le dossier folder,
+def compile_routines_fortran(folder: str):
+    """Permet de compiler les fonctions fortran contenu dans le dossier folder,
     doit être appelé après la fonction cache_routine_fortran.
     La compilation est faite en //, afin de gagner un peu de temps sur
     les gros modèles.
+
+    Parameters
+    ----------
+    folder :
+
+    folder : str :
+
+    folder : str :
+
+    folder: str :
+
+
+    Returns
+    -------
+
+
     """
     working_dir = fmodel_dir / folder
 
@@ -210,7 +268,27 @@ def compile_routines_fortran(folder):
     p.map(partial_comp, routines)
 
 
-def cache_routines_fortran(model, boundary, folder):
+def cache_routines_fortran(model, boundary, folder: str):
+    """
+
+    Parameters
+    ----------
+    model :
+
+    boundary :
+
+    folder : str :
+
+    folder : str :
+
+    folder: str :
+
+
+    Returns
+    -------
+
+
+    """
     U, F, J, pars, Helps = model()
     fields_order = order_field(U)
 

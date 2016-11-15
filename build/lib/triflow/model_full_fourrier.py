@@ -10,6 +10,18 @@ from sympy.polys.orthopolys import chebyshevt_poly as cbpt
 
 
 def model(Ny):
+    """
+
+    Parameters
+    ----------
+    Ny :
+        
+
+    Returns
+    -------
+
+    
+    """
 
     Ts = sp.symbols('T:%i_i' % Ny)
     y = ((-np.cos(np.pi * np.arange(Ny) / (Ny - 1))) + 1) / 2
@@ -25,6 +37,18 @@ def model(Ny):
     accoeff = sp.solve([res for res in residuals], a[2:])
 
     def solve_bdc(bdcs):
+        """
+
+        Parameters
+        ----------
+        bdcs :
+            
+
+        Returns
+        -------
+
+        
+        """
         y = sp.Symbol('y')
         U = sp.Symbol('U')
         left = sp.Function('left')

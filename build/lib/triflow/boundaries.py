@@ -10,6 +10,18 @@ import sympy as sp
 
 
 def order_field(U):
+    """
+
+    Parameters
+    ----------
+    U :
+        
+
+    Returns
+    -------
+
+    
+    """
     order_field = list(map(lambda y:
                            next(map(lambda x:
                                     str(x).split('_')[0],
@@ -21,6 +33,24 @@ def order_field(U):
 
 
 def analyse_boundary(boundaries, fields_order, window_range, nvar):
+    """
+
+    Parameters
+    ----------
+    boundaries :
+        param fields_order:
+    window_range :
+        param nvar:
+    fields_order :
+        
+    nvar :
+        
+
+    Returns
+    -------
+
+    
+    """
     boundaries = np.array(boundaries).flatten()
     total_symbols = sorted(
         map(str,
@@ -65,11 +95,37 @@ def analyse_boundary(boundaries, fields_order, window_range, nvar):
 
 
 def periodic_boundary(model, **pars):
+    """
+
+    Parameters
+    ----------
+    model :
+        param **pars:
+    **pars :
+        
+
+    Returns
+    -------
+
+    
+    """
     U, F, J, pars, helps = model
     fields_order = order_field(U)
     window_range, nvar = U.shape
 
     def subs_BG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:
@@ -85,6 +141,18 @@ def periodic_boundary(model, **pars):
         return subs_dict
 
     def subs_FG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:
@@ -122,12 +190,36 @@ def periodic_boundary(model, **pars):
 
 
 def openflow_boundary(model):
+    """
+
+    Parameters
+    ----------
+    model :
+        
+
+    Returns
+    -------
+
+    
+    """
     U, F, J, pars, helps = model
     fields_order = order_field(U)
     window_range, nvar = U.shape
     t = sp.Symbol('t')
 
     def subs_BG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:
@@ -148,6 +240,18 @@ def openflow_boundary(model):
         return subs_dict
 
     def subs_FG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:
@@ -191,6 +295,18 @@ def openflow_boundary(model):
 
 
 def openflow2_boundary(model):
+    """
+
+    Parameters
+    ----------
+    model :
+        
+
+    Returns
+    -------
+
+    
+    """
     U, F, J, pars, helps = model
     fields_order = order_field(U)
     window_range, nvar = U.shape
@@ -198,6 +314,18 @@ def openflow2_boundary(model):
     dx = sp.Symbol('dx')
 
     def subs_BG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:
@@ -218,6 +346,18 @@ def openflow2_boundary(model):
         return subs_dict
 
     def subs_FG(pos):
+        """
+
+        Parameters
+        ----------
+        pos :
+            
+
+        Returns
+        -------
+
+        
+        """
         subs_dict = {}
         for i, var in enumerate(U):
             for field in var:

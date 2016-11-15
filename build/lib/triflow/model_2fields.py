@@ -9,6 +9,7 @@ import numpy as np
 
 
 def model():
+    """ """
     Re, We, Ct = sp.symbols('Re, We, Ct')
 
     info('mise en place des variables')

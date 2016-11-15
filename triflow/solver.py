@@ -11,8 +11,7 @@ from triflow.simulation import Simulation
 
 
 class Solver(object):
-
-    """docstring for ClassName"""
+    """ """
 
     def __init__(self, routine_gen):
         (self.func_i, self.jacob_i,
@@ -25,6 +24,21 @@ class Solver(object):
         self.window_range, self.nvar = self.U.shape
 
     def check_pars(self, pars, parlist):
+        """
+
+        Parameters
+        ----------
+        pars :
+
+        parlist :
+
+
+        Returns
+        -------
+
+
+        """
+
         try:
             pars = [pars.get(key.name, 0)
                     for key
@@ -36,6 +50,19 @@ class Solver(object):
         return pars
 
     def get_fields(self, flat_data):
+        """
+
+        Parameters
+        ----------
+        flat_data :
+
+
+        Returns
+        -------
+
+
+        """
+
         nvar = self.nvar
         fields = []
         for ivar in range(nvar):
@@ -43,10 +70,38 @@ class Solver(object):
         return fields
 
     def flatten_fields(self, *fields):
+        """
+
+        Parameters
+        ----------
+        *fields :
+
+
+        Returns
+        -------
+
+
+        """
+
         flat_data = np.array(fields).flatten('F')
         return flat_data
 
     def compute_F(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+
+        **pars :
+
+
+        Returns
+        -------
+
+
+        """
+
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -74,6 +129,21 @@ class Solver(object):
         return F
 
     def compute_Hs(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+
+        **pars :
+
+
+        Returns
+        -------
+
+
+        """
+
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -104,6 +174,21 @@ class Solver(object):
         return Hs
 
     def compute_J(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+
+        **pars :
+
+
+        Returns
+        -------
+
+
+        """
+
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -142,11 +227,27 @@ class Solver(object):
         return J
 
     def compute_J_sparse(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+
+        **pars :
+
+
+        Returns
+        -------
+
+
+        """
+
         nvar = self.nvar
         # window_range = self.window_range
         Nx = int(data.size / nvar)
 
         def init_sparse():
+            """ """
             rand_data = np.random.rand(*data.shape)
             random_J = self.compute_J(rand_data,
                                       **pars)
@@ -177,4 +278,21 @@ class Solver(object):
             data, t = yield J_sparse
 
     def start_simulation(self, U0, t0, **pars):
+        """
+
+        Parameters
+        ----------
+        U0 :
+
+        t0 :
+
+        **pars :
+
+
+        Returns
+        -------
+
+
+        """
+
         return Simulation(self, U0, t0, **pars)

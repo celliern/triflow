@@ -31,6 +31,18 @@ from triflow.path_project import fmodel_dir
 
 @contextmanager
 def cd(dirname):
+    """
+
+    Parameters
+    ----------
+    dirname :
+        
+
+    Returns
+    -------
+
+    
+    """
     try:
         Path(dirname)
         curdir = Path(getcwdu())
@@ -42,6 +54,22 @@ def cd(dirname):
 
 def write_codegen(code, working_dir,
                   template=lambda filename: "%s" % filename):
+    """
+
+    Parameters
+    ----------
+    code :
+        param working_dir:
+    template :
+        Default value = lambda filename: "%s" % filename)
+    working_dir :
+        
+
+    Returns
+    -------
+
+    
+    """
     for file in code:
         info("write %s" % template(file[0]))
         with open(working_dir / template(file[0]), 'w') as f:
@@ -49,15 +77,38 @@ def write_codegen(code, working_dir,
 
 
 def extract_parameters(M, U):
-    """
-    Permet de trouver les paramètres, cad les symboles qui ne sont
+    """Permet de trouver les paramètres, cad les symboles qui ne sont
     pas contenus dans le champs de solution U.
+
+    Parameters
+    ----------
+    M :
+        param U:
+    U :
+        
+
+    Returns
+    -------
+
+    
     """
     parameters = M.atoms(sp.Symbol).difference(set(U.flatten()))
     return parameters
 
 
 def order_field(U):
+    """
+
+    Parameters
+    ----------
+    U :
+        
+
+    Returns
+    -------
+
+    
+    """
     order_field = list(map(lambda y:
                            next(map(lambda x:
                                     str(x).split('_')[0],
@@ -69,11 +120,22 @@ def order_field(U):
 
 
 def make_routines_fortran(model, boundary):
-    """
-    Permet de génerer les fonctions binaires directement utilisable par la
+    """Permet de génerer les fonctions binaires directement utilisable par la
     classe Solver. La fonction en entrée doit générer les vecteurs symboliques
     U (avec les variables discrètes), F et J respectivement le membre de droite
     et le jacobien du modèle.
+
+    Parameters
+    ----------
+    model :
+        param boundary:
+    boundary :
+        
+
+    Returns
+    -------
+
+    
     """
     U, F, J, pars, Helps = model()
     fields_order = order_field(U)
@@ -142,9 +204,18 @@ def make_routines_fortran(model, boundary):
 
 
 def load_routines_fortran(folder):
-    """
-    Si un modèle est déjà sauvegardé, il est possible de le charger sous
+    """Si un modèle est déjà sauvegardé, il est possible de le charger sous
     une forme accepté par le solver via cette fonction.
+
+    Parameters
+    ----------
+    folder :
+        
+
+    Returns
+    -------
+
+    
     """
 
     working_dir = fmodel_dir / folder
@@ -241,6 +312,20 @@ def load_routines_fortran(folder):
 
 
 def comp_function(routine, working_dir=Path('.')):
+    """
+
+    Parameters
+    ----------
+    routine :
+        param working_dir:  (Default value = Path('.')
+    working_dir :
+        (Default value = Path('.')
+
+    Returns
+    -------
+
+    
+    """
     fnull = open(os.devnull, 'w')
     with cd(working_dir):
         subprocess.call(["f2py", "-c", "-m",
@@ -249,11 +334,20 @@ def comp_function(routine, working_dir=Path('.')):
 
 
 def compile_routines_fortran(folder):
-    """
-    Permet de compiler les fonctions fortran contenu dans le dossier folder,
+    """Permet de compiler les fonctions fortran contenu dans le dossier folder,
     doit être appelé après la fonction cache_routine_fortran.
     La compilation est faite en //, afin de gagner un peu de temps sur
     les gros modèles.
+
+    Parameters
+    ----------
+    folder :
+        
+
+    Returns
+    -------
+
+    
     """
     working_dir = fmodel_dir / folder
 
@@ -267,6 +361,22 @@ def compile_routines_fortran(folder):
 
 
 def cache_routines_fortran(model, boundary, folder):
+    """
+
+    Parameters
+    ----------
+    model :
+        param boundary:
+    folder :
+        
+    boundary :
+        
+
+    Returns
+    -------
+
+    
+    """
     U, F, J, pars, Helps = model()
     fields_order = order_field(U)
 
@@ -441,6 +551,20 @@ class Solver(object):
         self.window_range, self.nvar = self.U.shape
 
     def check_pars(self, pars, parlist):
+        """
+
+        Parameters
+        ----------
+        pars :
+            param parlist:
+        parlist :
+            
+
+        Returns
+        -------
+
+        
+        """
         try:
             pars = [pars.get(key.name, 0)
                     for key
@@ -452,6 +576,18 @@ class Solver(object):
         return pars
 
     def get_fields(self, flat_data):
+        """
+
+        Parameters
+        ----------
+        flat_data :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         fields = []
         for ivar in range(nvar):
@@ -459,10 +595,36 @@ class Solver(object):
         return fields
 
     def flatten_fields(self, *fields):
+        """
+
+        Parameters
+        ----------
+        *fields :
+            
+
+        Returns
+        -------
+
+        
+        """
         flat_data = np.array(fields).flatten('F')
         return flat_data
 
     def compute_F(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -491,6 +653,20 @@ class Solver(object):
         return F
 
     def compute_Hs(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -521,6 +697,20 @@ class Solver(object):
         return Hs
 
     def compute_U0(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -533,6 +723,20 @@ class Solver(object):
         return U0
 
     def compute_J(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
@@ -570,11 +774,26 @@ class Solver(object):
         return J
 
     def compute_J_sparse(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(data.size / nvar)
 
         def init_sparse():
+            """ """
             rand_data = np.random.rand(*data.shape)
             random_J = self.compute_J(rand_data,
                                       **pars)
@@ -604,10 +823,27 @@ class Solver(object):
             data, t = yield J_sparse
 
     def start_simulation(self, U0, t0, **pars):
+        """
+
+        Parameters
+        ----------
+        U0 :
+            param t0:
+        t0 :
+            
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         return Simulation(self, U0, t0, **pars)
 
 
 class Simulation(object):
+    """ """
 
     def __init__(self, solver, U0, t0, **pars):
         self.solver = solver
@@ -618,6 +854,26 @@ class Simulation(object):
         self.iterator = self.compute()
 
     def check_stability_fft(self, theta, dt, U, F, tol_stability=1E-8):
+        """
+
+        Parameters
+        ----------
+        theta :
+            param dt:
+        U :
+            param F:
+        tol_stability :
+            Default value = 1E-8)
+        dt :
+            
+        F :
+            
+
+        Returns
+        -------
+
+        
+        """
         stable = False
         fields = self.get_fields(U)
         freq, ampls = periodogram(fields)
@@ -626,26 +882,66 @@ class Simulation(object):
         return stable
 
     def writter(self, t, U):
+        """
+
+        Parameters
+        ----------
+        t :
+            param U:
+        U :
+            
+
+        Returns
+        -------
+
+        
+        """
         pass
 
     def driver(self):
-        """
-        Like a hook, called after every successful step:
+        """Like a hook, called after every successful step:
         this is what is returned to the user after each iteration. Can be
         easily replaced to an other driver, for example in order
         to manage the time step.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        
         """
         pass
 
     def display(self):
-        """
-        Like a hook, called after every successful step:
+        """Like a hook, called after every successful step:
         this is what is returned to the user after each iteration. Can be
         easily replaced to an other driver.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        
         """
         return self.solver.get_fields(self.U), self.t
 
     def takewhile(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+            
+
+        Returns
+        -------
+
+        
+        """
         return True
 
     # def FE_scheme(self):
@@ -658,6 +954,7 @@ class Simulation(object):
     #         yield U
 
     def FE_scheme(self):
+        """ """
         from scipy.integrate import ode
         solv = ode(lambda t, x: self.solver.compute_F(x,
                                                       **self.pars))
@@ -680,6 +977,7 @@ class Simulation(object):
             yield U
 
     def BE_scheme(self):
+        """ """
         Jcomp = self.solver.compute_J_sparse(self.U,
                                              **self.pars)
         next(Jcomp)
@@ -696,6 +994,7 @@ class Simulation(object):
             yield U
 
     def compute(self):
+        """ """
         nvar = self.nvar
         self.pars['Nx'] = int(self.U.size / nvar)
 

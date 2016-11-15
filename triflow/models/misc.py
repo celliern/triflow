@@ -8,6 +8,18 @@ import sympy as sp
 
 @contextmanager
 def cd(dirname):
+    """
+
+    Parameters
+    ----------
+    dirname :
+
+
+    Returns
+    -------
+
+    """
+
     try:
         Path(dirname)
         curdir = Path(getcwdu())
@@ -19,6 +31,22 @@ def cd(dirname):
 
 def write_codegen(code, working_dir,
                   template=lambda filename: "%s" % filename):
+    """
+
+    Parameters
+    ----------
+    code :
+
+    working_dir :
+
+    template :
+         (Default value = lambda filename: "%s" % filename)
+
+    Returns
+    -------
+
+    """
+
     for file in code:
         info("write %s" % template(file[0]))
         with open(working_dir / template(file[0]), 'w') as f:
@@ -27,14 +55,36 @@ def write_codegen(code, working_dir,
 
 def extract_parameters(M, U):
     """
-    Permet de trouver les paramètres, cad les symboles qui ne sont
-    pas contenus dans le champs de solution U.
+
+    Parameters
+    ----------
+    M :
+
+    U :
+
+
+    Returns
+    -------
+
     """
+
     parameters = M.atoms(sp.Symbol).difference(set(U.flatten()))
     return parameters
 
 
 def order_field(U):
+    """
+
+    Parameters
+    ----------
+    U :
+
+
+    Returns
+    -------
+
+    """
+
     order_field = list(map(lambda y:
                            next(map(lambda x:
                                     str(x).split('_')[0],

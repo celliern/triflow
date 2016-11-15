@@ -13,6 +13,8 @@ from scipy.integrate import ode
 
 
 class Simulation(object):
+    """ """
+
 
     def __init__(self, solver, U0, t0, **pars):
         self.solver = solver
@@ -26,6 +28,8 @@ class Simulation(object):
         self.drivers = []
 
     def FE_scheme(self):
+        """ """
+
         solv = ode(lambda t, x: self.solver.compute_F(x,
                                                       **self.pars))
         solv.set_integrator('dopri5')
@@ -36,6 +40,8 @@ class Simulation(object):
             yield U
 
     def BDF2_scheme(self):
+        """ """
+
         U = self.U
         U = self.hook(U)
         Id = sps.identity(self.nvar * self.pars['Nx'],
@@ -73,6 +79,7 @@ class Simulation(object):
             yield U
 
     def BDFalpha_scheme(self):
+        """ """
         Id = sps.identity(self.nvar * self.pars['Nx'],
                           format='csc')
         Uhist = deque([], 2)
@@ -109,6 +116,8 @@ class Simulation(object):
             yield U
 
     def BE_scheme(self):
+        """ """
+
         U = self.U
         U = self.hook(U)
         Jcomp = self.solver.compute_J_sparse(U,
@@ -128,148 +137,19 @@ class Simulation(object):
             U = self.hook(U)
             yield U
 
-    def SDIRK_scheme(self):
-        """
-        Implementation of Singly Diagonally Implicit Runge-Kutta method
-        with constant step sizes.
-        Josefine Stal
-        Lund University
-        """
-
-        class RKscheme(object):
-            A = np.array([[1 / 4, 0, 0, 0, 0],
-                          [1 / 2, 1 / 4, 0, 0, 0],
-                          [17 / 50, -1 / 25, 1 / 4, 0, 0],
-                          [371 / 1360, -137 / 2720, 15 / 544, 1 / 4, 0],
-                          [25 / 24, -49 / 48, 125 / 16, -85 / 12, 1 / 4]])
-            b = np.array([25 / 24, -49 / 48, 125 / 16, -85 / 12, 1 / 4])
-            c = np.array([1 / 4, 3 / 4, 11 / 20, 1 / 2, 1])
-
-        scheme = RKscheme()
-        U = self.U
-        U = self.hook(U)
-        Jcomp = self.solver.compute_J_sparse(U,
-                                             **self.pars)
-        next(Jcomp)
-
-        s = scheme.b.size
-        m = U.size
-
-        def F(stage_derivative, t, U):
-            """
-            Returns the subtraction Y’_{i}-f(t_{n}+c_{i}*h, Y_{i}),
-            where Y are
-            the stage values, Y’ the stage derivatives and f the
-            function of
-            the IVP y’=f(t,y) that should be solved by the RK-method.
-            Parameters:
-            -------------
-            stageDer = initial guess of the stage derivatives Y’
-            t0 = float, current timestep
-            y0 = 1 x m vector, the last solution y_n. Where m is the
-            length
-            of the initial condition y_0 of the IVP.
-            """
-            stage_derivative_new = np.empty((s, m))
-            for i in np.arange(s):  # iterate over all stageDer
-                stage_value = U + np.array([self.pars['dt'] *
-                                            scheme.A[i, :] @
-                                            stage_derivative[:, j]
-                                            for j in np.arange(m)
-                                            ])
-                stage_derivative_new[i, :] = self.solver.compute_F(stage_value,
-                                                                   **self.pars)
-            return stage_derivative - stage_derivative_new
-
-        def phi_newtonstep(t, U, init_value, J, lufactor):
-            """
-            Takes one Newton step by solvning
-            G’(Y_i)(Y^(n+1)_i-Y^(n)_i)=-G(Y_i)
-            where
-            G(Y_i) = Y_i - haY’_i - y_n - h*sum(a_{ij}*Y’_j) for
-            j=1,...,i-1
-            Parameters:
-            -------------
-            t0 = float, current timestep
-            y0 = 1 x m vector, the last solution y_n. Where m is the
-            length
-            of the initial condition y_0 of the IVP.
-            initVal = initial guess for the Newton iteration
-            luFactor = (lu, piv) see documentation for linalg.lu_factor
-            Returns:
-            The difference Y^(n+1)_i-Y^(n)_i
-            """
-            def to_solve(x):
-                Fs = -F(x, t, U)
-                x = np.zeros((s, m))
-                for i in np.arange(s):  # solving the s mxm systems
-                    p01 = Fs[i]
-                    p02 = dt * np.sum([scheme.A[i, j] * (J @ x[j])
-                                       for j
-                                       in np.arange(1, i - 1)],
-                                      axis=0).squeeze()
-                    rhs = p01 + p02
-                    d = lufactor.solve(rhs)
-                    x[i] = d
-                return x
-            x = to_solve(init_value)
-            return init_value + np.array(x), norm(x)
-
-        def phi_solve(t, U, init_value, J):
-            """
-            This function solves F(Y_i)=0 by solving s systems of size m
-            x m each.
-            Newton’s method is used with an initial guess initVal.
-            Parameters:
-            -------------
-            t0 = float, current timestep
-            y0 = 1 x m vector, the last solution y_n. Where m is the
-            length
-            of the initial condition y_0 of the IVP.
-            initVal = initial guess for the Newton iteration
-            J = m x m matrix, the Jacobian matrix of f() evaluated in y_i
-            M = maximal number of Newton iterations
-            Returns:
-            -------------
-            The stage derivative Y’_i
-            """
-            M = self.pars['N_iter']
-            alpha = scheme.A[0, 0]
-            A = sps.eye(m, format='csc') - dt * alpha * J
-            luf = sps.linalg.splu(A)
-            for i in range(M):
-                init_value, norm_d = phi_newtonstep(
-                    t, U, init_value, J, luf)
-                if norm_d < self.pars['tol_iter']:
-                    # info('The Newton iteration converge after %i' % i)
-                    break
-                elif i == M - 1:
-                    raise ValueError('The Newton iteration did not'
-                                     ' converge, final error : %e' % norm_d)
-            return init_value
-
-        def phi(t, U):
-            stage_derivative = np.array(s *
-                                        [self.solver.compute_F(U,
-                                                               **self.pars)])
-            J = Jcomp.send((U, t))
-            stage_value = phi_solve(t, U, stage_derivative, J)
-            return np.array([
-                scheme.b @ stage_value[:, j]
-                for j in range(m)
-            ])
-
-        while True:
-            dt = self.pars['dt']
-            U = U + dt * phi(self.t, U)
-            yield U, dt
-
     def ROS_scheme(self):
-        """
-        DOI: 10.1007/s10543-006-0095-7
+        """DOI: 10.1007/s10543-006-0095-7
         A multirate time stepping strategy
         for stiff ordinary differential equation
         V. Savcenco and al.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+
         """
 
         U = self.U
@@ -293,11 +173,18 @@ class Simulation(object):
             yield U
 
     def ROS_vart_scheme(self):
-        """
-        DOI: 10.1007/s10543-006-0095-7
+        """DOI: 10.1007/s10543-006-0095-7
         A multirate time stepping strategy
         for stiff ordinary differential equation
         V. Savcenco and al.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+
         """
 
         U = self.U
@@ -315,6 +202,20 @@ class Simulation(object):
         # thist = deque([t], 3)
 
         def one_step(U, dt):
+            """
+
+            Parameters
+            ----------
+            U :
+
+            dt :
+
+
+            Returns
+            -------
+
+            """
+
             err = None
             while (err is None or err > self.pars['tol']):
                 J = Jcomp.send((U, t))
@@ -359,6 +260,8 @@ class Simulation(object):
                                    "less than authorized")
 
     def compute(self):
+        """ """
+
         nvar = self.nvar
         self.pars['Nx'] = int(self.U.size / nvar)
         self.U = self.hook(self.U)
@@ -388,36 +291,89 @@ class Simulation(object):
             yield self.display()
 
     def writter(self, t, U):
+        """
+
+        Parameters
+        ----------
+        t :
+
+        U :
+
+
+        Returns
+        -------
+
+        """
+
         pass
 
     def driver(self, t):
         """
-        Like a hook, called after every successful step:
-        this is what is returned to the user after each iteration. Can be
-        easily replaced to an other driver, for example in order
-        to manage the time step or boundaries.
+
+        Parameters
+        ----------
+        t :
+
+
+        Returns
+        -------
+
         """
+
         for driver in self.drivers:
             driver(self, t)
 
     def display(self):
-        """
-        Like a hook, called after every successful step:
-        this is what is returned to the user after each iteration. Can be
-        easily replaced to an other driver.
-        """
+        """ """
+
         return self.solver.get_fields(self.U), self.t
 
     def takewhile(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+
+
+        Returns
+        -------
+
+        """
+
         if True in (U[::self.nvar] < 0):
             error('h above 0, solver stopping')
             raise RuntimeError('h above 0')
         return True
 
     def hook(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+
+
+        Returns
+        -------
+
+        """
+
         return U
 
     def dumping_hook_h(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+
+
+        Returns
+        -------
+
+        """
+
         x = np.linspace(0, self.pars['Nx'] * self.pars['dx'], self.pars['Nx'])
         U[::self.nvar] = (U[::self.nvar] *
                           (-(np.tanh((x - self.pars['dx'] *
@@ -433,6 +389,18 @@ class Simulation(object):
         return U
 
     def dumping_hook_q(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+
+
+        Returns
+        -------
+
+        """
+
         x = np.linspace(0, self.pars['Nx'] * self.pars['dx'], self.pars['Nx'])
         U[1::self.nvar] = (U[1::self.nvar] *
                            (-(np.tanh((x - self.pars['dx'] *

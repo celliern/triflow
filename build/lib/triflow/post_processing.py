@@ -29,6 +29,18 @@ from triflow.path_project import fmodel_dir
 
 @contextmanager
 def cd(dirname):
+    """
+
+    Parameters
+    ----------
+    dirname :
+        
+
+    Returns
+    -------
+
+    
+    """
     try:
         Path(dirname)
         curdir = Path(getcwdu())
@@ -39,20 +51,40 @@ def cd(dirname):
 
 
 def extract_parameters(M, U):
-    """
-    Permet de trouver les paramètres, cad les symboles qui ne sont
+    """Permet de trouver les paramètres, cad les symboles qui ne sont
     pas contenus dans le champs de solution U.
+
+    Parameters
+    ----------
+    M :
+        param U:
+    U :
+        
+
+    Returns
+    -------
+
+    
     """
     parameters = M.atoms(sp.Symbol).difference(set(U.flatten()))
     return parameters
 
 
 def make_routines_fortran(model):
-    """
-    Permet de génerer les fonctions binaires directement utilisable par la
+    """Permet de génerer les fonctions binaires directement utilisable par la
     classe Solver. La fonction en entrée doit générer les vecteurs symboliques
     U (avec les variables discrètes), F et J respectivement le membre de droite
     et le jacobien du modèle.
+
+    Parameters
+    ----------
+    model :
+        
+
+    Returns
+    -------
+
+    
     """
     U, F, J, pars, Helps = model()
 
@@ -87,9 +119,18 @@ def make_routines_fortran(model):
 
 
 def load_routines_fortran(folder):
-    """
-    Si un modèle est déjà sauvegardé, il est possible de le charger sous
+    """Si un modèle est déjà sauvegardé, il est possible de le charger sous
     une forme accepté par le solver via cette fonction.
+
+    Parameters
+    ----------
+    folder :
+        
+
+    Returns
+    -------
+
+    
     """
 
     working_dir = fmodel_dir / folder
@@ -122,6 +163,20 @@ def load_routines_fortran(folder):
 
 
 def comp_function(routine, working_dir=Path('.')):
+    """
+
+    Parameters
+    ----------
+    routine :
+        param working_dir:  (Default value = Path('.')
+    working_dir :
+        (Default value = Path('.')
+
+    Returns
+    -------
+
+    
+    """
     fnull = open(os.devnull, 'w')
     with cd(working_dir):
         subprocess.call(["f2py", "-c", "-m",
@@ -130,11 +185,20 @@ def comp_function(routine, working_dir=Path('.')):
 
 
 def compile_routines_fortran(folder):
-    """
-    Permet de compiler les fonctions fortran contenu dans le dossier folder,
+    """Permet de compiler les fonctions fortran contenu dans le dossier folder,
     doit être appelé après la fonction cache_routine_fortran.
     La compilation est faite en //, afin de gagner un peu de temps sur
     les gros modèles.
+
+    Parameters
+    ----------
+    folder :
+        
+
+    Returns
+    -------
+
+    
     """
     working_dir = fmodel_dir / folder
 
@@ -148,6 +212,20 @@ def compile_routines_fortran(folder):
 
 
 def cache_routines_fortran(model, folder):
+    """
+
+    Parameters
+    ----------
+    model :
+        param folder:
+    folder :
+        
+
+    Returns
+    -------
+
+    
+    """
     U, F, J, pars, Helps = model()
 
     info('extraction des paramètres')
@@ -227,12 +305,36 @@ class Solver(object):
         self.window_range, self.nvar = self.U.shape
 
     def check_pars(self, pars):
+        """
+
+        Parameters
+        ----------
+        pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         pars = [pars[key.name]
                 for key
                 in self.parameters]
         return pars
 
     def get_fields(self, flat_data):
+        """
+
+        Parameters
+        ----------
+        flat_data :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         fields = []
         for ivar in range(nvar):
@@ -240,10 +342,36 @@ class Solver(object):
         return fields
 
     def flatten_fields(self, *fields):
+        """
+
+        Parameters
+        ----------
+        *fields :
+            
+
+        Returns
+        -------
+
+        
+        """
         flat_data = np.array(fields).flatten('F')
         return flat_data
 
     def compute_F(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(data.size / nvar)
@@ -260,6 +388,20 @@ class Solver(object):
         return F
 
     def compute_F(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(data.size / nvar)
@@ -276,6 +418,20 @@ class Solver(object):
         return F
 
     def compute_Hs(self, data, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param **pars:
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(data.size / nvar)
@@ -294,6 +450,18 @@ class Solver(object):
         return Hs
 
     def periodic_boundary(self, J):
+        """
+
+        Parameters
+        ----------
+        J :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(J.shape[0] / nvar)
@@ -306,6 +474,22 @@ class Solver(object):
         return Jnew
 
     def compute_J(self, data, boundary, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param boundary:
+        boundary :
+            
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
         Nx = int(data.size / nvar)
@@ -324,6 +508,22 @@ class Solver(object):
         return J
 
     def compute_J_sparse(self, data, boundary, **pars):
+        """
+
+        Parameters
+        ----------
+        data :
+            param boundary:
+        boundary :
+            
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         window_range = self.window_range
 
@@ -333,6 +533,7 @@ class Solver(object):
         # debug("nvar : %i" % nvar)
 
         def init_sparse():
+            """ """
             rand_data = np.random.rand(*data.shape)
             random_J = self.compute_J(rand_data,
                                       lambda args: args, **pars)
@@ -390,6 +591,24 @@ class Solver(object):
     #     return stable
 
     def compute(self, U0, t0, bmagic=True, **pars):
+        """
+
+        Parameters
+        ----------
+        U0 :
+            param t0:
+        bmagic :
+            Default value = True)
+        t0 :
+            
+        **pars :
+            
+
+        Returns
+        -------
+
+        
+        """
         nvar = self.nvar
         Nx = int(U0.size / nvar)
         U = U0
