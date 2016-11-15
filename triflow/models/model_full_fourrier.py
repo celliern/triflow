@@ -249,7 +249,7 @@ def model(Ny):
               sp.Matrix([dxT[ids] - y[ids] / h * dxh * dyT[ids],
                          dyT[ids] / h]))[0] for ids in range(1, Ny - 1)]
 
-    FT = [0] + [lap_T[ids] / Pe - vel_T[ids] - y[ids + 1] / h *
+    FT = [0] + [lap_T[ids] / (Pe * 3) - vel_T[ids] - y[ids + 1] / h *
                 dxq * dyT[ids + 1] for ids in range(len(lap_T))] + [0]
 
     F_therm = sp.Matrix([Fh, Fq, *FT])
