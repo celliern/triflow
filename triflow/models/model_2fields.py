@@ -16,7 +16,7 @@ def model():
 
     dx = sp.symbols('dx')
 
-    h, q, s = sp.symbols('h_i, q_i, s_i')
+    fields = h, q, s = sp.symbols('h_i, q_i, s_i')
     hm1, hm2, hm3 = sp.symbols('h_im1:4')
     hp1, hp2, hp3 = sp.symbols('h_ip1:4')
     qm1, qm2, qm3 = sp.symbols('q_im1:4')

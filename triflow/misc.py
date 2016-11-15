@@ -29,6 +29,14 @@ def cd(dirname):
         curdir.chdir()
 
 
+def coroutine(func):
+    def wrapper(*arg, **kwargs):
+        generator = func(*arg, **kwargs)
+        next(generator)
+        return generator
+    return wrapper
+
+
 def write_codegen(code, working_dir,
                   template=lambda filename: "%s" % filename):
     """

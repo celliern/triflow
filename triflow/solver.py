@@ -8,20 +8,27 @@ import numpy as np
 import scipy.sparse as sps
 
 from triflow.simulation import Simulation
+from triflow.make_routines import load_routines_fortran
+from triflow.misc import coroutine
 
 
 class Solver(object):
     """ """
 
-    def __init__(self, routine_gen):
+    def __init__(self, routine):
+        if isinstance(routine, str):
+            routine = load_routines_fortran(routine)
         (self.func_i, self.jacob_i,
          self.U, self.parameters,
          self.helpers,
          ((self.Fbdc, self.Jbdc, self.Hsbdc,
            self.fields_order,
            self.bdc_fsymbols,
-           self.bdc_parameters))) = routine_gen()
+           self.bdc_parameters))) = routine
         self.window_range, self.nvar = self.U.shape
+        self.fields = np.vectorize(lambda x: str(x).split('_')[0],
+                                   otypes=[str])(self.U[0])
+        info('Champs: %s' % ' - '.join(self.fields))
 
     def check_pars(self, pars, parlist):
         """
@@ -62,12 +69,9 @@ class Solver(object):
 
 
         """
-
-        nvar = self.nvar
-        fields = []
-        for ivar in range(nvar):
-            fields.append(flat_data[ivar::nvar].squeeze())
-        return fields
+        new_data = flat_data.T
+        new_data.dtype = [(name, float) for name in self.fields]
+        return new_data.T
 
     def flatten_fields(self, *fields):
         """
@@ -226,6 +230,7 @@ class Solver(object):
 
         return J
 
+    @coroutine
     def compute_J_sparse(self, data, **pars):
         """
 

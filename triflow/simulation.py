@@ -11,10 +11,11 @@ import scipy.sparse as sps
 from scipy.linalg import norm
 from scipy.integrate import ode
 
+from triflow import displays
+
 
 class Simulation(object):
     """ """
-
 
     def __init__(self, solver, U0, t0, **pars):
         self.solver = solver
@@ -22,10 +23,13 @@ class Simulation(object):
         self.nvar = self.solver.nvar
         self.U = U0
         self.t = t0
+        self.x = np.linspace(0, pars['Nx'] * pars['dx'], pars['Nx'])
         self.iterator = self.compute()
         self.internal_iter = None
         self.err = None
         self.drivers = []
+        self.writers = []
+        self.display = displays.simple_display
 
     def FE_scheme(self):
         """ """
@@ -50,7 +54,6 @@ class Simulation(object):
         Uhist.append(U.copy())
         Jcomp = self.solver.compute_J_sparse(U,
                                              **self.pars)
-        next(Jcomp)
         self.F = F = self.solver.compute_F(U,
                                            **self.pars)
         J = Jcomp.send((U, self.t))
@@ -86,7 +89,6 @@ class Simulation(object):
         Uhist.append(self.U.copy())
         Jcomp = self.solver.compute_J_sparse(self.U,
                                              **self.pars)
-        next(Jcomp)
         self.F = F = self.solver.compute_F(self.U,
                                            **self.pars)
         U = self.hook(self.U)
@@ -122,7 +124,6 @@ class Simulation(object):
         U = self.hook(U)
         Jcomp = self.solver.compute_J_sparse(U,
                                              **self.pars)
-        next(Jcomp)
         while True:
             dt = self.pars['dt']
             self.F = F = self.solver.compute_F(U,
@@ -156,7 +157,6 @@ class Simulation(object):
         U = self.hook(U)
         Jcomp = self.solver.compute_J_sparse(U,
                                              **self.pars)
-        next(Jcomp)
         gamma = 1 - 1 / 2 * np.sqrt(2)
         while True:
             dt = self.pars['dt']
@@ -191,7 +191,6 @@ class Simulation(object):
         U = self.hook(U)
         Jcomp = self.solver.compute_J_sparse(U,
                                              **self.pars)
-        next(Jcomp)
         gamma = 1 - 1 / 2 * np.sqrt(2)
         t = self.t
 
@@ -265,6 +264,7 @@ class Simulation(object):
         nvar = self.nvar
         self.pars['Nx'] = int(self.U.size / nvar)
         self.U = self.hook(self.U)
+        self.display = self.display(self)
 
         if self.pars['method'] == 'theta':
             if self.pars['theta'] != 0:
@@ -283,14 +283,16 @@ class Simulation(object):
             numerical_scheme = self.ROS_vart_scheme()
         else:
             raise NotImplementedError('method not implemented')
-        for self.i, self.U in enumerate(it.takewhile(self.takewhile,
-                                                     numerical_scheme)):
+        for self.i, self.U in enumerate(filter(
+                self.filter,
+                it.takewhile(self.takewhile,
+                             numerical_scheme))):
             self.t += self.pars['dt']
             self.driver(self.t)
-            self.writter(self.t, self.U)
-            yield self.display()
+            self.writer(self.t, self.U)
+            yield self.display.send(self)
 
-    def writter(self, t, U):
+    def writer(self, t, U):
         """
 
         Parameters
@@ -305,18 +307,21 @@ class Simulation(object):
 
         """
 
-        pass
+        for writer in self.writers:
+            writer(t, U)
 
     def driver(self, t):
         """
-
+        Modify the parameters at each internal time steps. The driver have
+        to be appened to the attribute drivers.
         Parameters
         ----------
-        t :
+        t : actual time
 
 
         Returns
         -------
+        None
 
         """
 
@@ -324,7 +329,17 @@ class Simulation(object):
             driver(self, t)
 
     def display(self):
-        """ """
+        """
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        tuple with what will be returned to the user. By default, the
+        unflatten fields and the current time
+        """
 
         return self.solver.get_fields(self.U), self.t
 
@@ -338,12 +353,34 @@ class Simulation(object):
 
         Returns
         -------
-
+        Stopping condition for the simulation: without overide
+        this will raise an error if the film thickness go less than 0 and
+        exit when tmax is reached if in the parameters.
         """
 
-        if True in (U[::self.nvar] < 0):
+        if any(U[::self.nvar] < 0):
             error('h above 0, solver stopping')
             raise RuntimeError('h above 0')
+        if self.pars.get('tmax', None) is None:
+            return True
+        if self.t >= self.pars.get('tmax', None):
+            return False
+        return True
+
+    def filter(self, U):
+        """
+
+        Parameters
+        ----------
+        U :
+
+
+        Returns
+        -------
+        Tell when return the solution to the user.
+        Default return all solutions reaching dt.
+        """
+
         return True
 
     def hook(self, U):
@@ -359,60 +396,6 @@ class Simulation(object):
 
         """
 
-        return U
-
-    def dumping_hook_h(self, U):
-        """
-
-        Parameters
-        ----------
-        U :
-
-
-        Returns
-        -------
-
-        """
-
-        x = np.linspace(0, self.pars['Nx'] * self.pars['dx'], self.pars['Nx'])
-        U[::self.nvar] = (U[::self.nvar] *
-                          (-(np.tanh((x - self.pars['dx'] *
-                                      self.pars['Nx']) /
-                                     (self.pars['dx'] *
-                                      self.pars['Nx'] / 10)) + 1) /
-                           2 + 1) +
-                          ((np.tanh((x - self.pars['dx'] *
-                                     self.pars['Nx']) /
-                                    (self.pars['dx'] *
-                                     self.pars['Nx'] / 10)) + 1) / 2) *
-                          self.pars['hhook'])
-        return U
-
-    def dumping_hook_q(self, U):
-        """
-
-        Parameters
-        ----------
-        U :
-
-
-        Returns
-        -------
-
-        """
-
-        x = np.linspace(0, self.pars['Nx'] * self.pars['dx'], self.pars['Nx'])
-        U[1::self.nvar] = (U[1::self.nvar] *
-                           (-(np.tanh((x - self.pars['dx'] *
-                                       self.pars['Nx']) /
-                                      (self.pars['dx'] *
-                                       self.pars['Nx'] / 10)) + 1) /
-                            2 + 1) +
-                           ((np.tanh((x - self.pars['dx'] *
-                                      self.pars['Nx']) /
-                                     (self.pars['dx'] *
-                                      self.pars['Nx'] / 10)) + 1) / 2) *
-                           self.pars['qhook'])
         return U
 
     def __iter__(self):

@@ -15,12 +15,12 @@ def model(Ny):
     Parameters
     ----------
     Ny :
-        
+
 
     Returns
     -------
 
-    
+
     """
 
     Ts = sp.symbols('T:%i_i' % Ny)
@@ -42,12 +42,12 @@ def model(Ny):
         Parameters
         ----------
         bdcs :
-            
+
 
         Returns
         -------
 
-        
+
         """
         y = sp.Symbol('y')
         U = sp.Symbol('U')
