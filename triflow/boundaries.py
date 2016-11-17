@@ -15,12 +15,12 @@ def order_field(U):
     Parameters
     ----------
     U :
-        
+
 
     Returns
     -------
 
-    
+
     """
     order_field = list(map(lambda y:
                            next(map(lambda x:
@@ -42,14 +42,14 @@ def analyse_boundary(boundaries, fields_order, window_range, nvar):
     window_range :
         param nvar:
     fields_order :
-        
+
     nvar :
-        
+
 
     Returns
     -------
 
-    
+
     """
     boundaries = np.array(boundaries).flatten()
     total_symbols = sorted(
@@ -102,12 +102,12 @@ def periodic_boundary(model, **pars):
     model :
         param **pars:
     **pars :
-        
+
 
     Returns
     -------
 
-    
+
     """
     U, F, J, pars, helps = model
     fields_order = order_field(U)
@@ -119,12 +119,12 @@ def periodic_boundary(model, **pars):
         Parameters
         ----------
         pos :
-            
+
 
         Returns
         -------
 
-        
+
         """
         subs_dict = {}
         for i, var in enumerate(U):
@@ -146,12 +146,12 @@ def periodic_boundary(model, **pars):
         Parameters
         ----------
         pos :
-            
+
 
         Returns
         -------
 
-        
+
         """
         subs_dict = {}
         for i, var in enumerate(U):
@@ -187,87 +187,18 @@ def periodic_boundary(model, **pars):
     return (Fboundaries, Jboundaries, Hboundaries)
 
 
-# def openflow_boundary(model):
-#     U, F, J, pars, helps = model
-#     fields_order = order_field(U)
-#     window_range, nvar = U.shape
-#     t = sp.Symbol('t')
-
-#     def subs_BG(pos):
-#         subs_dict = {}
-#         for i, var in enumerate(U):
-#             for field in var:
-#                 pos_i = pos + i - 2
-#                 if pos_i < 0:
-#                     subs_dict[field] = (sp.Symbol('%sini' %
-#                                                   str(field).split('_')[0]) +
-#                                         sp.Symbol('%sampl' %
-#                                                   str(field).split('_')[0]) *
-#                                         sp.sin(t * 2 * sp.pi *
-#                                                sp.Symbol('%sfreq' %
-#                                                          str(field)
-#                                                          .split('_')[0])))
-#                 else:
-#                     subs_dict[field] = sp.Symbol('%s_%i' %
-#                                                  (str(field).split('_')[0],
-#                                                   np.abs(pos_i)))
-#         return subs_dict
-
-#     def subs_FG(pos):
-#         subs_dict = {}
-#         for i, var in enumerate(U):
-#             for field in var:
-#                 pos_i = pos + i - 2
-#                 if pos_i > 0:
-#                     if str(field).split('_')[0] == 'q':
-#                         subs_dict[field] = (1 / 3 *
-#                                             sp.sqrt(sp.Symbol('h_Nm_0')**3))
-#                     else:
-#                         subs_dict[field] = sp.Symbol('%s_Nm_%i' %
-#                                                      (str(field)
-#                                                       .split('_')[0],
-#                                                       np.abs(pos_i)))
-#                 else:
-#                     subs_dict[field] = sp.Symbol('%s_Nm_%i' %
-#                                                  (str(field).split('_')[0],
-#                                                   np.abs(pos_i)))
-#         return subs_dict
-
-#     # Our goal is to 'shift' the variables for the 2 first problematics points
-
-#     Fboundaries = [F.subs(subs_BG(0)), F.subs(subs_BG(1)),
-#                    F.subs(subs_FG(-1)), F.subs(subs_FG(0))]
-
-#     Hboundaries = [[H.subs(subs_BG(0)), H.subs(subs_BG(1)),
-#                     H.subs(subs_FG(-1)), H.subs(subs_FG(0))] for H in helps]
-
-#     fsymbols, psymbols = analyse_boundary((Fboundaries, ),
-#                                           fields_order, window_range, nvar)
-#     Jboundaries = []
-#     for Fboundary in Fboundaries:
-#         Jboundaries.append(sp.Matrix(np.array([Fboundary.diff(sp.Symbol(u))
-#                                                .tolist()
-#                                                for u
-#                                                in fsymbols]).squeeze()
-#                                      .tolist()).T)
-#     # Our goal is to 'shift' the variables for the 2 first problematics points
-#     U0 = sp.Matrix([sp.Symbol('%s_i' % field)
-#                     for field in fields_order]).subs(subs_BG(-1))
-#     return (Fboundaries, Jboundaries, Hboundaries, U0)
-
-
 def openflow_boundary(model):
     """
 
     Parameters
     ----------
     model :
-        
+
 
     Returns
     -------
 
-    
+
     """
     U, F, J, pars, helps = model
     fields_order = order_field(U)
@@ -280,12 +211,12 @@ def openflow_boundary(model):
         Parameters
         ----------
         pos :
-            
+
 
         Returns
         -------
 
-        
+
         """
         subs_dict = {}
         for i, var in enumerate(U):
@@ -306,12 +237,12 @@ def openflow_boundary(model):
         Parameters
         ----------
         pos :
-            
+
 
         Returns
         -------
 
-        
+
         """
         subs_dict = {}
         for i, var in enumerate(U):
