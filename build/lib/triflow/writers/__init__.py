@@ -6,7 +6,7 @@ from triflow.writers.bokeh import bokeh_nb_writer
 from triflow.writers.datreant import (datreant_step_writer,
                                       datreant_steps_writer)
 
-from triflow.writers.remote import remote_writer
+from triflow.writers.remote import remote_step_writer, remote_steps_writer
 
 try:  # Python 2.7+
     from logging import NullHandler

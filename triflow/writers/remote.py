@@ -10,6 +10,15 @@ from triflow.misc import coroutine
 from triflow.writers.datreant import (datreant_init, datreant_save,
                                       get_datreant_conf)
 
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+logging.getLogger(__name__).addHandler(NullHandler())
+
 
 @coroutine
 def remote_step_writer(simul):
@@ -17,7 +26,7 @@ def remote_step_writer(simul):
         pass
     path_data, simul_name, compressed = get_datreant_conf(simul)
 
-    server = simul.conf.get('remote.path', 'localhost')
+    server = simul.conf.get('remote.server', 'localhost')
     port = simul.conf.get('remote.port', 50000)
     QueueManager.register('get_queue')
     distant_manager = QueueManager(address=(server,
@@ -44,7 +53,7 @@ def remote_steps_writer(simul):
         pass
     path_data, simul_name, compressed = get_datreant_conf(simul)
 
-    server = simul.conf.get('remote.path', 'localhost')
+    server = simul.conf.get('remote.server', 'localhost')
     port = simul.conf.get('remote.port', 50000)
     QueueManager.register('get_queue')
     distant_manager = QueueManager(address=(server,
@@ -67,6 +76,14 @@ def remote_steps_writer(simul):
 
 
 def datreant_server_writer(port=50000):
+    logger = logging.getLogger()
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
     class QueueManager(BaseManager):
         pass
 
@@ -80,26 +97,33 @@ def datreant_server_writer(port=50000):
         def run(self):
             while self.working:
                 msg = self.q.get()
-                logging.debug(msg)
+                logger.debug(msg)
                 if msg[0] == 'init':
                     simul_id, [path_data, simul_name, pars] = msg[1:]
+
                     treant = datreant_init(path_data, simul_name, pars)
+                    logger.info("initialize %s, writer set at %s" %
+                                (simul_id,
+                                 treant.abspath))
                     self.cache[simul_id] = treant
                 if msg[0] == 'run':
                     simul_id, i, t, tosave = msg[1:]
+                    logger.info("save %s, iter %i, time %f" %
+                                (simul_id,
+                                 i, t))
                     treant = self.cache[simul_id]
                     datreant_save(treant, i, t, tosave)
     queue = Queue()
 
     QueueManager.register('get_queue', callable=lambda: queue)
-    logging.info('QueueManager registered')
+    logger.info('QueueManager registered')
     w = Worker(queue)
     w.start()
-    logging.info('Worker initialized')
+    logger.info('Worker initialized')
     local_manager = QueueManager(address=('', port),
                                  authkey=b'triflow')
     server = local_manager.get_server()
-    logging.info('starting server...')
+    logger.info('starting server...')
     server.serve_forever()
 
 

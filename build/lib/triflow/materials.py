@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from mdict import magical_dict
+from triflow.mdict import magical_dict
 
 
 def water():

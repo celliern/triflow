@@ -16,6 +16,8 @@ triflow.egg-info/SOURCES.txt
 triflow.egg-info/dependency_links.txt
 triflow.egg-info/entry_points.txt
 triflow.egg-info/top_level.txt
+triflow/mdict/__init__.py
+triflow/mdict/mdict.py
 triflow/models/__init__.py
 triflow/models/cache_main_models.py
 triflow/models/model_2fields.py
