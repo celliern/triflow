@@ -7,11 +7,13 @@ import numpy as np
 
 
 class Signal(object):
-    def __init__(self, tmax, signal_size=10000, **kwarg):
-        self.size = signal_size
-        self.tmax = tmax
-        self.time_period = np.linspace(0, tmax, signal_size)
-        self.template = np.array(self.signal_template(**kwarg))
+    def __init__(self, simul, **kwargs):
+        self.simul = simul
+        self.size = simul.pars.get('signal_size', 10000)
+        self.tmax = simul.pars['tmax']
+        self.time_period = np.linspace(0, self.tmax, self.size)
+        kwargs.update(simul.pars)
+        self.template = np.array(self.signal_template(**kwargs))
         self.generate_wave_function()
 
     def signal_template(self, **kwarg):
@@ -25,7 +27,7 @@ class Signal(object):
         return signal
 
     def __call__(self, t):
-        return self.wave(t)
+        return self.wave(t % self.tmax)
 
     def __add__(self, other_signal):
         templates = self.template, other_signal.template
@@ -34,8 +36,7 @@ class Signal(object):
         return type('Additive_Signal', (Signal,),
                     {'signal_template':
                      lambda self, **kwarg:
-                     np.sum(templates, axis=0)})(self.tmax,
-                                                 signal_size=self.size)
+                     np.sum(templates, axis=0)})(self.simul)
 
 
 class NoNoise(Signal):

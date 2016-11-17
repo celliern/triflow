@@ -21,6 +21,11 @@ setup(
     # Active la prise en compte du fichier MANIFEST.in
     include_package_data=True,
 
+    entry_points={
+        'console_scripts':
+        ['datreant_server=triflow.writers.remote:datreant_server_writer'],
+    },
+
     # Une url qui pointe vers la page officielle de votre lib
     # url='http://github.com/celliern/numerical-wave',
 

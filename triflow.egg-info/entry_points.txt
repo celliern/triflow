@@ -1,0 +1,3 @@
+[console_scripts]
+datreant_server = triflow.writers.remote:datreant_server_writer
+
