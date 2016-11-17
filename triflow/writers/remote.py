@@ -108,9 +108,9 @@ def datreant_server_writer(port=50000):
                     self.cache[simul_id] = treant
                 if msg[0] == 'run':
                     simul_id, i, t, tosave = msg[1:]
-                    logger.info("save %s, iter %i, time %f" %
+                    logger.info("save %s, iter %i, time %f in %s" %
                                 (simul_id,
-                                 i, t))
+                                 i, t, treant.abspath))
                     treant = self.cache[simul_id]
                     datreant_save(treant, i, t, tosave)
     queue = Queue()
