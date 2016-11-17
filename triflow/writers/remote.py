@@ -57,8 +57,7 @@ def remote_steps_writer(simul):
     port = simul.conf.get('remote.port', 50000)
     QueueManager.register('get_queue')
     distant_manager = QueueManager(address=(server,
-                                            port),
-                                   authkey=b'triflow')
+                                            port))
     distant_manager.connect()
     queue = distant_manager.get_queue()
     queue.put(('init', simul.id,
@@ -120,8 +119,7 @@ def datreant_server_writer(port=50000):
     w = Worker(queue)
     w.start()
     logger.info('Worker initialized')
-    local_manager = QueueManager(address=('', port),
-                                 authkey=b'triflow')
+    local_manager = QueueManager(address=('', port))
     server = local_manager.get_server()
     logger.info('starting server...')
     server.serve_forever()
