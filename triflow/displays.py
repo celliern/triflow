@@ -16,25 +16,21 @@ import numpy as np
 from triflow.misc import coroutine
 
 
-@coroutine
 def none_display(simul):
     while True:
-        simul = yield
+        yield
 
 
-@coroutine
 def simple_display(simul):
     while True:
-        simul = yield simul.t, simul.solver.get_fields(simul.U)
+        yield simul.t, simul.solver.get_fields(simul.U)
 
 
-@coroutine
 def simple_display_with_id(simul):
     while True:
-        simul = yield simul.t, simul.solver.get_fields(simul.U), simul.pars
+        yield simul.t, simul.solver.get_fields(simul.U), simul.pars
 
 
-@coroutine
 def full_display(simul):
     time_list = [simul.t]
     sol_list = np.array([simul.solver.get_fields(simul.U)])
@@ -42,4 +38,4 @@ def full_display(simul):
     while True:
         time_list.append(simul.t)
         sol_list = np.vstack([sol_list, simul.solver.get_fields(simul.U)])
-        simul = yield time_list, sol_list
+        yield time_list, sol_list

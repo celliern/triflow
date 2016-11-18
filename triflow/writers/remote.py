@@ -4,8 +4,11 @@
 import logging
 from multiprocessing import Process, Queue
 from multiprocessing.managers import BaseManager
+from threading import Thread
 
-from triflow.displays import simple_display, full_display
+import click
+
+from triflow.displays import full_display, simple_display
 from triflow.misc import coroutine
 from triflow.writers.datreant import (datreant_init, datreant_save,
                                       get_datreant_conf)
@@ -21,7 +24,13 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 
 @coroutine
-def remote_step_writer(simul):
+def queue_async(queue):
+    while True:
+        data = yield
+        Thread(target=queue.put, args=(data,)).start()
+
+
+def init_remote(simul):
     class QueueManager(BaseManager):
         pass
     path_data, simul_name, compressed = get_datreant_conf(simul)
@@ -34,8 +43,14 @@ def remote_step_writer(simul):
                                    authkey=b'triflow')
     distant_manager.connect()
     queue = distant_manager.get_queue()
-    queue.put(('init', simul.id,
-               [path_data, simul_name, simul.pars]))
+    send_remote = queue_async(queue)
+    send_remote.send(('init', simul.id, [path_data, simul_name, simul.pars]))
+    return queue, send_remote
+
+
+@coroutine
+def remote_step_writer(simul):
+    remote_queue, send_remote = init_remote(simul)
     display = simple_display(simul)
     while True:
         simul = yield
@@ -44,25 +59,12 @@ def remote_step_writer(simul):
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        queue.put(('run', simul.id, simul.i, simul.t, tosave))
+        send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
 
 
 @coroutine
 def remote_steps_writer(simul):
-    class QueueManager(BaseManager):
-        pass
-    path_data, simul_name, compressed = get_datreant_conf(simul)
-
-    server = simul.conf.get('remote.server', 'localhost')
-    port = simul.conf.get('remote.port', 50000)
-    QueueManager.register('get_queue')
-    distant_manager = QueueManager(address=(server,
-                                            port),
-                                   authkey=b'triflow')
-    distant_manager.connect()
-    queue = distant_manager.get_queue()
-    queue.put(('init', simul.id,
-               [path_data, simul_name, simul.pars]))
+    remote_queue, send_remote = init_remote(simul)
     display = full_display(simul)
     while True:
         simul = yield
@@ -72,10 +74,18 @@ def remote_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        queue.put(('run', simul.id, simul.i, simul.t, tosave))
+        send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
 
 
-def datreant_server_writer(port=50000):
+remote_step_writer.writer_type = 'remote'
+remote_steps_writer.writer_type = 'remote'
+
+
+@click.command()
+@click.option('-p', '--port', default=50000, help='port number.')
+@click.option('--debug-level', 'debug',
+              default='INFO', help='verbosity level.')
+def datreant_server_writer(port, debug):
     logger = logging.getLogger()
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
@@ -125,7 +135,3 @@ def datreant_server_writer(port=50000):
     server = local_manager.get_server()
     logger.info('starting server...')
     server.serve_forever()
-
-
-remote_step_writer.writer_type = 'remote'
-remote_steps_writer.writer_type = 'remote'

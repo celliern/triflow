@@ -4,6 +4,7 @@
 import itertools as it
 import logging
 from logging import debug, error, info
+from threading import Event
 from uuid import uuid1
 
 import numpy as np
@@ -14,11 +15,19 @@ from triflow import displays, schemes
 class Simulation(object):
     """ """
 
-    def __init__(self, solver, U0, t0, **pars):
-        self.id = str(uuid1())
+    def __init__(self, solver, U0, t0=0, id=None, **pars):
+        self.id = str(uuid1()) if id is None else id
         self.solver = solver
         self.pars = pars
         self.nvar = self.solver.nvar
+        U0 = solver.flatten_fields(U0)
+
+        logging.debug('U field after flattend: %s' % (' - '.join(map(str,
+                                                                     U0.shape)
+                                                                 )
+                                                      )
+                      )
+
         self.U = U0
         self.t = t0
         self.i = 0
@@ -31,6 +40,7 @@ class Simulation(object):
         self.writers = []
         self.display = displays.simple_display
         self.scheme = schemes.ROS_vart_scheme
+        self.stop = Event()
         self.signals = {}
         self.conf = {}
 
@@ -52,12 +62,13 @@ class Simulation(object):
             self.t += self.pars['dt']
             self.driver(self.t)
             self.write(writers)
-            yield display.send(self)
+            yield next(display)
+        self.stop.set()
 
     def add_signal(self, field, signal):
         self.signals[field] = signal
 
-    def add_writer(self, writer):
+    def add_writer(self, writer, replace=True):
         try:
             assert not(writer.writer_type in [writer.writer_type
                                               for writer
@@ -65,16 +76,21 @@ class Simulation(object):
                 'Already %s writer attached' % writer.writer_type
         except AttributeError:
             logging.warning('writer_type not found')
+        except AssertionError:
+            logging.warning('Already %s writer attached, replacing..')
+            [self.writers.remove(oldwriter)
+             for oldwriter in self.writers
+             if getattr(oldwriter, 'writer_type', None) == writer.type]
         self.writers.append(writer)
 
     def _init_writers_(self):
         return [writer(self) for writer in self.writers]
 
-    def set_display(self, display):
-        self.display = display
-
     def _init_display_(self):
         return self.display(self)
+
+    def set_display(self, display):
+        self.display = display
 
     def set_scheme(self, scheme):
         if scheme == 'theta':
