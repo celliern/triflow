@@ -48,33 +48,30 @@ def init_remote(simul):
     return queue, send_remote
 
 
-@coroutine
 def remote_step_writer(simul):
     remote_queue, send_remote = init_remote(simul)
     display = simple_display(simul)
-    while True:
-        simul = yield
-        t, field = display.send(simul)
+    for t, field in display:
+        t, field = next(display)
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
         send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
+        yield
 
 
-@coroutine
 def remote_steps_writer(simul):
     remote_queue, send_remote = init_remote(simul)
     display = full_display(simul)
-    while True:
-        simul = yield
-        t, field = display.send(simul)
+    for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
         send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
+        yield
 
 
 remote_step_writer.writer_type = 'remote'

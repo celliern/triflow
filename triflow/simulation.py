@@ -77,7 +77,8 @@ class Simulation(object):
         except AttributeError:
             logging.warning('writer_type not found')
         except AssertionError:
-            logging.warning('Already %s writer attached, replacing..')
+            logging.warning('Already %s writer attached, replacing..' %
+                            writer.writer_type)
             [self.writers.remove(oldwriter)
              for oldwriter in self.writers
              if getattr(oldwriter, 'writer_type', None) == writer.type]
@@ -124,7 +125,7 @@ class Simulation(object):
 
     def write(self, writers):
         for writer in writers:
-            writer.send(self)
+            next(writer)
 
     def driver(self, t):
         """
@@ -207,3 +208,25 @@ class Simulation(object):
 
     def __next__(self):
         return next(self.iterator)
+
+    def copy(self):
+        newid = self.id.split('_')
+        if len(newid) == 1:
+            newid = '_'.join(newid + ['0'])
+        else:
+            newid = '_'.join(newid[:-1] + [str(int(newid[-1]) + 1)])
+        new_simul = Simulation(self.solver, self.U, self.t,
+                               id=newid,
+                               **self.pars)
+        new_simul.display = self.display
+        new_simul.writers = self.writers.copy()
+        new_simul.signals = self.signals.copy()
+        new_simul.drivers = self.drivers.copy()
+        new_simul.internal_iter = self.internal_iter
+        new_simul.err = self.err
+        new_simul.scheme = self.scheme
+        new_simul.i = self.i
+        return new_simul
+
+    def __copy__(self):
+        return self.copy()

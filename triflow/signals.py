@@ -33,7 +33,7 @@ class Signal(object):
         templates = self.template, other_signal.template
         time_periodes = self.time_period, other_signal.time_period
         assert np.allclose(*time_periodes), "Incompatible time signals"
-        return type('Additive_Signal', (Signal,),
+        return type('Signal', (Signal,),
                     {'signal_template':
                      lambda self, **kwarg:
                      np.sum(templates, axis=0)})(self.simul)

@@ -8,7 +8,6 @@ import numpy as np
 from path import path
 
 from triflow.displays import full_display, simple_display
-from triflow.misc import coroutine
 
 
 def get_datreant_conf(simul):
@@ -39,36 +38,33 @@ def datreant_save(treant, i, t, tosave, compressed=False):
         np.savez_compressed(path(treant.abspath) / 'data', **tosave)
 
 
-@coroutine
 def datreant_steps_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
-    treant = datreant_init(path_data, simul_name, simul.pars)
+    simul.treant = datreant_init(path_data, simul_name, simul.pars)
+    simul.save_path = path(simul.treant.abspath)
     display = full_display(simul)
-
-    while True:
-        simul = yield
-        t, field = display.send(simul)
+    for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        datreant_save(treant, simul.i, simul.t, tosave, compressed)
+        datreant_save(simul.treant, simul.i, simul.t, tosave, compressed)
+        yield
 
 
-@coroutine
 def datreant_step_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
-    treant = datreant_init(path_data, simul_name, simul.pars)
+    simul.treant = datreant_init(path_data, simul_name, simul.pars)
+    simul.save_path = path(simul.treant.abspath)
     display = simple_display(simul)
-    while True:
-        simul = yield
-        t, field = display.send(simul)
+    for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save(treant, simul.i, simul.t, tosave, compressed)
+        datreant_save(simul.treant, simul.i, simul.t, tosave, compressed)
+        yield
 
 
 datreant_step_writer.writer_type = 'datreant'

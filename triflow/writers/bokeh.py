@@ -60,15 +60,14 @@ class bokeh_plotter(Thread):
             push_notebook(handle=handler)
 
 
-@coroutine
 def bokeh_nb_writer(simul):
     queue = Queue()
     display = simple_display(simul)
     plotter = bokeh_plotter(simul, queue, display)
     plotter.start()
-    while True:
-        simul = yield
-        queue.put(display.send(simul))
+    for t, fields in display:
+        queue.put((t, fields))
+        yield
 
 
 bokeh_nb_writer.writer_type = 'bokeh'
