@@ -40,7 +40,7 @@ initial_parameters = {
 }
 parameters.update(initial_parameters)
 
-numerical_parameters = {'t': 0, 'dt': 1, 'tmax': 200,
+numerical_parameters = {'t': 0, 'dt': 1, 'tmax': 20,
                         'tol': 1E-1}
 parameters.update(numerical_parameters)
 
