@@ -95,10 +95,10 @@ def datreant_server_writer(port, debug):
         pass
 
     class Worker(Process):
-        def __init__(self, q):
+        def __init__(self, q, cache):
             self.q = q
             self.working = True
-            self.cache = {}
+            self.cache = cache
             super(Worker, self).__init__()
 
         def run(self):
@@ -126,7 +126,8 @@ def datreant_server_writer(port, debug):
     queue = Queue()
 
     QueueManager.register('get_queue', callable=lambda: queue)
-    logger.info('QueueManager registered')
+    QueueManager.register('register_writer', callable=None)
+    logger.info('Manager registered')
     w = Worker(queue)
     w.start()
     logger.info('Worker initialized')
