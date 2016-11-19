@@ -65,6 +65,13 @@ class Simulation(object):
             yield next(display)
         self.stop.set()
 
+    def compute_until_finished(self):
+        logging.info('simulation %s computing until the end' % self.id)
+        self.pars['tmax']
+        for iteration in self.iterator:
+            logging.info('simulation reached time %.2f, iteration %i' %
+                         (self.t, self.i))
+
     def add_signal(self, field, signal):
         self.signals[field] = signal
 

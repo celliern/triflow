@@ -89,7 +89,7 @@ def datreant_server_writer(port, debug):
         '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(debug)
 
     class QueueManager(BaseManager):
         pass
@@ -103,23 +103,26 @@ def datreant_server_writer(port, debug):
 
         def run(self):
             while self.working:
-                msg = self.q.get()
-                logger.debug(msg)
-                if msg[0] == 'init':
-                    simul_id, [path_data, simul_name, pars] = msg[1:]
+                try:
+                    msg = self.q.get()
+                    logging.debug(self.cache)
+                    if msg[0] == 'init':
+                        simul_id, [path_data, simul_name, pars] = msg[1:]
 
-                    treant = datreant_init(path_data, simul_name, pars)
-                    logger.info("initialize %s, writer set at %s" %
-                                (simul_id,
-                                 treant.abspath))
-                    self.cache[simul_id] = treant
-                if msg[0] == 'run':
-                    simul_id, i, t, tosave = msg[1:]
-                    logger.info("save %s, iter %i, time %f in %s" %
-                                (simul_id,
-                                 i, t, treant.abspath))
-                    treant = self.cache[simul_id]
-                    datreant_save(treant, i, t, tosave)
+                        treant = datreant_init(path_data, simul_name, pars)
+                        logger.info("initialize %s, writer set at %s" %
+                                    (simul_id,
+                                     treant.abspath))
+                        self.cache[simul_id] = treant
+                    if msg[0] == 'run':
+                        simul_id, i, t, tosave = msg[1:]
+                        logger.info("save %s, iter %i, time %f in %s" %
+                                    (simul_id,
+                                     i, t, treant.abspath))
+                        treant = self.cache[simul_id]
+                        datreant_save(treant, i, t, tosave)
+                except KeyError:
+                    logging.error('KEYERROR')
     queue = Queue()
 
     QueueManager.register('get_queue', callable=lambda: queue)
