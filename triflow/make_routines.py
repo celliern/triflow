@@ -177,7 +177,7 @@ def load_routines_fortran(folder: str):
         except ImportError:
             spec = impu.spec_from_file_location(
                 Fbdc, working_dir / '%s.so' % Fbdc)
-        Fbound = impu.module_from_spec(spec).fbdc
+            Fbound = impu.module_from_spec(spec).fbdc
         Fbounds.append(Fbound)
 
     Jbdc_routines = sorted([file.namebase for
@@ -224,7 +224,7 @@ def load_routines_fortran(folder: str):
                 spec = impu.spec_from_file_location(
                     Hbdc, working_dir /
                     '%s.so' % Hbdc)
-            Hbound = impu.module_from_spec(spec).hbdc
+                Hbound = impu.module_from_spec(spec).hbdc
             Hbounds.append(Hbound)
         Hsbounds.append(Hbounds)
 
