@@ -126,15 +126,24 @@ def load_routines_fortran(folder: str):
 
     info("paramètres (ordonnés): " +
          ' - '.join([par.name for par in parameters]))
-
-    spec = impu.spec_from_file_location("F",
-                                        working_dir /
-                                        'F.cpython-35m-x86_64-linux-gnu.so')
-    func_i = impu.module_from_spec(spec).f
-
-    spec = impu.spec_from_file_location(
-        "J", working_dir / 'J.cpython-35m-x86_64-linux-gnu.so')
-    jacob_i = impu.module_from_spec(spec).j
+    try:
+        spec = impu.spec_from_file_location("F",
+                                            working_dir /
+                                            'F.cpython-35m-x86_64-linux-gnu.so')
+        func_i = impu.module_from_spec(spec).f
+    except ImportError:
+        spec = impu.spec_from_file_location("F",
+                                            working_dir /
+                                            'F.so')
+        func_i = impu.module_from_spec(spec).f
+    try:
+        spec = impu.spec_from_file_location(
+            "J", working_dir / 'J.cpython-35m-x86_64-linux-gnu.so')
+        jacob_i = impu.module_from_spec(spec).j
+    except ImportError:
+        spec = impu.spec_from_file_location(
+            "J", working_dir / 'J.so')
+        jacob_i = impu.module_from_spec(spec).j
 
     help_routines = [file.namebase for
                      file in
@@ -144,9 +153,13 @@ def load_routines_fortran(folder: str):
                          not file.namebase[:4] == 'Hbdc')]
     helps_i = []
     for H in help_routines:
-        spec = impu.spec_from_file_location(
-            H, working_dir / '%s.cpython-35m-x86_64-linux-gnu.so' % H)
-        help_i = impu.module_from_spec(spec).h
+        try:
+            spec = impu.spec_from_file_location(
+                H, working_dir / '%s.cpython-35m-x86_64-linux-gnu.so' % H)
+            help_i = impu.module_from_spec(spec).h
+        except ImportError:
+            spec = impu.spec_from_file_location(H, working_dir / '%s.so' % H)
+            help_i = impu.module_from_spec(spec).h
         helps_i.append(help_i)
 
     Fbdc_routines = sorted([file.namebase for
@@ -156,8 +169,14 @@ def load_routines_fortran(folder: str):
                                 file.namebase[:4] == 'Fbdc')])
     Fbounds = []
     for Fbdc in Fbdc_routines:
-        spec = impu.spec_from_file_location(
-            Fbdc, working_dir / '%s.cpython-35m-x86_64-linux-gnu.so' % Fbdc)
+        try:
+            spec = impu.spec_from_file_location(
+                Fbdc, working_dir /
+                '%s.cpython-35m-x86_64-linux-gnu.so' % Fbdc)
+            Fbound = impu.module_from_spec(spec).fbdc
+        except ImportError:
+            spec = impu.spec_from_file_location(
+                Fbdc, working_dir / '%s.so' % Fbdc)
         Fbound = impu.module_from_spec(spec).fbdc
         Fbounds.append(Fbound)
 
@@ -168,9 +187,15 @@ def load_routines_fortran(folder: str):
                                 file.namebase[:4] == 'Jbdc')])
     Jbounds = []
     for Jbdc in Jbdc_routines:
-        spec = impu.spec_from_file_location(
-            Jbdc, working_dir / '%s.cpython-35m-x86_64-linux-gnu.so' % Jbdc)
-        Jbound = impu.module_from_spec(spec).jbdc
+        try:
+            spec = impu.spec_from_file_location(
+                Jbdc, working_dir /
+                '%s.cpython-35m-x86_64-linux-gnu.so' % Jbdc)
+            Jbound = impu.module_from_spec(spec).jbdc
+        except ImportError:
+            spec = impu.spec_from_file_location(Jbdc, working_dir /
+                                                '%s.so' % Jbdc)
+            Jbound = impu.module_from_spec(spec).jbdc
         Jbounds.append(Jbound)
 
     Hsbounds = []
@@ -190,9 +215,15 @@ def load_routines_fortran(folder: str):
                                 if (file.ext == '.f90' and
                                     file.namebase[:5] == 'Hbdc%i' % int(i))])
         for Hbdc in Hbdc_routines:
-            spec = impu.spec_from_file_location(
-                Hbdc, working_dir /
-                '%s.cpython-35m-x86_64-linux-gnu.so' % Hbdc)
+            try:
+                spec = impu.spec_from_file_location(
+                    Hbdc, working_dir /
+                    '%s.cpython-35m-x86_64-linux-gnu.so' % Hbdc)
+                Hbound = impu.module_from_spec(spec).hbdc
+            except ImportError:
+                spec = impu.spec_from_file_location(
+                    Hbdc, working_dir /
+                    '%s.so' % Hbdc)
             Hbound = impu.module_from_spec(spec).hbdc
             Hbounds.append(Hbound)
         Hsbounds.append(Hbounds)
