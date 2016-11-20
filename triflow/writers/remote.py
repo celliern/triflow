@@ -87,7 +87,6 @@ remote_steps_writer.writer_type = 'remote'
 @click.option('--debug-level', 'debug',
               default='INFO', help='verbosity level.')
 def datreant_server_writer(port, debug):
-    with daemon.DaemonContext():
         current_process().authkey = b'triflow'
         logger = logging.getLogger()
         handler = logging.StreamHandler()
