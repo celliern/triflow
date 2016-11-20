@@ -26,11 +26,12 @@ def datreant_init(path_data, simul_name, parameters):
             treant.categories[key] = float(parameters[key])
     treant.categories['t'] = 0
     treant.categories['i'] = 0
-    return str(treant.abspath)
 
 
-def datreant_save(treant_path, i, t, tosave, compressed=False):
-    treant = dtr.Treant(treant_path)
+def datreant_save(path_data, simul_name, i, t,
+                  tosave, compressed=False):
+    treant = dtr.Treant(path(path_data) / simul_name)
+    logging.debug(treant.abspath)
     treant.categories['t'] = t
     treant.categories['i'] = i
     if not compressed:
@@ -50,7 +51,8 @@ def datreant_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        datreant_save(simul.save_path, simul.i, simul.t, tosave, compressed)
+        datreant_save(path_data, simul_name,
+                      simul.i, simul.t, tosave, compressed)
         yield
 
 
@@ -64,7 +66,8 @@ def datreant_step_writer(simul):
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save(simul.save_path, simul.i, simul.t, tosave, compressed)
+        datreant_save(path_data, simul_name,
+                      simul.i, simul.t, tosave, compressed)
         yield
 
 

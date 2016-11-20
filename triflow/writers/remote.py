@@ -6,6 +6,8 @@ import logging
 from multiprocessing import current_process
 from multiprocessing.managers import BaseManager
 from threading import Thread
+from path import path
+import datreant.core as dtr
 
 import click
 
@@ -53,14 +55,15 @@ def init_remote(simul):
 def remote_step_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init, datreant_save = init_remote(simul)
-    treant_path = str(datreant_init(path_data, simul_name, simul.pars))
+    datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
     for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
+        datreant_save(path_data, simul_name,
+                      simul.i, simul.t, tosave, compressed)
         yield
 
 
