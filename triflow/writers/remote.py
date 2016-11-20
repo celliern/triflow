@@ -5,6 +5,7 @@ import daemon
 import logging
 from multiprocessing import Process, current_process
 from multiprocessing.managers import BaseManager
+from functools import ft
 from threading import Thread
 
 import click
@@ -36,7 +37,6 @@ def init_remote(simul):
 
     class QueueManager(BaseManager):
         pass
-    path_data, simul_name, compressed = get_datreant_conf(simul)
 
     server = simul.conf.get('remote.server', 'localhost')
     port = simul.conf.get('remote.port', 50000)
@@ -45,26 +45,29 @@ def init_remote(simul):
     distant_manager = QueueManager(address=(server,
                                             port))
     distant_manager.connect()
-    datreant_init = distant_manager.datreant_init
-    datreant_save = distant_manager.datreant_save
-    return datreant_init, datreant_save
+    remote_datreant_init = distant_manager.datreant_init
+    remote_datreant_save = distant_manager.datreant_save
+    return remote_datreant_init, remote_datreant_save
 
 
 def remote_step_writer(simul):
+    remote_datreant_init, remote_datreant_save = init_remote(simul)
     path_data, simul_name, compressed = get_datreant_conf(simul)
-    treant_path = datreant_init(path_data, simul_name, simul.pars)
+    treant_path = remote_datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
     for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
+        remote_datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
         yield
 
 
 def remote_steps_writer(simul):
-    remote_queue, send_remote = init_remote(simul)
+    remote_datreant_init, remote_datreant_save = init_remote(simul)
+    path_data, simul_name, compressed = get_datreant_conf(simul)
+    treant_path = remote_datreant_init(path_data, simul_name, simul.pars)
     display = full_display(simul)
     for t, field in display:
         tosave = {name: field[name]
@@ -72,7 +75,7 @@ def remote_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
+        remote_datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
         yield
 
 
