@@ -5,7 +5,6 @@ import daemon
 import logging
 from multiprocessing import Process, current_process
 from multiprocessing.managers import BaseManager
-from functools import ft
 from threading import Thread
 
 import click
