@@ -52,6 +52,7 @@ def init_remote(simul):
 
 def remote_step_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
+    datreant_init, datreant_save = init_remote(simul)
     treant_path = datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
     for t, field in display:
@@ -64,7 +65,9 @@ def remote_step_writer(simul):
 
 
 def remote_steps_writer(simul):
-    remote_queue, send_remote = init_remote(simul)
+    path_data, simul_name, compressed = get_datreant_conf(simul)
+    datreant_init, datreant_save = init_remote(simul)
+    treant_path = datreant_init(path_data, simul_name, simul.pars)
     display = full_display(simul)
     for t, field in display:
         tosave = {name: field[name]
@@ -72,7 +75,7 @@ def remote_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        send_remote.send(('run', simul.id, simul.i, simul.t, tosave))
+        datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
         yield
 
 
