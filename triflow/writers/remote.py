@@ -3,7 +3,7 @@
 
 import daemon
 import logging
-from multiprocessing import Process, current_process
+from multiprocessing import current_process
 from multiprocessing.managers import BaseManager
 from threading import Thread
 
@@ -53,7 +53,7 @@ def init_remote(simul):
 def remote_step_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init, datreant_save = init_remote(simul)
-    treant_path = datreant_init(path_data, simul_name, simul.pars)
+    treant_path = str(datreant_init(path_data, simul_name, simul.pars))
     display = simple_display(simul)
     for t, field in display:
         tosave = {name: field[name]
@@ -88,23 +88,22 @@ remote_steps_writer.writer_type = 'remote'
 @click.option('--debug-level', 'debug',
               default='INFO', help='verbosity level.')
 def datreant_server_writer(port, debug):
-    with daemon.DaemonContext():
-        current_process().authkey = b'triflow'
-        logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(debug)
+    current_process().authkey = b'triflow'
+    logger = logging.getLogger()
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(debug)
 
-        class QueueManager(BaseManager):
-            pass
+    class QueueManager(BaseManager):
+        pass
 
-        QueueManager.register('datreant_init', callable=datreant_init)
-        QueueManager.register('datreant_save', callable=datreant_save)
-        logger.info('Manager registered')
-        local_manager = QueueManager(address=('', port))
-        server = local_manager.get_server()
-        logger.info('starting server...')
-        server.serve_forever()
+    QueueManager.register('datreant_init', callable=datreant_init)
+    QueueManager.register('datreant_save', callable=datreant_save)
+    logger.info('Manager registered')
+    local_manager = QueueManager(address=('', port))
+    server = local_manager.get_server()
+    logger.info('starting server...')
+    server.serve_forever()

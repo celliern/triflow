@@ -26,7 +26,7 @@ def datreant_init(path_data, simul_name, parameters):
             treant.categories[key] = float(parameters[key])
     treant.categories['t'] = 0
     treant.categories['i'] = 0
-    return treant.abspath
+    return str(treant.abspath)
 
 
 def datreant_save(treant_path, i, t, tosave, compressed=False):
