@@ -5,23 +5,51 @@ import logging
 import multiprocessing as mp
 from logging import info
 
-from triflow.boundaries import openflow_boundary, periodic_boundary
-from triflow.make_routines import cache_routines_fortran
+from triflow.core.make_routines import cache_routines_fortran
+from triflow.models.boundaries import openflow_boundary, periodic_boundary
 from triflow.models.model_2fields import model as model2
 from triflow.models.model_4fields import model as model4
 from triflow.models.model_full_fourrier import model as modelfull
 
-if __name__ == '__main__':
+logger = logging.getLogger()
+logger.handlers = []
+handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
-    logger = logging.getLogger()
-    logger.handlers = []
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+
+def cache_full():
     processes = []
+
+    processes.append(mp.Process(target=cache_routines_fortran,
+                                args=(lambda: modelfull(10),
+                                      periodic_boundary,
+                                      'full_fourrier%i_per' % 10)))
+    processes.append(mp.Process(target=cache_routines_fortran,
+                                args=(lambda: modelfull(10),
+                                      openflow_boundary,
+                                      'full_fourrier%i_open' % 10)))
+
+    for process in processes:
+        process.start()
+
+    finish = False
+    while not finish:
+        finish = True
+        for process in processes:
+            finish *= not process.is_alive()
+    info("processes are finish")
+
+    for process in processes:
+        process.join()
+
+
+def cache_simple():
+    processes = []
+
     processes.append(mp.Process(target=cache_routines_fortran,
                                 args=(model2, openflow_boundary,
                                       '2fields_open')))
@@ -34,15 +62,6 @@ if __name__ == '__main__':
     processes.append(mp.Process(target=cache_routines_fortran,
                                 args=(model4, periodic_boundary,
                                       '4fields_per')))
-    for n in [10]:
-        processes.append(mp.Process(target=cache_routines_fortran,
-                                    args=(lambda: modelfull(n),
-                                          periodic_boundary,
-                                          'full_fourrier%i_per' % n)))
-        processes.append(mp.Process(target=cache_routines_fortran,
-                                    args=(lambda: modelfull(n),
-                                          openflow_boundary,
-                                          'full_fourrier%i_open' % n)))
 
     for process in processes:
         process.start()

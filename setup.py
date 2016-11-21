@@ -23,7 +23,12 @@ setup(
 
     entry_points={
         'console_scripts':
-        ['datreant_server=triflow.writers.remote:datreant_server_writer'],
+        ['datreant_server='\
+         'triflow.plugins.writers.remote:datreant_server_writer',
+         'triflow_cache_full='\
+         'triflow.models.cache_main_models:cache_full',
+         'triflow_cache_simple='\
+         'triflow.models.cache_main_models:cache_simple'],
     },
 
     # Une url qui pointe vers la page officielle de votre lib

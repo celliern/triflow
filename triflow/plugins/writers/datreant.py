@@ -50,8 +50,8 @@ def datreant_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        datreant_save.delay(path_data, simul_name,
-                            simul.i, simul.t, tosave, compressed)
+        datreant_save(path_data, simul_name,
+                      simul.i, simul.t, tosave, compressed)
         yield
 
 
@@ -64,8 +64,8 @@ def datreant_step_writer(simul):
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save.delay(path_data, simul_name,
-                            simul.i, simul.t, tosave, compressed)
+        datreant_save(path_data, simul_name,
+                      simul.i, simul.t, tosave, compressed)
         yield
 
 

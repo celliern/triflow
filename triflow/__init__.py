@@ -12,10 +12,6 @@ from triflow.core.make_routines import (cache_routines_fortran,
 from triflow.core.simulation import Simulation
 from triflow.core.solver import Solver
 
-import msgpack
-import msgpack_numpy as m
-m.patch()
-
 try:  # Python 2.7+
     from logging import NullHandler
 except ImportError:
