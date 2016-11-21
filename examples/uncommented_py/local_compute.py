@@ -2,17 +2,11 @@
 # coding=utf8
 
 import logging
-import itertools as it
 
-import pylab as pl
-import seaborn as sns
 import numpy as np
-from scipy.signal import hamming
-
-from triflow.solver import Solver
-from triflow.helpers import init_4f_per
-from triflow import displays, writers, materials, signals, schemes
-
+from triflow.misc import materials
+from triflow.misc.helpers import init_4f_per
+from triflow.plugins import writers
 
 logger = logging.getLogger()
 logger.handlers = []
@@ -53,4 +47,5 @@ simul = solver.start_simulation(initial_fields, 0, **parameters)
 
 running_simul = simul.copy()
 running_simul.add_writer(writers.datreant_step_writer)
+running_simul.conf['treant.path'] = '/tmp'
 running_simul.compute_until_finished()
