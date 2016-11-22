@@ -27,11 +27,11 @@ def cache_full():
     processes.append(mp.Process(target=cache_routines_fortran,
                                 args=(lambda: modelfull(10),
                                       periodic_boundary,
-                                      'full_fourrier%i_per' % 10)))
+                                      '%iff_per' % 10)))
     processes.append(mp.Process(target=cache_routines_fortran,
                                 args=(lambda: modelfull(10),
                                       openflow_boundary,
-                                      'full_fourrier%i_open' % 10)))
+                                      '%iff_open' % 10)))
 
     for process in processes:
         process.start()

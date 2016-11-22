@@ -2,16 +2,12 @@
 # coding=utf8
 
 import logging
-import itertools as it
 
-import pylab as pl
-import seaborn as sns
 import numpy as np
-from scipy.signal import hamming
 
-from triflow.solver import Solver
-from triflow.helpers import init_4f_per
-from triflow import displays, writers, materials, signals, schemes
+from triflow.misc.helpers import init_4f_per
+from triflow.plugins import writers
+from triflow.misc import materials
 
 
 logger = logging.getLogger()

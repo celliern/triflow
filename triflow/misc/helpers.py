@@ -46,7 +46,7 @@ def init_4f_open(parameters):
     thetai = x * 0 + parameters['theta_flat']
     phii = x * 0 + parameters['phi_flat']
     s = x * 0
-    solver = Solver('4fields_open')
+    solver = Solver('%iff_open' % Ny)
     return solver, [hi, qi, thetai, phii, s]
 
 
