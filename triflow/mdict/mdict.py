@@ -72,6 +72,3 @@ class magical_dict(dict):
 
     def add_relation(self, relation):
         self.magic_relations.append(sp.S(relation))
-
-    def __reduce__(self):
-        return (ComplicatedThing, (self.progress_int,))
