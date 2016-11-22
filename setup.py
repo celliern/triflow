@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import find_packages
-from numpy.distutils.core import setup
+from setuptools import find_packages, setup
 
 setup(
     name='triflow',
     # la version du code
-    version="0.2.0",
+    version="0.2.1",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
     author="Nicolas CELLIER",
     author_email="contact@nicolas-cellier.net",
     description="Python library for falling-films modeling",
+
+    license='MIT',
 
     # long_description=open('README.md').read(),
 
@@ -41,6 +42,5 @@ setup(
         "Programming Language :: Python",
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.5",
     ],
 )
