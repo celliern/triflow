@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 setup(
     name='triflow',
     # la version du code
-    version="0.1.1",
+    version="0.2.0",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -39,7 +39,7 @@ setup(
 
     classifiers=[
         "Programming Language :: Python",
-        "Development Status :: 2 - Development",
+        "Development Status :: 3 - Alpha",
         "License :: GNU GPL V3",
         "Natural Language :: French",
         "Operating System :: OS Independent",
