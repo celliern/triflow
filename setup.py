@@ -40,10 +40,7 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 3 - Alpha",
-        "License :: GNU GPL V3",
-        "Natural Language :: French",
-        "Operating System :: OS Independent",
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.5",
-        "Topic :: Physical modeling",
     ],
 )
