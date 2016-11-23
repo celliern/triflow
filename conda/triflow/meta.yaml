@@ -1,0 +1,94 @@
+package:
+  name: triflow
+  version: "0.2.1"
+
+source:
+  fn: triflow-0.2.1.tar.gz
+  url: https://pypi.python.org/packages/f5/7a/e7186b4fb99eb21f0a973de5b8db523d6811d4a6c7ec1399e47be28c96d7/triflow-0.2.1.tar.gz
+  md5: a0f3a5079d91d07d54737925859d17fd
+#  patches:
+   # List any patch files here
+   # - fix.patch
+
+build:
+  # noarch_python: True
+  # preserve_egg_dir: True
+  entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    # - triflow = triflow:main
+    #
+    # Would create an entry point called triflow that calls triflow.main()
+
+    - datreant_server=triflow.plugins.writers.remote:datreant_server_writer
+    - triflow_cache_full=triflow.models.cache_main_models:cache_full
+    - triflow_cache_simple=triflow.models.cache_main_models:cache_simple
+
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  # number: 1
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - appdirs 1.4.0
+    - asciitree
+    - bokeh 0.12.3
+    - click 6.6
+    - dask 0.12.0
+    - datreant.core 0.7.0
+    - fuzzywuzzy
+    - jinja2 2.8
+    - markupsafe 0.23
+    - mpmath 0.19
+    - numpy 1.11.2
+    - path.py
+    - pathlib2 2.1.0
+    - python-dateutil 2.6.0
+    - pyyaml 3.12
+    - requests 2.12.1
+    - scandir
+    - scipy 0.18.1
+    - six 1.10.0
+    - sympy 1.0
+    - tornado 4.4.2
+    - distributed 1.14.3
+
+test:
+  # Python imports
+  imports:
+    - triflow
+    - triflow.core
+    - triflow.mdict
+    - triflow.misc
+    - triflow.models
+    - triflow.plugins
+    - triflow.plugins.writers
+
+  commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+    - datreant_server --help
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  # requires:
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  #home: The package home page
+  license: MIT License
+  summary: 'Python library for falling-films modeling'
+  license_family: MIT
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

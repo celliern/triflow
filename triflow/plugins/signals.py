@@ -70,29 +70,3 @@ def init_signal(simul, field, Signals=(NoNoise,)):
     def frequencies(simul, t):
         simul.pars['h%' % field] = signal(t)
     return frequencies
-
-
-if __name__ == '__main__':
-    import pylab as pl
-
-    signal1 = WhiteNoise(10000, noise_ampl=.01)
-    signal2 = BrownNoise(10000, noise_ampl=.01, fcut=.3)
-    signal3 = ForcedSignal(10000, signal_freq=10, signal_ampl=.1,
-                           offset=1.)
-    sum_signal_white = signal1 + signal3
-    sum_signal_brown = signal2 + signal3
-
-    pl.subplot(321)
-    pl.plot(signal1(signal1.time_period))
-    pl.subplot(323)
-    pl.plot(signal3(signal1.time_period))
-    pl.subplot(325)
-    pl.plot(sum_signal_white(signal1.time_period))
-
-    pl.subplot(322)
-    pl.plot(signal2(signal1.time_period))
-    pl.subplot(324)
-    pl.plot(signal3(signal1.time_period))
-    pl.subplot(326)
-    pl.plot(sum_signal_brown(signal1.time_period))
-    pl.show()
