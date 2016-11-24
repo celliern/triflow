@@ -33,7 +33,7 @@ def simple_display_with_id(simul):
 def full_display(simul):
     time_list = [simul.t]
     sol_list = np.array([simul.solver.get_fields(simul.U)])
-    simul = yield time_list, sol_list
+    yield time_list, sol_list
     while True:
         time_list.append(simul.t)
         sol_list = np.vstack([sol_list, simul.solver.get_fields(simul.U)])

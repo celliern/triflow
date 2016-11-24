@@ -53,6 +53,7 @@ class Simulation(object):
         display = self._init_display_()
         writers = self._init_writers_()
         numerical_scheme = self._init_scheme_()
+        yield next(display)
 
         for self.i, self.U in enumerate(filter(
                 self.filter,
