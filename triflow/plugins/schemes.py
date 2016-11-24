@@ -208,11 +208,11 @@ def ROS_vart_scheme(simul):
             k2 = luf.solve(dt * F - 2 * k1)
 
             Ubar = U + k1
-            U = U + 3 / 2 * k1 + 1 / 2 * k2
+            U_new = U + 3 / 2 * k1 + 1 / 2 * k2
 
-            err = norm(U - Ubar, ord=np.inf)
+            err = norm(U_new - Ubar, ord=np.inf)
             dt = 0.9 * dt * np.sqrt(simul.pars['tol'] / err)
-        return U, dt, err
+        return U_new, dt, err
     simul.internal_iter = 0
     while True:
         Unew, dt_calc, simul.err = one_step(U, dt)
