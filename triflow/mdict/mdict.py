@@ -2,11 +2,21 @@ import sympy as sp
 from logging import info
 
 
+import sympy as sp
+from logging import info
+
+
+def recreate_magical_dict(this_dict, magic_relations):
+    this_dict = magical_dict(this_dict)
+    for relation in magic_relations:
+        this_dict.add_relation(relation)
+    return this_dict
+
 class magical_dict(dict):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.magic_relations = []
-        super().__init__()
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
@@ -72,3 +82,6 @@ class magical_dict(dict):
 
     def add_relation(self, relation):
         self.magic_relations.append(sp.S(relation))
+
+    def __reduce__(self):
+        return (recreate_magical_dict, (dict(self), self.magic_relations))

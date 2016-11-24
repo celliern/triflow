@@ -216,17 +216,9 @@ def model(Ny):
                 .subs(ccoeff)
                 for yi in y]
 
-    T = Tcheb
-
     info('Calcul des dérivés en x, 2nd dim')
     dxT = [((.5 * Tchebp1[ids] - .5 * Tchebm1[ids]) / dx)
            for ids in range(Ny)]
-    """dxTp = [((Tchebm2[ids]
-              - 6 * Tchebm1[ids]
-              + 3 * Tcheb[ids]
-              + 2 * Tchebp1[ids]) / (6*dx))
-            for ids in range(Ny)]"""
-    """dxhp = (hm2 - 6 * hm1 + 3 * h + 2 * hp1) / (6 * dx)"""
 
     dxxT = [(Tchebm1[ids] - 2 * Tcheb[ids] + Tchebp1[ids]) /
             dx for ids in range(Ny)]
@@ -240,8 +232,6 @@ def model(Ny):
 
     Re, We, Ct = sp.symbols('Re, We, Ct')
     Pe, Bi = sp.symbols('Pe, Bi')
-
-    yred = y
 
     u = np.array([3 * q / h * (y[ids] - .5 * y[ids]**2) for ids in range(Ny)])
 
