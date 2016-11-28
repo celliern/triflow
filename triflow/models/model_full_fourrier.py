@@ -270,13 +270,13 @@ def model(Ny):
                 3 * dxs * dyT[ids] * h * Pe * u[ids] -
                 3 * dxT[ids] * h**2 * Pe * u[ids] -
                 3 * dyT[ids] * h * Pe * v[ids] +
-                2 * dxh**2 * dyT[ids] * y +
-                2 * dxh * dxs * dyyT[ids] * y -
-                2 * dxh * dxyT[ids] * h * y -
-                dxxh * dyT[ids] * h * y -
-                3 * dxq * dyT[ids] * h * Pe * y +
-                3 * dxh * dyT[ids] * h * Pe * u * y +
-                dxh**2 * dyyT[ids] * y**2) / (3. * h**2 * Pe))
+                2 * dxh**2 * dyT[ids] * y[ids] +
+                2 * dxh * dxs * dyyT[ids] * y[ids] -
+                2 * dxh * dxyT[ids] * h * y[ids] -
+                dxxh * dyT[ids] * h * y[ids] -
+                3 * dxq * dyT[ids] * h * Pe * y[ids] +
+                3 * dxh * dyT[ids] * h * Pe * u[ids] * y[ids] +
+                dxh**2 * dyyT[ids] * y[ids]**2) / (3. * h**2 * Pe))
               for ids in range(1, Ny - 1)]
 
     FT = [0] + FTbulk + [0]
