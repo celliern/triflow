@@ -80,7 +80,7 @@ def model(Ny):
 
     wphi = ("(1 + dxh**2) * right(dx(U))"
             "- h * dxh * dxTtop"
-            "+ h*sqrt(1 + dxh**2) * Bi * right(U)")
+            "+ h*sqrt(1 + dxh**2) * B * right(U)")
 
     bdccoeff = solve_bdc([wphi, 'left(U) - 1'])
     # return bdccoeff
@@ -231,7 +231,7 @@ def model(Ny):
             for ids in range(Ny)]
 
     Re, We, Ct = sp.symbols('Re, We, Ct')
-    Pe, Bi = sp.symbols('Pe, Bi')
+    Pe, B = sp.symbols('Pe, B')
 
     u = np.array([3 * q / h * (y[ids] - .5 * y[ids]**2) for ids in range(Ny)])
 
@@ -279,7 +279,7 @@ def model(Ny):
                                   for u in np.array(U_therm)
                                   .flatten()]
                                  ).squeeze()).T
-    return (U_therm, F_therm, J_therm, (Re, We, Ct, Pe, Bi),
+    return (U_therm, F_therm, J_therm, (Re, We, Ct, Pe, B),
             (Tcheb[-1],
              dyTcheb[0]),)
 
