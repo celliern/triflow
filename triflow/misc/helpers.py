@@ -30,7 +30,8 @@ def init_ff_per(Ny, parameters):
     y = ((-np.cos(np.pi * np.arange(Ny) / (Ny - 1))) + 1) / 2
     hi = hamming(parameters['Nx']) * .1 + .95
     qi = hi**3 / 3
-    Ti = 1 - parameters['theta_flat'] * y[np.newaxis, :] + x[:, np.newaxis] * 0
+    Ti = ((parameters['theta_flat'] - 1) *
+          y[np.newaxis, :] + 1 + x[:, np.newaxis] * 0)
     solver = Solver('%iff_per' % Ny)
     return solver, [hi, qi, *Ti.T]
 
@@ -60,7 +61,8 @@ def init_ff_open(Ny, parameters):
     hi = ((-(np.tanh(
         (x - .1 * parameters['L']) / 20) + 1) / 2 + 1) * 1 + 1) / 2
     qi = hi**3 / 3
-    Ti = 1 - parameters['theta_flat'] * y[np.newaxis, :] + x[:, np.newaxis] * 0
+    Ti = ((parameters['theta_flat'] - 1) *
+          y[np.newaxis, :] + 1 + x[:, np.newaxis] * 0)
     print(Ti)
     solver = Solver('%iff_per' % Ny)
     return solver, [hi, qi, *Ti.T]
