@@ -252,19 +252,34 @@ def model(Ny):
 
     # dxh = 0 # little effect
 
-    lap_T = [(dxxT[ids] * h**2 -
-              2 * dxh * dxyT[ids] * y[ids] / h +  # bug
-              y[ids] / h * (2 / h * dxh**2 - dxxh) * dyT[ids] +
-              ((y[ids] / h)**2 * dxh**2 + 1 / h**2) *
-              dyyT[ids]) for ids in range(1, Ny - 1)]
+    # lap_T = [(dxxT[ids] * h**2 -
+    #           2 * dxh * dxyT[ids] * y[ids] / h +  # bug
+    #           y[ids] / h * (2 / h * dxh**2 - dxxh) * dyT[ids] +
+    #           ((y[ids] / h)**2 * dxh**2 + 1 / h**2) *
+    #           dyyT[ids]) for ids in range(1, Ny - 1)]
 
-    vel_T = [(sp.Matrix([u[ids],
-                         v[ids]]).T @
-              sp.Matrix([dxT[ids] - y[ids] / h * dxh * dyT[ids],
-                         dyT[ids] / h]))[0] for ids in range(1, Ny - 1)]
+    # vel_T = [(sp.Matrix([u[ids],
+    #                      v[ids]]).T @
+    #           sp.Matrix([dxT[ids] - y[ids] / h * dxh * dyT[ids],
+    #                      dyT[ids] / h]))[0] for ids in range(1, Ny - 1)]
 
-    FT = [0] + [lap_T[ids] / (Pe * 3) - vel_T[ids] - y[ids + 1] / h *
-                dxq * dyT[ids + 1] for ids in range(len(lap_T))] + [0]
+    FTbulk = [((2 * dxh * dxs * dyT[ids] + dyyT[ids] +
+                dxs**2 * dyyT[ids] -
+                2 * dxs * dxyT[ids] * h -
+                dxxs * dyT[ids] * h + dxxT[ids] * h**2 +
+                3 * dxs * dyT[ids] * h * Pe * u[ids] -
+                3 * dxT[ids] * h**2 * Pe * u[ids] -
+                3 * dyT[ids] * h * Pe * v[ids] +
+                2 * dxh**2 * dyT[ids] * y +
+                2 * dxh * dxs * dyyT[ids] * y -
+                2 * dxh * dxyT[ids] * h * y -
+                dxxh * dyT[ids] * h * y -
+                3 * dxq * dyT[ids] * h * Pe * y +
+                3 * dxh * dyT[ids] * h * Pe * u * y +
+                dxh**2 * dyyT[ids] * y**2) / (3. * h**2 * Pe))
+              for ids in range(1, Ny - 1)]
+
+    FT = [0] + FTbulk + [0]
 
     F_therm = sp.Matrix([Fh, Fq, *FT])
 
