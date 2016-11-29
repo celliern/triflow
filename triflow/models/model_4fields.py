@@ -56,31 +56,64 @@ def model():
            70 * h**3 * (1 - Ct * dxs +
                         (dxxxh + dxxxs) * We)) / (252. * h**2 * Re))
 
-    Ftheta = (-(2*dxh*(1 + B*h)*(-7*(3*dxphi + 4*dxtheta)*h*(1 + B*h)**2 +
-                                 15*dxs*(-16 - 3*phi - 3*B*h*(2 + B*h)*(5 + phi)) + 48*dxs*(1 + B*h)**2*(5 + 2*B*h)*theta) +
-                2*dxh**2*(-3*(30 + 7*phi) - B*h*(250 + 63*phi + 3*B*h*(3 + B*h)*(27 + 7*phi)) +
-                          6*(1 + B*h)**3*(15 + 8*B*h)*theta) +
-                (1 + B*h)*(-6*dxs*(15*dxphi + 8*dxtheta)*h*(1 + B*h)**2 - 24*(15 + 30*B*h + 7*phi - 15*theta) +
-                           24*(dxs + B*dxs*h)**2*(-15 - 7*phi + (15 + 4*B*h)*theta) +
-                           h*(-360*B**2*h - dxxh*(68 + 3*B*h*(41 + 19*B*h)) -
-                              (1 + B*h)*(34*dxxtheta*h*(1 + B*h) + dxxs*(72 + 57*B*h)) -
-                              3*(7*dxxh + 15*dxxs + B*(2 + B*h)*(56 + 7*dxxh*h + 15*dxxs*h))*phi +
-                              153*dxtheta*(1 + B*h)**2*Pe*q +
-                              4*(17*dxxh + 18*dxxs + B*(228 +
-                                                        h*(186*B + 34*dxxh + 36*dxxs + B*(48*B + 17*dxxh + 18*dxxs)*h)))*theta))) /
-              (102.*h**2*(1 + B*h)**3*Pe))
+    Ftheta = (-(2*dxh*(1 + B*h)*
+                (-7*(3*dxphi + 4*dxtheta)*h*(1 + B*h)**2 +
+                                 15*dxs*(-16 - 3*phi -
+                                         3*B*h*(2 + B*h)*(5 + phi)) +
+                                 48*dxs*(1 + B*h)**2*(5 + 2*B*h)*theta) +
+         2*dxh**2*(-3*(30 + 7*phi) -
+                   B*h*(250 + 63*phi +
+                        3*B*h*(3 + B*h)*(27 + 7*phi)) +
+                   6*(1 + B*h)**3*(15 + 8*B*h)*theta) +
+         (1 + B*h)*(-6*dxs*(15*dxphi +
+                            8*dxtheta)*h*(1 + B*h)**2 -
+         24*(15 + 30*B*h + 7*phi - 15*theta) +
+         24*(dxs + B*dxs*h)**2*(-15 - 7*phi +
+                                (15 + 4*B*h)*theta) +
+            h*(-360*B**2*h -
+               dxxh*(68 + 3*B*h*(41 + 19*B*h)) -
+               (1 + B*h)*(34*dxxtheta*h*(1 + B*h) +
+                          dxxs*(72 + 57*B*h)) -
+               3*(7*dxxh + 15*dxxs + B*(2 + B*h)*(56 +
+                7*dxxh*h + 15*dxxs*h))*phi +
+               153*dxtheta*(1 + B*h)**2*Pe*q +
+               4*(17*dxxh + 18*dxxs +
+                  B*(228 + h*(186*B + 34*dxxh +
+                              36*dxxs + B*(48*B +
+                                           17*dxxh +
+                                           18*dxxs)*h)))*theta)))/
+    (102.*h**2*(1 + B*h)**3*Pe))
 
-    Fphi = ((2*dxh**2*(-3*(5 + 6*B*h)*(8 + B*h*(13 + 6*B*h)) - 28*(1 + B*h)**3*phi +
-                       30*(1 + B*h)**3*(4 + B*h)*theta) +
-             2*dxh*(1 + B*h)*(-((11*dxphi + 60*dxtheta)*h*(1 + B*h)**2) +
-                              20*dxs*(-16 - 3*phi - 3*B*h*(2 + B*h)*(5 + phi) + (1 + B*h)**2*(16 + 3*B*h)*theta)) +
-             (1 + B*h)*(-480 + 40*dxxs*h + 17*dxxphi*h**2 - 40*dxs*(3*dxphi + 5*dxtheta)*h*(1 + B*h)**2 -
-                        360*phi - 11*dxxh*h*phi - 60*dxxs*h*phi - 51*dxq*Pe*phi + 480*theta - 40*dxxs*h*theta +
-                        120*B**3*h**3*theta + 60*(dxs + B*dxs*h)**2*(-8 - 6*phi + (8 + B*h)*theta) +
-                        B**2*h**2*(-480 + 17*dxxphi*h**2 + dxxh*h*(9 - 11*phi) - 360*phi - 51*dxq*Pe*phi + 720*theta -
-                                   20*dxxs*h*(-3 + 3*phi + 2*theta)) +
-                        2*B*h*(dxxh*h*(3 - 11*phi) + 17*(dxxphi*h**2 - 3*dxq*Pe*phi) - 60*(8 + 6*phi - 9*theta) -
-                               10*dxxs*h*(-5 + 6*phi + 4*theta))))/(51.*h*(1 + B*h)**3*Pe))
+    Fphi = ((2*dxh**2*(-3*(5 + 6*B*h)*(8 +
+     B*h*(13 + 6*B*h)) - 28*(1 +
+     B*h)**3*phi + 30*(1 + B*h)**3*(4 +
+     B*h)*theta) +
+         2*dxh*(1 + B*h)*(-((11*dxphi +
+          60*dxtheta)*h*(1 + B*h)**2) +
+         20*dxs*(-16 - 3*phi - 3*B*h*(2 +
+                                      B*h)*(5 + phi) +
+         (1 + B*h)**2*(16 + 3*B*h)*theta)) +
+         (1 + B*h)*(-480 + 40*dxxs*h +
+                    17*dxxphi*h**2 - 40*dxs*(3*dxphi +
+                                             5*dxtheta)*h*(1 + B*h)**2 -
+                    360*phi - 11*dxxh*h*phi -
+                    60*dxxs*h*phi - 51*dxq*Pe*phi +
+                    480*theta - 40*dxxs*h*theta +
+                    120*B**3*h**3*theta +
+            60*(dxs + B*dxs*h)**2*(-8 - 6*phi +
+                                   (8 + B*h)*theta) +
+                                    B**2*h**2*(-480 +
+                                               17*dxxphi*h**2 +
+                                               dxxh*h*(9 - 11*phi) -
+                                               360*phi - 51*dxq*Pe*phi +
+                                               720*theta -
+                                               20*dxxs*h*(-3 +
+                                                          3*phi + 2*theta)) +
+            2*B*h*(dxxh*h*(3 - 11*phi) +
+                   17*(dxxphi*h**2 - 3*dxq*Pe*phi) -
+                   60*(8 + 6*phi - 9*theta) -
+                   10*dxxs*h*(-5 + 6*phi + 4*theta))))/
+    (51.*h*(1 + B*h)**3*Pe))
 
     F_therm = sp.Matrix([Fh, Fq, Ftheta, Fphi, Fs])
 
