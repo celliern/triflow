@@ -278,7 +278,6 @@ def model(Ny):
                 3 * dxh * dyT[ids] * h * Pe * u[ids] * y[ids] +
                 dxh**2 * dyyT[ids] * y[ids]**2) / (3. * h**2 * Pe))
               for ids in range(1, Ny - 1)]
-    print(FTbulk)
 
     FT = [0] + FTbulk + [0]
 
