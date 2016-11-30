@@ -87,14 +87,3 @@ def init_ff_open(Ny, parameters):
     print(Ti)
     solver = Solver('%iff_per' % Ny)
     return solver, [hi, qi, *Ti.T]
-
-
-def cache_routines():
-    cache_routines_fortran(model, openflow_boundary, '4fields_open')
-    cache_routines_fortran(model, periodic_boundary, '4fields_per')
-    cache_routines_fortran(lambda: ffmodel(10), periodic_boundary, '10ff_per')
-    cache_routines_fortran(lambda: ffmodel(10), openflow_boundary, '10ff_open')
-
-
-if __name__ == '__main__':
-    cache_routines()
