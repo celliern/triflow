@@ -26,14 +26,30 @@ def make_routines_fortran(model, boundary):
 
     Parameters
     ----------
-    model :
+    model : a physical model as in triflow.models representing the model
+    \partial t U = F(U) : it should be a callable and return the local
+    unknowns (needed for the i-st row of the matrix), the function F evaluated
+    at the i-st row, the jacobian J evaluated at the i-st row, all the
+    physical parameters and helper functions (which can be empty).
 
-    boundary :
+    boundary : a boundary as in triflow.models.boundaries, which return
+    (Fboundaries, Jboundaries, Hboundaries), the function F, the Jacobian and
+    the helpers evaluated at the boundaries of the domain.
 
 
     Returns
     -------
-
+    func_i: a Fortran routine which compute F at the row i.
+    jacob_i: a Fortran routine which compute J at the row i.
+    U: the local unknowns
+    parameters: the physical parameters
+    helps_i: a Fortran routine which compute the helpers at the row i.
+    (Fbounds, Jbounds,
+     helps_i,
+     fields_order,
+     bdc_fsymbols,
+     bdc_parameters):
+        the routines and informations needed to compute the boundaries.
 
     """
     U, F, J, pars, Helps = model()
@@ -104,16 +120,21 @@ def load_routines_fortran(folder: str):
 
     Parameters
     ----------
-    folder : str :
-
-    folder : str :
-
-    folder: str :
-
+    folder : str : the name of the folder where is cached the fortran routine
 
     Returns
     -------
-
+    func_i: a Fortran routine which compute F at the row i.
+    jacob_i: a Fortran routine which compute J at the row i.
+    U: the local unknowns
+    parameters: the physical parameters
+    helps_i: a Fortran routine which compute the helpers at the row i.
+    (Fbounds, Jbounds,
+     helps_i,
+     fields_order,
+     bdc_fsymbols,
+     bdc_parameters):
+        the routines and informations needed to compute the boundaries.
 
     """
 
@@ -241,22 +262,14 @@ def comp_function(routine, working_dir: (str, Path) = Path('.')):
 
     Parameters
     ----------
-    routine :
+    routine : the name of the wanted fortran source.
 
-    working_dir :
-        Path:  (Default value = Path('.')
-    working_dir : (str :
-
-    Path :
-
-    working_dir : (str :
-
-    working_dir: (str :
+    working_dir: str or Path: the folder where the fortran source is placed.
 
 
     Returns
     -------
-
+    None
 
     """
 
@@ -276,12 +289,6 @@ def compile_routines_fortran(folder: str):
     Parameters
     ----------
     folder :
-
-    folder : str :
-
-    folder : str :
-
-    folder: str :
 
 
     Returns
@@ -310,10 +317,6 @@ def cache_routines_fortran(model, boundary, folder: str):
     boundary :
 
     folder : str :
-
-    folder : str :
-
-    folder: str :
 
 
     Returns

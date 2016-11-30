@@ -11,6 +11,16 @@ from triflow.models.model_4fields import model
 from triflow.models.model_full_fourrier import model as ffmodel
 
 
+def init_2f_per(parameters):
+    x, dx = np.linspace(
+        0, parameters['L'], parameters['Nx'], endpoint=False, retstep=True)
+    hi = hamming(parameters['Nx']) * .1 + .95
+    qi = hi**3 / 3
+    s = x * 0
+    solver = Solver('2fields_per')
+    return solver, [hi, qi, s]
+
+
 def init_4f_per(parameters):
     x, dx = np.linspace(
         0, parameters['L'], parameters['Nx'], endpoint=False, retstep=True)
@@ -36,6 +46,17 @@ def init_ff_per(Ny, parameters):
     return solver, [hi, qi, *Ti.T]
 
 
+def init_2f_open(parameters):
+    x, dx = np.linspace(
+        0, parameters['L'], parameters['Nx'], endpoint=False, retstep=True)
+    hi = ((-(np.tanh(
+        (x - .1 * parameters['L']) / 20) + 1) / 2 + 1) * 1 + 1) / 2
+    qi = hi**3 / 3
+    s = x * 0
+    solver = Solver('2fields_open')
+    return solver, [hi, qi, s]
+
+
 def init_4f_open(parameters):
     x, dx = np.linspace(
         0, parameters['L'], parameters['Nx'], endpoint=False, retstep=True)
@@ -47,7 +68,7 @@ def init_4f_open(parameters):
     thetai = x * 0 + parameters['theta_flat']
     phii = x * 0 + parameters['phi_flat']
     s = x * 0
-    solver = Solver('4f_open')
+    solver = Solver('4fields_open')
     return solver, [hi, qi, thetai, phii, s]
 
 
