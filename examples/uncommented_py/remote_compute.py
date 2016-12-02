@@ -49,4 +49,5 @@ simul = solver.start_simulation(initial_fields, 0, **parameters)
 
 running_simul = simul.copy()
 running_simul.add_writer(writers.remote_step_writer)
+running_simul.conf['treant.path'] = '/tmp'
 running_simul.compute_until_finished()

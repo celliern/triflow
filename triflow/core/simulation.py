@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import asyncio
+from threading import Lock
 import itertools as it
 import logging
 from threading import Event
@@ -15,6 +17,8 @@ class Simulation(object):
     """ """
 
     def __init__(self, solver, U0, t0=0, id=None, **pars):
+        self.simuloop = asyncio.get_event_loop()
+        self.datalock = Lock()
         self.id = str(uuid1()) if id is None else id
         self.solver = solver
         self.pars = pars

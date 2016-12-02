@@ -4,11 +4,9 @@
 import logging
 
 import numpy as np
-
+from triflow.misc import materials
 from triflow.misc.helpers import init_4f_per
 from triflow.plugins import writers
-from triflow.misc import materials
-
 
 logger = logging.getLogger()
 logger.handlers = []
@@ -40,7 +38,7 @@ numerical_parameters = {'t': 0, 'dt': 1, 'tmax': 20,
                         'tol': 1E-1}
 parameters.update(numerical_parameters)
 
-domain_parameters = {'L': 3, 'Nx': 20}
+domain_parameters = {'L': 20, 'Nx': 60}
 parameters.update(domain_parameters)
 
 solver, initial_fields = init_4f_per(parameters)
@@ -48,6 +46,6 @@ solver, initial_fields = init_4f_per(parameters)
 simul = solver.start_simulation(initial_fields, 0, **parameters)
 
 running_simul = simul.copy()
-running_simul.add_writer(writers.remote_steps_writer)
+running_simul.add_writer(writers.datreant_steps_writer)
 running_simul.conf['treant.path'] = '/tmp'
 running_simul.compute_until_finished()

@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import functools as ft
 import logging
 from multiprocessing import current_process
 from multiprocessing.managers import BaseManager
 from threading import Thread
 
 import click
-
+import numpy as np
 from triflow.misc.misc import coroutine
 from triflow.plugins.displays import simple_display
-from triflow.plugins.writers.datreant import (datreant_init,
-                                              datreant_save, datreant_append,
-                                              get_datreant_conf)
+from triflow.plugins.writers.datreant import (datreant_append, datreant_init,
+                                              datreant_save, get_datreant_conf)
 
 try:  # Python 2.7+
     from logging import NullHandler
@@ -62,8 +62,15 @@ def remote_step_writer(simul):
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        datreant_save(path_data, simul_name,
-                      simul.i, t, tosave, compressed)
+        simul.simuloop.run_in_executor(None,
+                                       ft.partial(
+                                           datreant_save,
+                                           path_data,
+                                           simul_name,
+                                           simul.i,
+                                           t,
+                                           tosave,
+                                           compressed))
         yield
 
 
@@ -76,10 +83,17 @@ def remote_steps_writer(simul):
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
-        tosave['t'] = t
+        tosave['t'] = np.array([t])
         tosave['x'] = simul.x
-        datreant_append(path_data, simul_name,
-                        simul.i, t, tosave, compressed)
+        simul.simuloop.run_in_executor(None,
+                                       ft.partial(
+                                           datreant_append,
+                                           path_data,
+                                           simul_name,
+                                           simul.i,
+                                           t,
+                                           tosave,
+                                           compressed))
         yield
 
 
@@ -106,7 +120,7 @@ def datreant_server_writer(port, debug):
 
     QueueManager.register('datreant_init', callable=datreant_init)
     QueueManager.register('datreant_save', callable=datreant_save)
-    QueueManager.register('datreant_save', callable=datreant_append)
+    QueueManager.register('datreant_append', callable=datreant_append)
     logger.info('Manager registered')
     local_manager = QueueManager(address=('', port))
     server = local_manager.get_server()
