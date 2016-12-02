@@ -75,7 +75,7 @@ def datreant_step_writer(simul):
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        simul.simuloop.run_in_executor(None,
+        simul.simuloop.run_in_executor(simul.executor,
                                        ft.partial(
                                            datreant_save,
                                            path_data,
@@ -98,7 +98,7 @@ def datreant_steps_writer(simul):
                   in simul.solver.fields}
         tosave['t'] = np.array([t])
         tosave['x'] = simul.x
-        simul.simuloop.run_in_executor(None,
+        simul.simuloop.run_in_executor(simul.executor,
                                        ft.partial(
                                            datreant_append,
                                            path_data,
