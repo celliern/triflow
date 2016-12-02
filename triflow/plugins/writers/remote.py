@@ -9,8 +9,9 @@ from threading import Thread
 import click
 
 from triflow.misc.misc import coroutine
-from triflow.plugins.displays import full_display, simple_display
-from triflow.plugins.writers.datreant import (datreant_init, datreant_save,
+from triflow.plugins.displays import simple_display
+from triflow.plugins.writers.datreant import (datreant_init,
+                                              datreant_save, datreant_append,
                                               get_datreant_conf)
 
 try:  # Python 2.7+
@@ -41,17 +42,19 @@ def init_remote(simul):
     port = simul.conf.get('remote.port', 50000)
     QueueManager.register('datreant_init')
     QueueManager.register('datreant_save')
+    QueueManager.register('datreant_append')
     distant_manager = QueueManager(address=(server,
                                             port))
     distant_manager.connect()
     datreant_init = distant_manager.datreant_init
     datreant_save = distant_manager.datreant_save
-    return datreant_init, datreant_save
+    datreant_append = distant_manager.datreant_append
+    return datreant_init, datreant_save, datreant_append
 
 
 def remote_step_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
-    datreant_init, datreant_save = init_remote(simul)
+    datreant_init, datreant_save = init_remote(simul)[:2]
     datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
     for t, field in display:
@@ -60,22 +63,23 @@ def remote_step_writer(simul):
                   in simul.solver.fields}
         tosave['x'] = simul.x
         datreant_save(path_data, simul_name,
-                      simul.i, simul.t, tosave, compressed)
+                      simul.i, t, tosave, compressed)
         yield
 
 
 def remote_steps_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
-    datreant_init, datreant_save = init_remote(simul)
-    treant_path = datreant_init(path_data, simul_name, simul.pars)
-    display = full_display(simul)
+    datreant_init, datreant_save, datreant_append = init_remote(simul)
+    datreant_init(path_data, simul_name, simul.pars)
+    display = simple_display(simul)
     for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['t'] = t
         tosave['x'] = simul.x
-        datreant_save(treant_path, simul.i, simul.t, tosave, compressed)
+        datreant_append(path_data, simul_name,
+                        simul.i, t, tosave, compressed)
         yield
 
 
@@ -102,6 +106,7 @@ def datreant_server_writer(port, debug):
 
     QueueManager.register('datreant_init', callable=datreant_init)
     QueueManager.register('datreant_save', callable=datreant_save)
+    QueueManager.register('datreant_save', callable=datreant_append)
     logger.info('Manager registered')
     local_manager = QueueManager(address=('', port))
     server = local_manager.get_server()

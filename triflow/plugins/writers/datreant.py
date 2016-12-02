@@ -40,6 +40,21 @@ def datreant_save(path_data, simul_name, i, t,
         np.savez_compressed(path(treant.abspath) / 'data', **tosave)
 
 
+def datreant_append(path_data, simul_name, i, t,
+                    tosave, compressed=False):
+    treant = dtr.Treant(path(path_data) / simul_name)
+    logging.debug(treant.abspath)
+    treant.categories['t'] = t
+    treant.categories['i'] = i
+    print(path(treant.abspath) / 'data.npz')
+    old_data = np.load(path(treant.abspath) / 'data.npz')
+    print(old_data)
+    if not compressed:
+        np.savez(path(treant.abspath) / 'data', **tosave)
+    else:
+        np.savez_compressed(path(treant.abspath) / 'data', **tosave)
+
+
 def datreant_steps_writer(simul):
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init(path_data, simul_name, simul.pars)
