@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import functools as ft
 import logging
 from multiprocessing import current_process
 from multiprocessing.managers import BaseManager
 from threading import Thread
 
 import click
-import numpy as np
-from triflow.misc.misc import coroutine
+from queue import Queue
 from triflow.plugins.displays import simple_display
 from triflow.plugins.writers.datreant import (datreant_append, datreant_init,
                                               datreant_save, get_datreant_conf)
@@ -24,11 +22,17 @@ except ImportError:
 logging.getLogger(__name__).addHandler(NullHandler())
 
 
-@coroutine
-def queue_async(queue):
-    while True:
-        data = yield
-        Thread(target=queue.put, args=(data,)).start()
+class remote_writer(Thread):
+    def __init__(self, simul, queue, method):
+        self.simul = simul
+        self.queue = queue
+        self.method = method
+        super().__init__()
+
+    def run(self):
+        while not self.simul.stop.is_set() or not self.queue.empty():
+            to_send = self.queue.get()
+            self.method(*to_send)
 
 
 def init_remote(simul):
@@ -53,49 +57,46 @@ def init_remote(simul):
 
 
 def remote_step_writer(simul):
+    queue = Queue()
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init, datreant_save = init_remote(simul)[:2]
     datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
+    threaded_writer = remote_writer(simul, queue, datreant_save)
+    threaded_writer.start()
     for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
         tosave['x'] = simul.x
-        simul.simuloop.run_in_executor(simul.executor,
-                                       ft.partial(
-                                           datreant_save,
-                                           path_data,
-                                           simul_name,
-                                           simul.i,
-                                           t,
-                                           tosave,
-                                           compressed,
-                                           simul.datalock))
+        queue.put([path_data,
+                   simul_name,
+                   simul.i,
+                   t,
+                   tosave,
+                   compressed])
         yield
 
 
 def remote_steps_writer(simul):
+    queue = Queue()
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init, datreant_save, datreant_append = init_remote(simul)
     datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
+    threaded_writer = remote_writer(simul, queue, datreant_append)
+    threaded_writer.start()
     for t, field in display:
         tosave = {name: field[name]
                   for name
                   in simul.solver.fields}
-        tosave['t'] = np.array([t])
         tosave['x'] = simul.x
-        simul.simuloop.run_in_executor(simul.executor,
-                                       ft.partial(
-                                           datreant_append,
-                                           path_data,
-                                           simul_name,
-                                           simul.i,
-                                           t,
-                                           tosave,
-                                           compressed,
-                                           simul.datalock))
+        queue.put([path_data,
+                   simul_name,
+                   simul.i,
+                   t,
+                   tosave,
+                   compressed])
         yield
 
 
