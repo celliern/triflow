@@ -70,7 +70,8 @@ def remote_step_writer(simul):
                                            simul.i,
                                            t,
                                            tosave,
-                                           compressed))
+                                           compressed,
+                                           simul.datalock))
         yield
 
 
@@ -93,7 +94,8 @@ def remote_steps_writer(simul):
                                            simul.i,
                                            t,
                                            tosave,
-                                           compressed))
+                                           compressed,
+                                           simul.datalock))
         yield
 
 
@@ -104,7 +106,7 @@ remote_steps_writer.writer_type = 'remote'
 @click.command()
 @click.option('-p', '--port', default=50000, help='port number.')
 @click.option('--debug-level', 'debug',
-              default='INFO', help='verbosity level.')
+              default='DEBUG', help='verbosity level.')
 def datreant_server_writer(port, debug):
     current_process().authkey = b'triflow'
     logger = logging.getLogger()
