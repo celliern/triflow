@@ -106,9 +106,9 @@ remote_steps_writer.writer_type = 'remote'
 
 @click.command()
 @click.option('-p', '--port', default=50000, help='port number.')
-@click.option('--debug-level', 'debug',
-              default='DEBUG', help='verbosity level.')
-def datreant_server_writer(port, debug):
+@click.option('--log-level', 'log',
+              default='INFO', help='verbosity level.')
+def datreant_server_writer(port, log):
     current_process().authkey = b'triflow'
     logger = logging.getLogger()
     handler = logging.StreamHandler()
@@ -116,7 +116,7 @@ def datreant_server_writer(port, debug):
         '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(debug)
+    logger.setLevel(log)
 
     class QueueManager(BaseManager):
         pass

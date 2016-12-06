@@ -6,7 +6,7 @@ import sympy as sp
 from logging import info
 
 
-def recreate_magical_dict(this_dict, magic_relations):
+def rebuild_magical_dict(this_dict, magic_relations):
     this_dict = magical_dict(this_dict)
     for relation in magic_relations:
         this_dict.add_relation(relation)
@@ -84,4 +84,4 @@ class magical_dict(dict):
         self.magic_relations.append(sp.S(relation))
 
     def __reduce__(self):
-        return (recreate_magical_dict, (dict(self), self.magic_relations))
+        return (rebuild_magical_dict, (dict(self), self.magic_relations))

@@ -30,8 +30,7 @@ def BDF2_scheme(simul):
                       format='csc')
     Uhist = deque([], 2)
     Uhist.append(U.copy())
-    Jcomp = simul.solver.compute_J_sparse(U,
-                                          **simul.pars)
+    Jcomp = simul.Jcomp
     simul.F = F = simul.solver.compute_F(U,
                                          **simul.pars)
     J = Jcomp.send((U, simul.t))
@@ -66,8 +65,8 @@ def BDFalpha_scheme(simul):
                       format='csc')
     Uhist = deque([], 2)
     Uhist.append(simul.U.copy())
-    Jcomp = simul.solver.compute_J_sparse(simul.U,
-                                          **simul.pars)
+
+    Jcomp = simul.Jcomp
     simul.F = F = simul.solver.compute_F(simul.U,
                                          **simul.pars)
     U = simul.hook(simul.U)
@@ -102,8 +101,7 @@ def BE_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.solver.compute_J_sparse(U,
-                                          **simul.pars)
+    Jcomp = simul.Jcomp
     while True:
         dt = simul.pars['dt']
         simul.F = F = simul.solver.compute_F(U,
@@ -136,8 +134,7 @@ def ROS_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.solver.compute_J_sparse(U,
-                                          **simul.pars)
+    Jcomp = simul.Jcomp
     gamma = 1 - 1 / 2 * np.sqrt(2)
     while True:
         dt = simul.pars['dt']
@@ -171,8 +168,7 @@ def ROS_vart_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.solver.compute_J_sparse(U,
-                                          **simul.pars)
+    Jcomp = simul.Jcomp
     gamma = 1 - 1 / 2 * np.sqrt(2)
     t = simul.t
 

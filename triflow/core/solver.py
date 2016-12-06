@@ -11,11 +11,18 @@ from triflow.core.make_routines import load_routines_fortran
 from triflow.misc.misc import coroutine
 
 
+def rebuild_solver(routine_name):
+    solver = Solver(routine_name)
+    return solver
+
+
 class Solver(object):
     """ """
 
     def __init__(self, routine):
+        self.routine_name = None
         if isinstance(routine, str):
+            self.routine_name = routine
             routine = load_routines_fortran(routine)
         (self.func_i, self.jacob_i,
          self.U, self.parameters,
@@ -300,3 +307,8 @@ class Solver(object):
         """
 
         return Simulation(self, U0, t0, **pars)
+
+        def __reduce__(self):
+            if self.routine_name is None:
+                raise ValueError('cannot pickle not named solver')
+            return (rebuild_solver, (self.routine_name,))

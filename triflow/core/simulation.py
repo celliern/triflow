@@ -42,6 +42,8 @@ class Simulation(object):
         self.iterator = self.compute()
         self.internal_iter = None
         self.err = None
+        self.Jcomp = self.solver.compute_J_sparse(self.U,
+                                                  **self.pars)
         self.drivers = []
         self.writers = []
         self.display = displays.simple_display

@@ -25,8 +25,6 @@ def datreant_init(path_data, simul_name, parameters):
             treant.categories[key] = parameters[key]
         except TypeError:
             treant.categories[key] = float(parameters[key])
-    treant.categories['t'] = 0
-    treant.categories['i'] = 0
 
 
 def datreant_save(path_data, simul_name, i, t,
@@ -63,6 +61,8 @@ def datreant_append(path_data, simul_name, i, t,
             np.savez(path(treant.abspath) / 'data', **tosave)
         else:
             np.savez_compressed(path(treant.abspath) / 'data', **tosave)
+        logging.info("simul %s saved in %s, time %.2f iter %i" %
+                     (simul_name, path_data, t, i))
 
 
 def datreant_step_writer(simul):
