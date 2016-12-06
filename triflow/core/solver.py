@@ -308,7 +308,7 @@ class Solver(object):
 
         return Simulation(self, U0, t0, **pars)
 
-        def __reduce__(self):
-            if self.routine_name is None:
-                raise ValueError('cannot pickle not named solver')
-            return (rebuild_solver, (self.routine_name,))
+    def __reduce__(self):
+        if self.routine_name is None:
+            raise ValueError('cannot pickle not named solver')
+        return (rebuild_solver, (self.routine_name,))
