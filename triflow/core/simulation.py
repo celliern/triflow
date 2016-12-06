@@ -13,7 +13,7 @@ from triflow.plugins import displays, schemes
 
 def rebuild_simul(id, solver, U, t, display,
                   writers, signals,
-                  drivers, internal_iter, err, scheme, i, pars):
+                  drivers, internal_iter, err, scheme, i, pars, conf):
     newid = id.split('_')
     if len(newid) == 1:
         newid = '_'.join(newid + ['0'])
@@ -30,6 +30,7 @@ def rebuild_simul(id, solver, U, t, display,
     new_simul.err = err
     new_simul.scheme = scheme
     new_simul.i = i
+    new_simul.conf = conf
     return new_simul
 
 
@@ -257,6 +258,7 @@ class Simulation(object):
         new_simul.err = self.err
         new_simul.scheme = self.scheme
         new_simul.i = self.i
+        new_simul.conf = self.conf
         return new_simul
 
     def __copy__(self):
@@ -267,4 +269,4 @@ class Simulation(object):
         return rebuild_simul, (self.id, self.solver, self.U, self.t,
                                self.display, self.writers, self.signals,
                                self.drivers, self.internal_iter, self.err,
-                               self.scheme, self.i, self.pars)
+                               self.scheme, self.i, self.pars, self.conf)
