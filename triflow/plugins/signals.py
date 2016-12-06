@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import copy
 from scipy.fftpack import rfft, irfft
 from scipy.interpolate import interp1d
 import numpy as np
 
 
 class Signal(object):
-    def __init__(self, simul, **kwargs):
-        self.simul = simul
-        self.size = simul.pars.get('signal_size', 10000)
-        self.tmax = simul.pars['tmax']
+    def __init__(self, **kwargs):
+        self.size = kwargs.get('signal_size', 10000)
+        self.tmax = kwargs['tmax']
         self.time_period = np.linspace(0, self.tmax, self.size)
-        kwargs.update(simul.pars)
         self.template = np.array(self.signal_template(**kwargs))
         self.generate_wave_function()
+        self.pars = kwargs
 
     def signal_template(self, **kwarg):
         raise NotImplementedError
@@ -30,13 +30,20 @@ class Signal(object):
         return self.wave(t % self.tmax)
 
     def __add__(self, other_signal):
-        templates = self.template, other_signal.template
         time_periodes = self.time_period, other_signal.time_period
+        pars = self.pars.copy()
+        pars.update(other_signal.pars)
         assert np.allclose(*time_periodes), "Incompatible time signals"
-        return type('Signal', (Signal,),
-                    {'signal_template':
-                     lambda self, **kwarg:
-                     np.sum(templates, axis=0)})(self.simul)
+        return AdditiveSignal(self, other_signal, **pars)
+
+
+class AdditiveSignal(Signal):
+    def __init__(self, signal_a, signal_b, **kwarg):
+        self.templates = [signal_a.template, signal_b.template]
+        super().__init__(**kwarg)
+
+    def signal_template(self, **kwarg):
+        return np.sum(self.templates, axis=0)
 
 
 class NoNoise(Signal):
@@ -64,9 +71,9 @@ class ForcedSignal(Signal):
                                     signal_freq + signal_phase) + offset
 
 
-def init_signal(simul, field, Signals=(NoNoise,)):
-    signal = sum([Signal(simul.pars) for Signal in Signals])
+# def init_signal(simul, field, Signals=(NoNoise,)):
+#     signal = sum([Signal(simul.pars) for Signal in Signals])
 
-    def frequencies(simul, t):
-        simul.pars['h%' % field] = signal(t)
-    return frequencies
+#     def frequencies(simul, t):
+#         simul.pars['h%' % field] = signal(t)
+#     return frequencies

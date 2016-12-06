@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from threading import Lock
 import itertools as it
 import logging
 from threading import Event
@@ -14,14 +11,32 @@ import numpy as np
 from triflow.plugins import displays, schemes
 
 
+def rebuild_simul(id, solver, U, t, display,
+                  writers, signals,
+                  drivers, internal_iter, err, scheme, i, pars):
+    newid = id.split('_')
+    if len(newid) == 1:
+        newid = '_'.join(newid + ['0'])
+    else:
+        newid = '_'.join(newid[:-1] + [str(int(newid[-1]) + 1)])
+    new_simul = Simulation(solver, U, t,
+                           id=newid,
+                           **pars)
+    new_simul.display = display
+    new_simul.writers = writers.copy()
+    new_simul.signals = signals.copy()
+    new_simul.drivers = drivers.copy()
+    new_simul.internal_iter = internal_iter
+    new_simul.err = err
+    new_simul.scheme = scheme
+    new_simul.i = i
+    return new_simul
+
+
 class Simulation(object):
     """ """
 
     def __init__(self, solver, U0, t0=0, id=None, **pars):
-        self.simuloop = asyncio.new_event_loop()
-        self.executor = ThreadPoolExecutor(max_workers=1)
-
-        self.datalock = Lock()
         self.id = str(uuid1()) if id is None else id
         self.solver = solver
         self.pars = pars
@@ -246,3 +261,10 @@ class Simulation(object):
 
     def __copy__(self):
         return self.copy()
+
+    def __reduce__(self):
+
+        return rebuild_simul, (self.id, self.solver, self.U, self.t,
+                               self.display, self.writers, self.signals,
+                               self.drivers, self.internal_iter, self.err,
+                               self.scheme, self.i, self.pars)

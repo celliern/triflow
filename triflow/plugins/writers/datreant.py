@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import functools as ft
 import logging
 
 import datreant.core as dtr
