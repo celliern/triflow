@@ -123,8 +123,7 @@ class Solver(object):
             Ui[:] = data[(i - bdc_range) * nvar:
                          (i + bdc_range + 1) * nvar]
             Fi = self.func_i(*Ui, *Fpars)
-            for ivar in range(nvar):
-                F[i * nvar + ivar] = Fi[ivar, 0]
+            F[i * nvar: (i + 1) * nvar] = Fi[:, 0]
         bdcpars = self.check_pars(pars, self.bdc_parameters)
         bdc_args = (data[:(bdc_range + 2) * nvar].tolist() +
                     data[-(bdc_range + 2) * nvar:].tolist() +
@@ -183,7 +182,6 @@ class Solver(object):
             Hs.append(H)
         return Hs
 
-    @profile
     def compute_J(self, data, **pars):
         """
 
@@ -210,10 +208,9 @@ class Solver(object):
             Ji = self.jacob_i(*data[(i - bdc_range) * nvar:
                                     (i + bdc_range + 1) * nvar],
                               *Jpars)
-            for ivar in range(nvar):
-                J[i * nvar + ivar,
-                  nvar * (i - bdc_range):
-                  nvar * (i + bdc_range + 1)] = Ji[ivar]
+            J[i * nvar: (i + 1) * nvar,
+              nvar * (i - bdc_range):
+              nvar * (i + bdc_range + 1)] = Ji
         bdcpars = self.check_pars(pars, self.bdc_parameters)
         bdc_args = (data[:(bdc_range + 2) * nvar].tolist() +
                     data[-(bdc_range + 2) * nvar:].tolist() +
