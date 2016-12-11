@@ -118,11 +118,9 @@ class Solver(object):
         Nx = int(data.size / nvar)
         Fpars = self.check_pars(pars, self.parameters)
         F = np.zeros(data.shape)
-        Ui = np.zeros([nvar * window_range])
         for i in np.arange(bdc_range, Nx - bdc_range):
-            Ui[:] = data[(i - bdc_range) * nvar:
-                         (i + bdc_range + 1) * nvar]
-            Fi = self.func_i(*Ui, *Fpars)
+            Fi = self.func_i(*data[(i - bdc_range) * nvar:
+                                   (i + bdc_range + 1) * nvar], *Fpars)
             F[i * nvar: (i + 1) * nvar] = Fi[:, 0]
         bdcpars = self.check_pars(pars, self.bdc_parameters)
         bdc_args = (data[:(bdc_range + 2) * nvar].tolist() +
@@ -159,14 +157,11 @@ class Solver(object):
         Nx = int(data.size / nvar)
         Hpars = self.check_pars(pars, self.parameters)
         Hs = []
-        Ui = np.zeros([nvar * window_range])
         for j, help_i in enumerate(self.helpers):
             H = np.zeros(Nx)
-            Ui = np.zeros([nvar * window_range])
             for i in np.arange(bdc_range, Nx - bdc_range):
-                Ui[:] = data[(i - bdc_range) * nvar:
-                             (i + bdc_range + 1) * nvar]
-                Hi = help_i(*Ui, *Hpars)
+                Hi = help_i(*data[(i - bdc_range) * nvar:
+                                  (i + bdc_range + 1) * nvar], *Hpars)
                 H[i] = Hi
             bdcpars = self.check_pars(pars, self.bdc_parameters)
             bdc_args = (data[:(bdc_range + 2) * nvar].tolist() +
