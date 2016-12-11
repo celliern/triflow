@@ -34,11 +34,11 @@ initial_parameters = {
 }
 parameters.update(initial_parameters)
 
-numerical_parameters = {'t': 0, 'dt': 100, 'tmax': 300,
+numerical_parameters = {'t': 0, 'dt': 100, 'tmax': 1000,
                         'tol': 1E-1}
 parameters.update(numerical_parameters)
 
-domain_parameters = {'L': 1000, 'Nx': 1200}
+domain_parameters = {'L': 1000, 'Nx': 1400}
 parameters.update(domain_parameters)
 
 solver, initial_fields = init_4f_open(parameters)
