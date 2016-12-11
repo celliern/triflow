@@ -183,6 +183,7 @@ class Solver(object):
             Hs.append(H)
         return Hs
 
+    @profile
     def compute_J(self, data, **pars):
         """
 
@@ -205,10 +206,10 @@ class Solver(object):
         Nx = int(data.size / nvar)
         Jpars = self.check_pars(pars, self.parameters)
         J = np.zeros([nvar * Nx, nvar * Nx])
-        Ui = np.zeros([nvar * window_range])
         for i in range(bdc_range, Nx - bdc_range):
-            Ui[:] = data[(i - bdc_range) * nvar: (i + bdc_range + 1) * nvar]
-            Ji = self.jacob_i(*Ui, *Jpars)
+            Ji = self.jacob_i(*data[(i - bdc_range) * nvar:
+                                    (i + bdc_range + 1) * nvar],
+                              *Jpars)
             for ivar in range(nvar):
                 J[i * nvar + ivar,
                   nvar * (i - bdc_range):
