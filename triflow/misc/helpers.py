@@ -85,5 +85,5 @@ def init_ff_open(Ny, parameters):
     Ti = ((parameters['theta_flat'] - 1) *
           y[np.newaxis, :] + 1 + x[:, np.newaxis] * 0)
     print(Ti)
-    solver = Solver('%iff_per' % Ny)
+    solver = Solver('%iff_open' % Ny)
     return solver, [hi, qi, *Ti.T]
