@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 # coding=utf8
 
-"""
-Displays are written as coroutine: they take the simulation state and
-return what we want.
-
-It actually do not need the full simulation but any object with the
-needed attribute (usually t and U).
-
-The coroutine give the ability to initialize the function
-(as seen in full display).
-"""
+import logging
 
 import numpy as np
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 
 def none_display(simul):

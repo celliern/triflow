@@ -3,24 +3,22 @@
 
 import itertools as it
 import logging
-from threading import Event
 from uuid import uuid1
 
 import numpy as np
 
 from triflow.plugins import displays, schemes
 
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
+
 
 def rebuild_simul(id, solver, U, t, display,
                   writers, signals,
-                  drivers, internal_iter, err, scheme, i, pars, conf):
-    newid = id.split('_')
-    if len(newid) == 1:
-        newid = '_'.join(newid + ['0'])
-    else:
-        newid = '_'.join(newid[:-1] + [str(int(newid[-1]) + 1)])
+                  drivers, internal_iter, err,
+                  scheme, i, pars, conf, status, history):
     new_simul = Simulation(solver, U, t,
-                           id=newid,
+                           id=id,
                            **pars)
     new_simul.display = display
     new_simul.writers = writers.copy()
@@ -31,6 +29,8 @@ def rebuild_simul(id, solver, U, t, display,
     new_simul.scheme = scheme
     new_simul.i = i
     new_simul.conf = conf
+    new_simul.status = status
+    new_simul.history = history
     return new_simul
 
 
@@ -58,19 +58,17 @@ class Simulation(object):
         self.iterator = self.compute()
         self.internal_iter = None
         self.err = None
-        self.Jcomp = self.solver.compute_J_sparse(self.U,
-                                                  **self.pars)
         self.drivers = []
         self.writers = []
         self.display = displays.simple_display
         self.scheme = schemes.ROS_vart_scheme
-        self.stop = Event()
         self.signals = {}
         self.conf = {}
+        self.status = 'created'
+        self.history = None
 
     def compute(self):
         """ """
-
         nvar = self.nvar
         self.pars['Nx'] = int(self.U.size / nvar)
         self.U = self.hook(self.U)
@@ -78,6 +76,7 @@ class Simulation(object):
         display = self._init_display_()
         writers = self._init_writers_()
         numerical_scheme = self._init_scheme_()
+        self.status = 'started'
         yield next(display)
 
         for self.i, self.U in enumerate(filter(
@@ -87,8 +86,9 @@ class Simulation(object):
             self.t += self.pars['dt']
             self.driver(self.t)
             self.write(writers)
-            yield next(display)
-        self.stop.set()
+            self.history = next(display)
+            yield self.history
+        self.status = 'started'
 
     def compute_until_finished(self):
         logging.info('simulation %s computing until the end' % self.id)
@@ -96,6 +96,8 @@ class Simulation(object):
         for iteration in self.iterator:
             logging.info('simulation reached time %.2f, iteration %i' %
                          (self.t, self.i))
+        self.status = 'over'
+        return iteration
 
     def add_signal(self, field, signal):
         self.signals[field] = signal
@@ -197,10 +199,12 @@ class Simulation(object):
 
         if any(U[::self.nvar] < 0):
             logging.error('h above 0, solver stopping')
+            self.status = 'error'
             raise RuntimeError('h above 0')
         if self.pars.get('tmax', None) is None:
             return True
         if self.t >= self.pars.get('tmax', None):
+            self.status = 'finished'
             return False
         return True
 
@@ -242,11 +246,7 @@ class Simulation(object):
         return next(self.iterator)
 
     def copy(self):
-        newid = self.id.split('_')
-        if len(newid) == 1:
-            newid = '_'.join(newid + ['0'])
-        else:
-            newid = '_'.join(newid[:-1] + [str(int(newid[-1]) + 1)])
+        newid = self.id
         new_simul = Simulation(self.solver, self.U, self.t,
                                id=newid,
                                **self.pars)
@@ -259,6 +259,8 @@ class Simulation(object):
         new_simul.scheme = self.scheme
         new_simul.i = self.i
         new_simul.conf = self.conf
+        new_simul.status = self.status
+        new_simul.history = self.history
         return new_simul
 
     def __copy__(self):
@@ -269,4 +271,5 @@ class Simulation(object):
         return rebuild_simul, (self.id, self.solver, self.U, self.t,
                                self.display, self.writers, self.signals,
                                self.drivers, self.internal_iter, self.err,
-                               self.scheme, self.i, self.pars, self.conf)
+                               self.scheme, self.i, self.pars, self.conf,
+                               self.status, self.history)

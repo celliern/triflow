@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # coding=utf8
+
+import logging
+
 import numpy as np
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 
 def dumping_hook_h(self, U):

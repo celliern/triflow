@@ -128,7 +128,8 @@ def model():
     J_therm = sp.Matrix(np.array([F_therm.diff(u).tolist()
                                   for u
                                   in U_therm.flatten()]).squeeze().tolist()).T
-    return U_therm, F_therm, J_therm, (Re, We, Ct, Pe, B, M), ()
+    return U_therm, F_therm, J_therm, (Re, We, Ct, Pe, B, M), {}
+
 
 if __name__ == '__main__':
     logger = logging.getLogger()

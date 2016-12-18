@@ -2,7 +2,7 @@
 # coding=utf8
 from contextlib import contextmanager
 from path import Path, getcwdu
-from logging import debug, error, info
+import logging
 import sympy as sp
 
 
@@ -56,9 +56,13 @@ def write_codegen(code, working_dir,
     """
 
     for file in code:
-        info("write %s" % template(file[0]))
+        logging.info("write %s" % template(file[0]))
         with open(working_dir / template(file[0]), 'w') as f:
-            f.write(file[1])
+            index = file[1].index('implicit none') - 1
+            to_write = (file[1][:index] +
+                        '\n!f2py threadsafe' +
+                        file[1][index:])
+            f.write(to_write)
 
 
 def extract_parameters(M, U):
@@ -101,17 +105,3 @@ def order_field(U):
                            U.T)
                        )
     return order_field
-
-
-def send_from(arr, dest):
-    view = memoryview(arr).cast('B')
-    while len(view):
-        nsent = dest.send(view)
-        view = view[nsent:]
-
-
-def recv_into(arr, source):
-    view = memoryview(arr).cast('B')
-    while len(view):
-        nrecv = source.recv_into(view)
-        view = view[nrecv:]

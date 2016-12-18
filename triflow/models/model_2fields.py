@@ -61,7 +61,7 @@ def model():
                                   for u
                                   in U_therm.flatten()]).squeeze().tolist()).T
 
-    return U_therm, F_therm, J_therm, (Re, We, Ct), ()
+    return U_therm, F_therm, J_therm, (Re, We, Ct), {}
 
 
 if __name__ == '__main__':

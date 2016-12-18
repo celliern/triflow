@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import copy
+import logging
 from scipy.fftpack import rfft, irfft
 from scipy.interpolate import interp1d
 import numpy as np
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 
 class Signal(object):

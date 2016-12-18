@@ -11,6 +11,10 @@ from triflow.core.make_routines import load_routines_fortran
 from triflow.misc.misc import coroutine
 
 
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
+
+
 def rebuild_solver(routine_name):
     solver = Solver(routine_name)
     return solver
@@ -156,8 +160,8 @@ class Solver(object):
         bdc_range = int((window_range - 1) / 2)
         Nx = int(data.size / nvar)
         Hpars = self.check_pars(pars, self.parameters)
-        Hs = []
-        for j, help_i in enumerate(self.helpers):
+        Hs = {}
+        for help_name, help_i in self.helpers.items():
             H = np.zeros(Nx)
             for i in np.arange(bdc_range, Nx - bdc_range):
                 Hi = help_i(*data[(i - bdc_range) * nvar:
@@ -170,11 +174,11 @@ class Solver(object):
 
             Hbdc = np.array([hbdc(*bdc_args)
                              for hbdc
-                             in self.Hsbdc[::-1][j]]).flatten()
+                             in self.Hsbdc[help_name][::-1]]).flatten()
 
             H[:(bdc_range)] = Hbdc[:(bdc_range)]
             H[-(bdc_range):] = Hbdc[(bdc_range):]
-            Hs.append(H)
+            Hs[help_name] = H
         return Hs
 
     def compute_J(self, data, **pars):
@@ -229,7 +233,6 @@ class Solver(object):
 
         return J
 
-    @coroutine
     def compute_J_sparse(self, data, **pars):
         """
 
@@ -247,39 +250,90 @@ class Solver(object):
         """
 
         nvar = self.nvar
-        # window_range = self.window_range
+        window_range = self.window_range
+        bdc_range = int((window_range - 1) / 2)
         Nx = int(data.size / nvar)
+        Jpars = self.check_pars(pars, self.parameters)
 
-        def init_sparse():
-            """ """
-            rand_data = np.random.rand(*data.shape)
-            random_J = self.compute_J(rand_data,
-                                      **pars)
-            full_coordinates = np.indices(random_J.shape)
+        def mapping(i):
+            Ji = self.jacob_i(*data[(i - bdc_range) * nvar:
+                                    (i + bdc_range + 1) * nvar],
+                              *Jpars)
+            indexes, columns = np.meshgrid(
+                np.arange(i * nvar,
+                          (i + 1) * nvar),
+                np.arange(nvar * (i - bdc_range),
+                          nvar * (i + bdc_range + 1)),
+                indexing='ij')
+            return Ji.flatten(), indexes.flatten(), columns.flatten()
 
-            Jcoordinate_array = [full_coordinate
-                                 for full_coordinate
-                                 in full_coordinates]
+        J_list, indexes_list, columns_list = map(np.concatenate,
+                                                 zip(
+                                                     *map(mapping,
+                                                          range(bdc_range,
+                                                                Nx - bdc_range)
+                                                          )
+                                                 )
+                                                 )
 
-            Jpadded = tuple(Jcoordinate_array)
+        bdcpars = self.check_pars(pars, self.bdc_parameters)
+        bdc_args = (data[:(bdc_range + 2) * nvar].tolist() +
+                    data[-(bdc_range + 2) * nvar:].tolist() +
+                    bdcpars)
 
-            maskJ = random_J[Jpadded] != 0
-            row_padded = np.indices((nvar * Nx, nvar * Nx))[0][maskJ]
-            col_padded = np.indices((nvar * Nx, nvar * Nx))[1][maskJ]
-            row = full_coordinates[0][Jpadded][maskJ]
-            col = full_coordinates[1][Jpadded][maskJ]
-            return row_padded, col_padded, row, col
+        Jbdc = np.array([jbdc(*bdc_args).squeeze()
+                         for jbdc
+                         in self.Jbdc]).reshape((bdc_range * 2 * nvar, -1))
 
-        row_padded, col_padded, row, col = init_sparse()
-        data, t = yield
-        while True:
-            J = self.compute_J(data,
-                               **pars)
-            data = J[tuple([row, col])]
-            J_sparse = sps.csc_matrix(
-                (data, (row_padded, col_padded)),
-                shape=(nvar * Nx, nvar * Nx))
-            data, t = yield J_sparse
+        Jbdctopleft = Jbdc[:bdc_range * nvar,
+                           :(bdc_range + 2) * nvar].flatten()
+        Jbdctopright = Jbdc[:bdc_range * nvar,
+                            (bdc_range + 2) * nvar:].flatten()
+
+        Jbdcbottomleft = Jbdc[bdc_range * nvar:,
+                              :(bdc_range + 2) * nvar].flatten()
+        Jbdcbottomright = Jbdc[bdc_range * nvar:,
+                               (bdc_range + 2) * nvar:].flatten()
+
+        np.append(J_list, Jbdctopleft)
+        np.append(J_list, Jbdctopright)
+        np.append(J_list, Jbdcbottomleft)
+        np.append(J_list, Jbdcbottomright)
+
+        indexes, columns = np.meshgrid(
+            np.arange(0, bdc_range * nvar),
+            np.arange(0, nvar * (bdc_range + 2)),
+            indexing='ij')
+        np.append(indexes_list, indexes)
+        np.append(columns_list, columns)
+
+        indexes, columns = np.meshgrid(np.arange(0, bdc_range * nvar),
+                                       np.arange(Nx * nvar - nvar *
+                                                 (bdc_range + 2),
+                                                 Nx * nvar),
+                                       indexing='ij')
+        np.append(indexes_list, indexes)
+        np.append(columns_list, columns)
+
+        indexes, columns = np.meshgrid(np.arange(Nx * nvar - bdc_range * nvar,
+                                                 Nx * nvar),
+                                       np.arange(0, nvar * (bdc_range + 2)),
+                                       indexing='ij')
+        np.append(indexes_list, indexes)
+        np.append(columns_list, columns)
+
+        indexes, columns = np.meshgrid(np.arange(Nx * nvar - bdc_range * nvar,
+                                                 Nx * nvar),
+                                       np.arange(Nx * nvar - nvar *
+                                                 (bdc_range + 2), Nx * nvar),
+                                       indexing='ij')
+        np.append(indexes_list, indexes)
+        np.append(columns_list, columns)
+        J = sps.coo_matrix((J_list, (indexes_list, columns_list)),
+                           shape=(Nx * nvar, Nx * nvar),
+                           dtype=float)
+
+        return J.tocsr()
 
     def start_simulation(self, U0, t0, **pars):
         """

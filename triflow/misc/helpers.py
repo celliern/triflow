@@ -4,11 +4,7 @@
 from scipy.signal import hamming
 
 import numpy as np
-from triflow.core.make_routines import cache_routines_fortran
 from triflow.core.solver import Solver
-from triflow.models.boundaries import openflow_boundary, periodic_boundary
-from triflow.models.model_4fields import model
-from triflow.models.model_full_fourrier import model as ffmodel
 
 
 def init_2f_per(parameters):

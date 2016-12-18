@@ -170,8 +170,10 @@ def periodic_boundary(model, **pars):
     Fboundaries = [F.subs(subs_BG(0)), F.subs(subs_BG(1)),
                    F.subs(subs_FG(-1)), F.subs(subs_FG(0))]
 
-    Hboundaries = [[H.subs(subs_BG(0)), H.subs(subs_BG(1)),
-                    H.subs(subs_FG(-1)), H.subs(subs_FG(0))] for H in helps]
+    Hboundaries = {Hkey: [Hvalue.subs(subs_BG(0)), Hvalue.subs(subs_BG(1)),
+                          Hvalue.subs(subs_FG(-1)), Hvalue.subs(subs_FG(0))]
+                   for Hkey, Hvalue
+                   in helps.items()}
 
     fsymbols, psymbols = analyse_boundary((Fboundaries, ),
                                           fields_order, window_range, nvar)
@@ -269,8 +271,10 @@ def openflow_boundary(model):
                                sp.Symbol('%s_Nm_0' % field)) / dx
                               for field in fields_order])]
 
-    Hboundaries = [[H.subs(subs_BG(0)), H.subs(subs_BG(1)),
-                    H.subs(subs_FG(-1)), H.subs(subs_FG(0))] for H in helps]
+    Hboundaries = {Hkey: [Hvalue.subs(subs_BG(1)), Hvalue.subs(subs_BG(2)),
+                          Hvalue.subs(subs_FG(1)), Hvalue.subs(subs_FG(2))]
+                   for Hkey, Hvalue
+                   in helps.items()}
 
     fsymbols, psymbols = analyse_boundary((Fboundaries, ),
                                           fields_order, window_range, nvar)

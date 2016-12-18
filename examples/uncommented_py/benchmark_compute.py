@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from triflow.misc import materials
 from triflow.plugins import signals
-from triflow.misc.helpers import init_4f_open
+from triflow.misc.helpers import init_ff_per
 
 logger = logging.getLogger()
 logger.handlers = []
@@ -41,16 +41,6 @@ parameters.update(numerical_parameters)
 domain_parameters = {'L': 1000, 'Nx': 1400}
 parameters.update(domain_parameters)
 
-solver, initial_fields = init_4f_open(parameters)
+solver, initial_fields = init_ff_per(10, parameters)
 
 simul = solver.start_simulation(initial_fields, 0, **parameters)
-noisy_signal = (signals.ForcedSignal(signal_freq=(80 *
-                                                  simul.pars['t_factor']),
-                                     offset=1, signal_ampl=.1,
-                                     **simul.pars) +
-                signals.BrownNoise(fcut=.2, **simul.pars))
-
-simul.add_signal('h', noisy_signal)
-
-running_simul = simul.copy()
-running_simul.compute_until_finished()

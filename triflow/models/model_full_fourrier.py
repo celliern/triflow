@@ -281,26 +281,25 @@ def model(Ny):
 
     FT = [0] + FTbulk + [0]
 
-    F_therm = sp.Matrix([Fh, Fq, *FT])
+    F = sp.Matrix([Fh, Fq, *FT])
 
-    U_therm = np.array([hm2, qm2, *Tsm2,
-                        hm1, qm1, *Tsm1,
-                        h, q, *Ts,
-                        hp1, qp1, *Tsp1,
-                        hp2, qp2, *Tsp2]).reshape((5, -1))
+    U = np.array([hm2, qm2, *Tsm2,
+                  hm1, qm1, *Tsm1,
+                  h, q, *Ts,
+                  hp1, qp1, *Tsp1,
+                  hp2, qp2, *Tsp2]).reshape((5, -1))
 
     info('Calcul du jacobien')
-    J_therm = sp.Matrix(np.array([F_therm.diff(u).tolist()
-                                  for u in np.array(U_therm)
-                                  .flatten()]
-                                 ).squeeze()).T
-    return (U_therm, F_therm, J_therm, (Re, We, Ct, Pe, B),
-            (Tcheb[-1],
-             dyTcheb[0]),)
+    J = sp.Matrix(np.array([F.diff(u).tolist()
+                            for u in np.array(U)
+                            .flatten()]
+                           ).squeeze()).T
+    return (U, F, J, (Re, We, Ct, Pe, B),
+            {'theta': Tcheb[-1],
+             'phi': dyTcheb[0]},)
 
 
 if __name__ == '__main__':
-
     logger = logging.getLogger()
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
@@ -308,4 +307,4 @@ if __name__ == '__main__':
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
-    model(4)
+    model(5)

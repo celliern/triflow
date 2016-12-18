@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import logging
+
 import scipy.sparse as sps
 from scipy.linalg import norm
 from scipy.integrate import ode
 from collections import deque
 import numpy as np
+
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 
 def FE_scheme(simul):
@@ -30,10 +36,10 @@ def BDF2_scheme(simul):
                       format='csc')
     Uhist = deque([], 2)
     Uhist.append(U.copy())
-    Jcomp = simul.Jcomp
     simul.F = F = simul.solver.compute_F(U,
                                          **simul.pars)
-    J = Jcomp.send((U, simul.t))
+    simul.J = J = simul.solver.compute_J_sparse(U,
+                                                **simul.pars)
     B = simul.pars['dt'] * (F - J @ U) + U
     J = (Id - simul.pars['dt'] * J)
 
@@ -47,7 +53,8 @@ def BDF2_scheme(simul):
         dt = simul.pars['dt']
         simul.F = F = simul.solver.compute_F(Un,
                                              **simul.pars)
-        J = Jcomp.send((Un, simul.t))
+        simul.J = J = simul.solver.compute_J_sparse(U,
+                                                    **simul.pars)
         B = ((4 / 3 * Id - 2 / 3 * dt * J) @ Un -
              1 / 3 * Unm1 +
              2 / 3 * dt * F)
@@ -66,11 +73,11 @@ def BDFalpha_scheme(simul):
     Uhist = deque([], 2)
     Uhist.append(simul.U.copy())
 
-    Jcomp = simul.Jcomp
     simul.F = F = simul.solver.compute_F(simul.U,
                                          **simul.pars)
     U = simul.hook(simul.U)
-    J = Jcomp.send((U, simul.t))
+    simul.J = J = simul.solver.compute_J_sparse(U,
+                                                **simul.pars)
     B = simul.pars['dt'] * (F - J @ simul.U) + U
     J = (Id - simul.pars['dt'] * J)
 
@@ -85,7 +92,8 @@ def BDFalpha_scheme(simul):
         dt = simul.pars['dt']
         simul.F = F = simul.solver.compute_F(Un,
                                              **simul.pars)
-        J = Jcomp.send((Un, simul.t))
+        simul.J = J = simul.solver.compute_J_sparse(U,
+                                                    **simul.pars)
         B = ((Id + alpha * Id) @ (2 * Id - dt * J) @ Un -
              (Id / 2 + alpha * Id) @ Unm1 +
              dt * F)
@@ -101,12 +109,12 @@ def BE_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.Jcomp
     while True:
         dt = simul.pars['dt']
         simul.F = F = simul.solver.compute_F(U,
                                              **simul.pars)
-        J = Jcomp.send((U, simul.t))
+        simul.J = J = simul.solver.compute_J_sparse(U,
+                                                    **simul.pars)
         B = dt * (F -
                   simul.pars['theta'] * J @ U) + U
         J = (sps.identity(simul.nvar * simul.pars['Nx'],
@@ -134,11 +142,11 @@ def ROS_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.Jcomp
     gamma = 1 - 1 / 2 * np.sqrt(2)
     while True:
         dt = simul.pars['dt']
-        J = Jcomp.send((U, simul.t))
+        simul.J = J = simul.solver.compute_J_sparse(U,
+                                                    **simul.pars)
         J = sps.eye(U.size, format='csc') - gamma * dt * J
         luf = sps.linalg.splu(J)
         F = simul.solver.compute_F(U, **simul.pars)
@@ -168,7 +176,6 @@ def ROS_vart_scheme(simul):
 
     U = simul.U
     U = simul.hook(U)
-    Jcomp = simul.Jcomp
     gamma = 1 - 1 / 2 * np.sqrt(2)
     t = simul.t
 
@@ -195,7 +202,8 @@ def ROS_vart_scheme(simul):
 
         err = None
         while (err is None or err > simul.pars['tol']):
-            J = Jcomp.send((U, t))
+            simul.J = J = simul.solver.compute_J_sparse(U,
+                                                        **simul.pars)
             J = sps.eye(U.size, format='csc') - gamma * dt * J
             luf = sps.linalg.splu(J)
             F = simul.solver.compute_F(U, **simul.pars)
