@@ -4,7 +4,7 @@
 import numpy as np
 from project_path import *
 from scipy.stats import distributions as dist
-from triflow.triflow.misc.materials import water
+from triflow.misc.materials import water
 from triflow.triflow_helper.log import init_log
 from triflow.triflow_helper.sampling import (generate_full_design,
                                              generate_random_design,

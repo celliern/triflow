@@ -4,7 +4,7 @@
 import logging
 from itertools import chain
 from multiprocessing import Queue
-from threading import Thread
+from threading import Thread, Event
 
 from bokeh.io import output_notebook, push_notebook, show
 from bokeh.models.layouts import Column
@@ -19,6 +19,7 @@ class bokeh_plotter(Thread):
         self.simul = simul
         self.queue = queue
         self.display = display
+        self.stop = Event()
         super().__init__()
 
     def run(self):
@@ -49,7 +50,7 @@ class bokeh_plotter(Thread):
                                              {}).items())})
          for fig, field in zip(figs, fields)]
         handler = show(Column(*figs), notebook_handle=True)
-        while not self.simul.stop.is_set():
+        while not self.stop.is_set():
             t, field = self.queue.get()
             data = {name: field[name]
                     for name
@@ -64,9 +65,13 @@ def bokeh_nb_writer(simul):
     display = simple_display(simul)
     plotter = bokeh_plotter(simul, queue, display)
     plotter.start()
-    for t, fields in display:
-        queue.put((t, fields))
-        yield
+    try:
+        for t, fields in display:
+            queue.put((t, fields))
+            yield
+    except KeyboardInterrupt as e:
+        plotter.stop.set()
+        raise e
 
 
 bokeh_nb_writer.writer_type = 'bokeh'
