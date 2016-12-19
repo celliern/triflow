@@ -7,7 +7,6 @@ import logging
 from multiprocessing import Pool
 
 from hashids import Hashids
-from joblib import Parallel, delayed
 from pandas import DataFrame
 from pyDOE import lhs
 from sklearn.preprocessing import minmax_scale
