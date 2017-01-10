@@ -4,7 +4,7 @@
 from triflow.mdict import magical_dict
 
 
-def water():
+def fluid():
     relations_template = magical_dict()
     relations_template.add_relation('(nu**2 / (g * sin(Beta))) ** (1 / 3) -'
                                     ' l_v')
@@ -29,7 +29,12 @@ def water():
     relations_template.add_relation('niter - tmax / dt')
     relations_template.add_relation('theta_flat - 1 / (1 + B)')
     relations_template.add_relation('phi_flat + B * theta_flat')
-    water = relations_template
+    return relations_template
+
+
+def water():
+
+    water = fluid()
     water['rho'] = 1000
     water['nu'] = 1E-6
     water['g'] = 9.81

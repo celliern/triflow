@@ -15,11 +15,11 @@ class Signal(object):
         self.size = kwargs.get('signal_size', 10000)
         self.tmax = kwargs['tmax']
         self.time_period = np.linspace(0, self.tmax, self.size)
-        self.template = np.array(self.signal_template(**kwargs))
+        self.template = np.array(self._signal_template(**kwargs))
         self.generate_wave_function()
         self.pars = kwargs
 
-    def signal_template(self, **kwarg):
+    def _signal_template(self, **kwarg):
         raise NotImplementedError
 
     def generate_wave_function(self):
@@ -41,35 +41,58 @@ class Signal(object):
 
 
 class AdditiveSignal(Signal):
-    def __init__(self, signal_a, signal_b, **kwarg):
+    def __init__(self, signal_a, signal_b, **kwargs):
         self.templates = [signal_a.template, signal_b.template]
-        super().__init__(**kwarg)
+        super().__init__(**kwargs)
 
-    def signal_template(self, **kwarg):
+    def _signal_template(self, **kwarg):
         return np.sum(self.templates, axis=0)
 
 
 class NoNoise(Signal):
-    def signal_template(self, **kwarg):
+    def _signal_template(self, **kwargs):
         return 0 * self.time_period
 
 
 class BrownNoise(Signal):
-    def signal_template(self, noise_ampl=.1, fcut=.5, offset=0, **kwarg):
-        input_modes = rfft(np.random.rand(self.size) * 2 - 1)
+    def __init__(self, noise_ampl=.01, fcut=.5,
+                 offset=0,
+                 seed=None,
+                 **kwargs):
+        super().__init__(noise_ampl=noise_ampl,
+                         fcut=fcut,
+                         offset=offset,
+                         seed=seed, **kwargs)
+
+    def _signal_template(self, noise_ampl=.01, fcut=.5,
+                         offset=0,
+                         seed=None,
+                         **kwarg):
+        randgen = np.random.RandomState(seed=seed)
+        input_modes = rfft(randgen.rand(self.size) * 2 - 1)
         input_modes[int(fcut * self.size):] = 0
         return noise_ampl * irfft(input_modes) + offset
 
 
 class WhiteNoise(Signal):
-    def signal_template(self, noise_ampl=.1, offset=0, **kwarg):
-        input_modes = rfft(np.random.rand(self.time_period.size) * 2 - 1)
+    def __init__(self, noise_ampl=.01,
+                 offset=0,
+                 seed=None,
+                 **kwargs):
+        super().__init__(noise_ampl=noise_ampl,
+                         offset=offset,
+                         seed=seed, **kwargs)
+
+    def _signal_template(self, noise_ampl=.01, offset=0,
+                         seed=None, **kwarg):
+        randgen = np.random.RandomState(seed=seed)
+        input_modes = rfft(randgen.rand(self.size) * 2 - 1)
         return noise_ampl * irfft(input_modes) + offset
 
 
 class ForcedSignal(Signal):
-    def signal_template(self, signal_freq=1, signal_ampl=.1,
-                        signal_phase=0, offset=0., **kwarg):
+    def _signal_template(self, signal_freq=1, signal_ampl=.1,
+                         signal_phase=0, offset=0., **kwarg):
         return signal_ampl * np.sin(self.time_period * 2 * np.pi *
                                     signal_freq + signal_phase) + offset
 

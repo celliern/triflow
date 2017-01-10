@@ -5,9 +5,8 @@ import logging
 
 import datreant.core as dtr
 import numpy as np
-from path import path
+from path import Path
 from triflow.plugins.displays import simple_display
-from threading import Lock
 
 
 def get_datreant_conf(simul):
@@ -18,7 +17,7 @@ def get_datreant_conf(simul):
 
 
 def datreant_init(path_data, simul_name, parameters):
-    treant = dtr.Treant(path(path_data) / simul_name)
+    treant = dtr.Treant(Path(path_data) / simul_name)
     for key in parameters:
         try:
             treant.categories[key] = parameters[key]
@@ -28,24 +27,24 @@ def datreant_init(path_data, simul_name, parameters):
 
 def datreant_save(path_data, simul_name, i, t,
                   tosave, compressed):
-    treant = dtr.Treant(path(path_data) / simul_name)
+    treant = dtr.Treant(Path(path_data) / simul_name)
     logging.debug('save path: %s ' % treant.abspath)
     treant.categories['t'] = t
     treant.categories['i'] = i
     if not compressed:
-        np.savez(path(treant.abspath) / 'data', **tosave)
+        np.savez(Path(treant.abspath) / 'data', **tosave)
     else:
-        np.savez_compressed(path(treant.abspath) / 'data', **tosave)
+        np.savez_compressed(Path(treant.abspath) / 'data', **tosave)
 
 
 def datreant_append(path_data, simul_name, i, t,
                     tosave, compressed):
-    treant = dtr.Treant(path(path_data) / simul_name)
+    treant = dtr.Treant(Path(path_data) / simul_name)
     logging.debug('save path: %s ' % treant.abspath)
     treant.categories['t'] = t
     treant.categories['i'] = i
     try:
-        old_data = np.load(path(treant.abspath) / 'data.npz')
+        old_data = np.load(Path(treant.abspath) / 'data.npz')
         for fieldname in old_data.iterkeys():
             oldies = old_data[fieldname]
             tosave[fieldname] = np.insert(oldies, 0,
@@ -57,15 +56,14 @@ def datreant_append(path_data, simul_name, i, t,
                   in tosave.items()}
     finally:
         if not compressed:
-            np.savez(path(treant.abspath) / 'data', **tosave)
+            np.savez(Path(treant.abspath) / 'data', **tosave)
         else:
-            np.savez_compressed(path(treant.abspath) / 'data', **tosave)
+            np.savez_compressed(Path(treant.abspath) / 'data', **tosave)
         logging.info("simul %s saved in %s, time %.2f iter %i" %
                      (simul_name, path_data, t, i))
 
 
 def datreant_step_writer(simul):
-    lock = Lock()
     path_data, simul_name, compressed = get_datreant_conf(simul)
     datreant_init(path_data, simul_name, simul.pars)
     display = simple_display(simul)
@@ -79,8 +77,7 @@ def datreant_step_writer(simul):
                       simul.i,
                       t,
                       tosave,
-                      compressed,
-                      lock)
+                      compressed)
         yield
 
 

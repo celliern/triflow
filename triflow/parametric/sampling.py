@@ -15,28 +15,30 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
-def update_magical(physical_parameters, fixed, model,
+def update_magical(physical_parameters, model,
                    salt, n_id, i, parametric):
     logging.info(i)
     hashids = Hashids(min_length=n_id, salt=salt)
+    physical_parameters = physical_parameters.copy()
     for parameter, value in parametric.items():
-        physical_parameters[parameter] = value
-    for parameter, value in fixed.items():
         physical_parameters[parameter] = value
     physical_parameters = dict(physical_parameters).copy()
     physical_parameters['name'] = hashids.encode(
         int.from_bytes(bytes('%i-%s' % (i, model), 'utf8'), byteorder='big'))
     physical_parameters['model'] = model
-    return physical_parameters
+    return dict(physical_parameters)
 
 
 def generate_sample(material, fixed, parametrics, model, n=1,
                     salt='salt require a long enough string to have random',
                     n_id=6):
+
     physical_parameters = material()
+    for parameter, value in fixed.items():
+        physical_parameters[parameter] = value
 
     partial = ft.partial(update_magical, physical_parameters,
-                         fixed, model, salt, n_id)
+                         model, salt, n_id)
     if n > 1:
         with Pool(n) as p:
             samples = p.starmap(partial,

@@ -263,6 +263,10 @@ class Simulation(object):
         new_simul.history = self.history
         return new_simul
 
+    @property
+    def data(self):
+        return self.solver.get_fields(self.U)
+
     def __copy__(self):
         return self.copy()
 
