@@ -295,40 +295,40 @@ class Solver(object):
         Jbdcbottomright = Jbdc[bdc_range * nvar:,
                                (bdc_range + 2) * nvar:].flatten()
 
-        np.append(J_list, Jbdctopleft)
-        np.append(J_list, Jbdctopright)
-        np.append(J_list, Jbdcbottomleft)
-        np.append(J_list, Jbdcbottomright)
+        J_list = np.append(J_list, Jbdctopleft)
+        J_list = np.append(J_list, Jbdctopright)
+        J_list = np.append(J_list, Jbdcbottomleft)
+        J_list = np.append(J_list, Jbdcbottomright)
 
         indexes, columns = np.meshgrid(
             np.arange(0, bdc_range * nvar),
             np.arange(0, nvar * (bdc_range + 2)),
             indexing='ij')
-        np.append(indexes_list, indexes)
-        np.append(columns_list, columns)
+        indexes_list = np.append(indexes_list, indexes)
+        columns_list = np.append(columns_list, columns)
 
         indexes, columns = np.meshgrid(np.arange(0, bdc_range * nvar),
                                        np.arange(Nx * nvar - nvar *
                                                  (bdc_range + 2),
                                                  Nx * nvar),
                                        indexing='ij')
-        np.append(indexes_list, indexes)
-        np.append(columns_list, columns)
+        indexes_list = np.append(indexes_list, indexes)
+        columns_list = np.append(columns_list, columns)
 
         indexes, columns = np.meshgrid(np.arange(Nx * nvar - bdc_range * nvar,
                                                  Nx * nvar),
                                        np.arange(0, nvar * (bdc_range + 2)),
                                        indexing='ij')
-        np.append(indexes_list, indexes)
-        np.append(columns_list, columns)
+        indexes_list = np.append(indexes_list, indexes)
+        columns_list = np.append(columns_list, columns)
 
         indexes, columns = np.meshgrid(np.arange(Nx * nvar - bdc_range * nvar,
                                                  Nx * nvar),
                                        np.arange(Nx * nvar - nvar *
                                                  (bdc_range + 2), Nx * nvar),
                                        indexing='ij')
-        np.append(indexes_list, indexes)
-        np.append(columns_list, columns)
+        indexes_list = np.append(indexes_list, indexes)
+        columns_list = np.append(columns_list, columns)
         J = sps.coo_matrix((J_list, (indexes_list, columns_list)),
                            shape=(Nx * nvar, Nx * nvar),
                            dtype=float)
