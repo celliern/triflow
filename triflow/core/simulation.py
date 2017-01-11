@@ -102,6 +102,9 @@ class Simulation(object):
     def add_signal(self, field, signal):
         self.signals[field] = signal
 
+    def add_driver(self, driver):
+        self.drivers.append(driver)
+
     def add_writer(self, writer, replace=True):
         try:
             assert not(writer.writer_type in [writer.writer_type
@@ -126,6 +129,9 @@ class Simulation(object):
 
     def set_display(self, display):
         self.display = display
+
+    def set_hook(self, hook):
+        self.hook = hook
 
     def set_scheme(self, scheme):
         if scheme == 'theta':

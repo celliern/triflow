@@ -95,6 +95,8 @@ def init_simulation(additional_parameters, sample,
                                     id=parameters['name'], **parameters)
     simul.set_display(kwargs.get('display', displays.full_display))
     simul.set_scheme(kwargs.get('scheme', 'ROS_vart'))
+    for driver in kwargs.get('drivers', []):
+        simul.add_driver(driver)
 
     signal = kwargs.get('signal', None)
     if callable(signal):
