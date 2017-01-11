@@ -150,7 +150,7 @@ def run_simulation(simul, retry=0, down_factor=2):
 
 
 @curry
-def save_result(path_data, simul):
+def save_result(path_data, simul, bin=False):
     logger.info("\tsaving id: %s" %
                 (simul.id))
     writers.datreant.datreant_init(path_data, simul.id, simul.pars)
@@ -169,5 +169,6 @@ def save_result(path_data, simul):
     tr = dtr.Treant(path_data / simul.id)
     tr.tags.add(simul.status)
     logger.info("\tid: %s saved" % (simul.id))
-    with open(path_data / simul.id / 'simul.bin', 'wb') as f:
-        pickle.dump(simul, f)
+    if bin:
+        with open(path_data / simul.id / 'simul.bin', 'wb') as f:
+            pickle.dump(simul, f)
