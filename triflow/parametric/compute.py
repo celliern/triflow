@@ -88,9 +88,12 @@ def init_simulation(additional_parameters, sample,
     for field in solver.fields:
         initial_fields.append(kwargs.get(field, init_field(field,
                                                            parameters)))
-        if isinstance(parameters['%sini' % field], str):
-            parameters['%sini' % field] = parameters[parameters['%sini' %
-                                                                field]]
+        try:
+            parameters['%sini' % field] = float(parameters['%sini' % field])
+        except ValueError:
+            if isinstance(parameters['%sini' % field], str):
+                parameters['%sini' % field] = parameters[parameters['%sini' %
+                                                                    field]]
     simul = solver.start_simulation(initial_fields, 0,
                                     id=parameters['name'], **parameters)
     simul.set_display(kwargs.get('display', displays.full_display))
