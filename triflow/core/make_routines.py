@@ -57,12 +57,12 @@ def load_routines_fortran(folder: str):
                  ' - '.join([par.name for par in parameters]))
     spec = impu.spec_from_file_location("F",
                                         working_dir /
-                                        'F.cpython-35m-x86_64'
+                                        'F.cpython-36m-x86_64'
                                         '-linux-gnu.so')
     func_i = impu.module_from_spec(spec).f
 
     spec = impu.spec_from_file_location(
-        "J", working_dir / 'J.cpython-35m-x86_64-linux-gnu.so')
+        "J", working_dir / 'J.cpython-36m-x86_64-linux-gnu.so')
     jacob_i = impu.module_from_spec(spec).j
 
     help_routines = {file.namebase.split('_')[1]: file.namebase for
@@ -75,7 +75,7 @@ def load_routines_fortran(folder: str):
     helps_i = {}
     for key, H in help_routines.items():
         spec = impu.spec_from_file_location(
-            H, working_dir / '%s.cpython-35m-x86_64-linux-gnu.so' % H)
+            H, working_dir / '%s.cpython-36m-x86_64-linux-gnu.so' % H)
         help_i = getattr(impu.module_from_spec(spec), H.lower())
         helps_i[key] = help_i
 
@@ -89,7 +89,7 @@ def load_routines_fortran(folder: str):
         try:
             spec = impu.spec_from_file_location(
                 Fbdc, working_dir /
-                '%s.cpython-35m-x86_64-linux-gnu.so' % Fbdc)
+                '%s.cpython-36m-x86_64-linux-gnu.so' % Fbdc)
             Fbound = impu.module_from_spec(spec).f_bdc
         except ImportError:
             spec = impu.spec_from_file_location(
@@ -107,7 +107,7 @@ def load_routines_fortran(folder: str):
         try:
             spec = impu.spec_from_file_location(
                 Jbdc, working_dir /
-                '%s.cpython-35m-x86_64-linux-gnu.so' % Jbdc)
+                '%s.cpython-36m-x86_64-linux-gnu.so' % Jbdc)
             Jbound = impu.module_from_spec(spec).j_bdc
         except ImportError:
             spec = impu.spec_from_file_location(Jbdc, working_dir /
@@ -134,7 +134,7 @@ def load_routines_fortran(folder: str):
         for Hbdc in Hbdc_routines:
             spec = impu.spec_from_file_location(
                 Hbdc, working_dir /
-                '%s.cpython-35m-x86_64-linux-gnu.so' % Hbdc)
+                '%s.cpython-36m-x86_64-linux-gnu.so' % Hbdc)
             Hbound = getattr(impu.module_from_spec(spec),
                              '_'.join(Hbdc.split('_')[:-1]).lower())
             Hbounds.append(Hbound)
@@ -163,8 +163,7 @@ def comp_function(routine, working_dir: (str, Path) = Path('.')):
 
     """
 
-    fnull = open(os.devnull, 'w')
-    with cd(working_dir):
+    with cd(working_dir), open(os.devnull, 'w') as fnull:
         subprocess.call(["f2py", "-c", "-m",
                          "%s" % routine, "%s.f90" % routine],
                         stdout=fnull)
