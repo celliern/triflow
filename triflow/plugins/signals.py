@@ -50,8 +50,12 @@ class AdditiveSignal(Signal):
 
 
 class NoNoise(Signal):
-    def _signal_template(self, **kwargs):
-        return 0 * self.time_period
+    def __init__(self, offset=0,
+                 **kwargs):
+        super().__init__(offset=offset, **kwargs)
+
+    def _signal_template(self, offset=0, **kwargs):
+        return 0 * self.time_period + offset
 
 
 class BrownNoise(Signal):
