@@ -9,6 +9,7 @@ from triflow.core.make_routines import cache_routines_fortran
 from triflow.models.boundaries import openflow_boundary, periodic_boundary
 from triflow.models.model_2fields import model as model2
 from triflow.models.model_4fields import model as model4
+from triflow.models.model_4fields_simple import model as model4s
 from triflow.models.model_full_fourrier import model as modelfull
 
 logger = logging.getLogger()
@@ -62,6 +63,13 @@ def cache_simple():
     processes.append(mp.Process(target=cache_routines_fortran,
                                 args=(model4, periodic_boundary,
                                       '4fields_per')))
+
+    processes.append(mp.Process(target=cache_routines_fortran,
+                                args=(model4s, openflow_boundary,
+                                      '4fields_s_open')))
+    processes.append(mp.Process(target=cache_routines_fortran,
+                                args=(model4s, periodic_boundary,
+                                      '4fields_s_per')))
 
     for process in processes:
         process.start()
