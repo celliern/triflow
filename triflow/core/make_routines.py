@@ -164,7 +164,7 @@ def comp_function(routine, working_dir: (str, Path) = Path('.')):
     """
 
     with cd(working_dir), open(os.devnull, 'w') as fnull:
-        subprocess.call(["f2py", "-c", "-m",
+        subprocess.call(["f2py3.6", "-c", "-m",
                          "%s" % routine, "%s.f90" % routine],
                         stdout=fnull)
 
