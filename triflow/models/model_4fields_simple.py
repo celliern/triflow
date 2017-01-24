@@ -11,7 +11,7 @@ import numpy as np
 def model():
     """ """
     Re, We, Ct = sp.symbols('Re, We, Ct')
-    Pe, B, M = sp.symbols('Pe, B, M')
+    Pe, Bi, M = sp.symbols('Pe, Bi, M')
 
     info('mise en place des variables')
 
@@ -57,12 +57,12 @@ def model():
                         (dxxxh + dxxxs) * We)) / (252. * h**2 * Re))
 
     Ftheta = (180 / (17 * h**2) -
-              96 * B * h / (17 * h**2) * theta +
+              96 * Bi * h / (17 * h**2) * theta +
               7 / (17 * h**2) * phi +
               dxxtheta) / (3 * Pe) - 3 / (2 * h) * dxtheta
 
     Fphi = ((-460 / (17 * h**2) -
-             120 * B * h / (17 * h**2) * theta +
+             120 * Bi * h / (17 * h**2) * theta +
              3 / (17 * h**2) * phi +
              dxxphi) / (3 * Pe) - phi * dxq / h ** 2) * h
 
