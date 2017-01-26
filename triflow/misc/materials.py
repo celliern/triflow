@@ -21,7 +21,7 @@ def fluid():
     relations_template.add_relation('M - Ma / ((3 * Re) ** (2 / 3))')
     relations_template.add_relation('B - Bi * (3 * Re) ** (1 / 3)')
     relations_template.add_relation('chi - lamb / (rho * cp)')
-    relations_template.add_relation('t_factor - bhN / t_v * l_v')
+    relations_template.add_relation('t_factor - bhN / (t_v * l_v)')
     relations_template.add_relation('l_factor - 1 / bhN')
     relations_template.add_relation('freq - 1 / per')
     relations_template.add_relation('freqd - 1 / perd')
