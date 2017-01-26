@@ -55,6 +55,8 @@ Different temporal schemes are provided in the plugins module:
 * A ROW scheme with fixed time stepping
 * A ROW scheme with variable time stepping
 
+Each of them have advantages and disadvantages. The default is the variable time stepping ROW scheme.
+
 
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _Numpy: http://www.sympy.org/en/index.html
