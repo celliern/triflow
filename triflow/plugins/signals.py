@@ -12,7 +12,7 @@ logging = logging.getLogger(__name__)
 
 class Signal(object):
     def __init__(self, **kwargs):
-        self.size = kwargs.get('signal_size', 10000)
+        self.size = kwargs.get('signal_size', 1000000)
         self.tmax = kwargs['tmax']
         self.time_period = np.linspace(0, self.tmax, self.size)
         self.template = np.array(self._signal_template(**kwargs))
