@@ -50,7 +50,7 @@ Different temporal schemes are provided in the plugins module:
 
 * a forward Euler scheme
 * a backward Euler scheme
-* a :math:`\\theta` mixed scheme
+* a :math:`\theta` mixed scheme
 * a BDF scheme
 * A ROW scheme with fixed time stepping
 * A ROW scheme with variable time stepping
