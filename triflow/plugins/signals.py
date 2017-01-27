@@ -61,7 +61,8 @@ class AdditiveSignal(Signal):
 
 class ConstantSignal(Signal):
     def __init__(self, signal_period: float, n: int=1000, offset=0, **kwargs):
-        super().__init__(offset=offset)
+        super().__init__(signal_period,
+                         n=n, offset=offset)
 
     def _signal_template(self, offset=0, **kwargs):
         return 0 * self.time_period + offset
@@ -75,11 +76,12 @@ class BrownNoise(Signal):
                  offset: float=0,
                  seed: int or None=None,
                  **kwargs):
-        super().__init__(
-            noise_ampl=noise_ampl,
-            fcut=fcut,
-            offset=offset,
-            seed=seed)
+        super().__init__(signal_period,
+                         n=n,
+                         noise_ampl=noise_ampl,
+                         fcut=fcut,
+                         offset=offset,
+                         seed=seed)
 
     @memoize
     def _signal_template(self,
@@ -107,11 +109,12 @@ class WhiteNoise(BrownNoise):
                  offset: float=0,
                  seed: int or None=None,
                  **kwargs):
-        super().__init__(
-            noise_ampl=noise_ampl,
-            fcut=None,
-            offset=offset,
-            seed=seed)
+        super().__init__(signal_period,
+                         n=n,
+                         noise_ampl=noise_ampl,
+                         fcut=None,
+                         offset=offset,
+                         seed=seed)
 
 
 class ForcedSignal(Signal):
