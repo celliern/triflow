@@ -42,7 +42,7 @@ class Signal(object):
         signal_period = max(self.signal_period, other_signal.signal_period)
         size = max(self.size, other_signal.size)
         return AdditiveSignal(
-            self, other_signal, signal_period=signal_period, n=size)
+            self, other_signal, signal_period, size)
 
     @property
     def fourrier_spectrum(self):
