@@ -66,7 +66,7 @@ class ConstantSignal(Signal):
 
     def _signal_template(self, signal_period: float, n: int=1000,
                          offset=0):
-        return 0 * self.time_period + offset
+        return 0 * self.time + offset
 
 
 class BrownNoise(Signal):
