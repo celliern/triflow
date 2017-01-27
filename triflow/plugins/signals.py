@@ -117,11 +117,11 @@ class WhiteNoise(BrownNoise):
 
 class ForcedSignal(Signal):
     def __init__(self, signal_period: float, n: int=1000,
-                 signal_freq: float=1, signal_ampl: float=.1, **kwarg):
+                 signal_freq: float=1, signal_ampl: float=.1):
         super().__init__(self, signal_period, n=n,
                          signal_freq=signal_freq, signal_ampl=signal_ampl)
         freq, ampl = self.fourrier_spectrum
-        if not np.isclose(kwarg['freq'], freq[np.argmax(ampl)], rtol=.01):
+        if not np.isclose(signal_freq, freq[np.argmax(ampl)], rtol=.01):
             logging.warning('There is difference between '
                             'chosen frequency (%.3e) and '
                             'main frequency of the fourrier '
@@ -129,7 +129,7 @@ class ForcedSignal(Signal):
                             'They may have some aliasing, '
                             'you should increase the number of samples '
                             '(n parameter, see signal doc)' %
-                            (kwarg['freq'], freq[np.argmax(ampl)]))
+                            (signal_freq, freq[np.argmax(ampl)]))
 
     def _signal_template(self, freq=1, ampl=.1, phase=0, offset=0., **kwarg):
         return ampl * np.sin(self.time * 2 * np.pi * freq + phase) + offset
