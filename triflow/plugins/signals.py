@@ -121,7 +121,7 @@ class WhiteNoise(BrownNoise):
 class ForcedSignal(Signal):
     def __init__(self, signal_period: float, n: int=1000,
                  signal_freq: float=1, signal_ampl: float=.1, **kwarg):
-        super().__init__(self, signal_period, n,
+        super().__init__(self, signal_period, n=n,
                          signal_freq=signal_freq, signal_ampl=signal_ampl)
         freq, ampl = self.fourrier_spectrum
         if not np.isclose(kwarg['freq'], freq[np.argmax(ampl)], rtol=.01):
