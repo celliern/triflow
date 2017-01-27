@@ -55,7 +55,7 @@ class AdditiveSignal(Signal):
         self.templates = [signal_a.wave(time), signal_b.wave(time)]
         super().__init__(signal_period, n=n)
 
-    def _signal_template(self, n=None):
+    def _signal_template(self, signal_period: float, n: int=1000):
         return np.sum(self.templates, axis=0)
 
 
