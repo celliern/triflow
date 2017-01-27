@@ -19,7 +19,8 @@ class Signal(object):
         self.signal_period = signal_period
         self.time, self.dt = np.linspace(
             0, self.signal_period, self.size, retstep=True)
-        self.template = np.array(self._signal_template(**kwargs))
+        self.template = np.array(self._signal_template(signal_period,
+                                                       n=n, **kwargs))
         self.interp_function = self.generate_wave_function(self.time,
                                                            self.template)
 
