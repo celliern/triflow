@@ -131,5 +131,6 @@ class ForcedSignal(Signal):
                             (signal_freq, freq[np.argmax(ampl)]))
 
     def _signal_template(self, signal_period: float, n: int=1000,
-                         freq=1, ampl=.1, phase=0, offset=0.):
-        return ampl * np.sin(self.time * 2 * np.pi * freq + phase) + offset
+                         signal_freq=1, signal_ampl=.1, signal_phase=0):
+        return signal_ampl * np.sin(self.time * 2 * np.pi *
+                                    signal_freq + signal_phase)
