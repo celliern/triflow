@@ -61,11 +61,11 @@ class AdditiveSignal(Signal):
 
 
 class ConstantSignal(Signal):
-    def __init__(self, signal_period: float, n: int=1000, offset=0, **kwargs):
+    def __init__(self, signal_period: float, n: int=1000, offset=0):
         super().__init__(signal_period,
                          n=n, offset=offset)
 
-    def _signal_template(self, offset=0, **kwargs):
+    def _signal_template(self, offset=0, ):
         return 0 * self.time_period + offset
 
 
@@ -75,8 +75,7 @@ class BrownNoise(Signal):
                  noise_ampl: float=.01,
                  fcut: float=.5,
                  offset: float=0,
-                 seed: int or None=None,
-                 **kwargs):
+                 seed: int or None=None):
         super().__init__(signal_period,
                          n=n,
                          noise_ampl=noise_ampl,
@@ -90,8 +89,7 @@ class BrownNoise(Signal):
                          noise_ampl: float=.01,
                          fcut: float=.5,
                          offset: float=0,
-                         seed: int or None=None,
-                         **kwargs):
+                         seed: int or None=None):
         randgen = np.random.RandomState(seed=seed)
         input_modes = rfft(randgen.rand(self.size) * 2 - 1)
         if fcut is not None:
@@ -108,8 +106,7 @@ class WhiteNoise(BrownNoise):
                  signal_period: float, n: int=1000,
                  noise_ampl: float=.01,
                  offset: float=0,
-                 seed: int or None=None,
-                 **kwargs):
+                 seed: int or None=None):
         super().__init__(signal_period,
                          n=n,
                          noise_ampl=noise_ampl,
