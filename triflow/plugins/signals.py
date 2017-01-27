@@ -60,8 +60,8 @@ class AdditiveSignal(Signal):
 
 
 class ConstantSignal(Signal):
-    def __init__(self, offset=0, **kwargs):
-        super().__init__(offset=offset, **kwargs)
+    def __init__(self, signal_period: float, n: int=1000, offset=0, **kwargs):
+        super().__init__(offset=offset)
 
     def _signal_template(self, offset=0, **kwargs):
         return 0 * self.time_period + offset
@@ -69,6 +69,7 @@ class ConstantSignal(Signal):
 
 class BrownNoise(Signal):
     def __init__(self,
+                 signal_period: float, n: int=1000,
                  noise_ampl: float=.01,
                  fcut: float=.5,
                  offset: float=0,
@@ -78,16 +79,16 @@ class BrownNoise(Signal):
             noise_ampl=noise_ampl,
             fcut=fcut,
             offset=offset,
-            seed=seed,
-            **kwargs)
+            seed=seed)
 
     @memoize
     def _signal_template(self,
+                         signal_period: float, n: int=1000,
                          noise_ampl: float=.01,
                          fcut: float=.5,
                          offset: float=0,
                          seed: int or None=None,
-                         **kwarg):
+                         **kwargs):
         randgen = np.random.RandomState(seed=seed)
         input_modes = rfft(randgen.rand(self.size) * 2 - 1)
         if fcut is not None:
@@ -101,6 +102,7 @@ class BrownNoise(Signal):
 
 class WhiteNoise(BrownNoise):
     def __init__(self,
+                 signal_period: float, n: int=1000,
                  noise_ampl: float=.01,
                  offset: float=0,
                  seed: int or None=None,
@@ -109,13 +111,14 @@ class WhiteNoise(BrownNoise):
             noise_ampl=noise_ampl,
             fcut=None,
             offset=offset,
-            seed=seed,
-            **kwargs)
+            seed=seed)
 
 
 class ForcedSignal(Signal):
-    def __init__(self, **kwarg):
-        super().__init__(**kwarg)
+    def __init__(self, signal_period: float, n: int=1000,
+                 signal_freq: float=1, signal_ampl: float=.1, **kwarg):
+        super().__init__(self, signal_period, n,
+                         signal_freq=signal_freq, signal_ampl=signal_ampl)
         freq, ampl = self.fourrier_spectrum
         if not np.isclose(kwarg['freq'], freq[np.argmax(ampl)], rtol=.01):
             logging.warning('There is difference between '
