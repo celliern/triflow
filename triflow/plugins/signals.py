@@ -24,7 +24,7 @@ class Signal(object):
         self.interp_function = self.generate_wave_function(self.time,
                                                            self.template)
 
-    def _signal_template(self, **kwarg):
+    def _signal_template(self):
         raise NotImplementedError
 
     def generate_wave_function(self, time: np.array,
@@ -65,7 +65,8 @@ class ConstantSignal(Signal):
         super().__init__(signal_period,
                          n=n, offset=offset)
 
-    def _signal_template(self, offset=0, ):
+    def _signal_template(self, signal_period: float, n: int=1000,
+                         offset=0):
         return 0 * self.time_period + offset
 
 
@@ -131,5 +132,6 @@ class ForcedSignal(Signal):
                             '(n parameter, see signal doc)' %
                             (signal_freq, freq[np.argmax(ampl)]))
 
-    def _signal_template(self, freq=1, ampl=.1, phase=0, offset=0., **kwarg):
+    def _signal_template(self, signal_period: float, n: int=1000,
+                         freq=1, ampl=.1, phase=0, offset=0.):
         return ampl * np.sin(self.time * 2 * np.pi * freq + phase) + offset
