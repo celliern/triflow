@@ -7,7 +7,6 @@ from scipy.interpolate import interp1d
 from scipy.signal import periodogram
 from typing import Callable
 import numpy as np
-from toolz.functoolz import memoize
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -84,7 +83,6 @@ class BrownNoise(Signal):
                          offset=offset,
                          seed=seed)
 
-    @memoize
     def _signal_template(self,
                          signal_period: float, n: int=1000,
                          noise_ampl: float=.01,
