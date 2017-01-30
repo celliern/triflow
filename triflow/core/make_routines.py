@@ -13,10 +13,10 @@ import numpy as np
 import sympy as sp
 from path import Path
 from sympy.utilities.codegen import codegen
-from triflow.misc.misc import (cd, extract_parameters, order_field,
-                               write_codegen)
-from triflow.models.boundaries import analyse_boundary
-from triflow.path_project import fmodel_dir
+from ..misc.misc import (cd, extract_parameters, order_field,
+                         write_codegen)
+from ..models.boundaries import analyse_boundary
+from ..path_project import fmodel_dir
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
