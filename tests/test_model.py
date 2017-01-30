@@ -21,7 +21,7 @@ def model_monovariate_str(fourrier_args):
 
 
 @pytest.fixture()
-def model_monovariate_list():
+def model_monovariate_list(fourrier_args):
     func, var, par = fourrier_args
     model = Model(func=[func],
                   vars=[var],
@@ -30,7 +30,7 @@ def model_monovariate_list():
 
 
 @pytest.fixture()
-def model_monovariate_tuple():
+def model_monovariate_tuple(fourrier_args):
     func, var, par = fourrier_args
     model = Model(func=(func, ),
                   vars=(var, ),
@@ -38,9 +38,9 @@ def model_monovariate_tuple():
     return model
 
 
-def test_model_inline_string_monovariate_vars(model):
-    assert model.vars == ('U', )
+def test_model_inline_string_monovariate_vars(model_monovariate_str):
+    assert model_monovariate_str.vars == ('U', )
 
 
-def test_model_inline_tuple_monovariate_pars(model):
+def test_model_inline_tuple_monovariate_pars(model_monovariate_str):
     assert model.pars == ('k', )

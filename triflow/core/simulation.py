@@ -7,7 +7,7 @@ from uuid import uuid1
 
 import numpy as np
 
-from triflow.plugins import displays, schemes
+from ..plugins import displays, schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)

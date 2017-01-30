@@ -6,10 +6,8 @@ import logging
 import numpy as np
 import scipy.sparse as sps
 
-from triflow.core.simulation import Simulation
-from triflow.core.make_routines import load_routines_fortran
-from triflow.misc.misc import coroutine
-
+from .make_routines import load_routines_fortran
+from .simulation import Simulation
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
