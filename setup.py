@@ -31,7 +31,7 @@ setup(
     },
 
     # Une url qui pointe vers la page officielle de votre lib
-    # url='http://github.com/celliern/numerical-wave',
+    url='http://github.com/celliern/triflow',
 
     # Il est d'usage de mettre quelques metadata à propos de sa lib
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
