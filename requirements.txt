@@ -9,4 +9,3 @@ scipy==0.18.1
 six==1.10.0
 sympy==1.0
 toolz==0.8.2
--e git+git@github.com:celliern/triflow.git@14d974115039da409769f4a76bf03c28442d7cb8#egg=triflow
