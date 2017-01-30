@@ -1,0 +1,12 @@
+appdirs==1.4.0
+hashids==1.2.0
+mpmath==0.19
+numpy==1.12.0
+packaging==16.8
+path.py==10.1
+pyparsing==2.1.10
+scipy==0.18.1
+six==1.10.0
+sympy==1.0
+toolz==0.8.2
+-e git+git@github.com:celliern/triflow.git@14d974115039da409769f4a76bf03c28442d7cb8#egg=triflow
