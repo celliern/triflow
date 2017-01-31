@@ -4,7 +4,7 @@
 import logging
 
 from sympy import (Idx, IndexedBase, Symbol, Wild, symbols,
-                   sympify, Function, Eq, Matrix,)
+                   sympify, Function, Eq, Matrix, MatrixSymbol)
 from sympy.utilities.codegen import codegen
 from typing import Union
 
@@ -65,6 +65,8 @@ class Model:
         J_matrix = J_matrix.subs({svar: dvar
                                   for svar, dvar in zip(symbolic_vars,
                                                         discrete_vars)})
+
+        print(Eq(MatrixSymbol('F', F_vector.shape), F_vector))
 
     def finite_diff_scheme(self, U, order):
         dx = Symbol('dx')
