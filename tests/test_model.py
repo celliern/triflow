@@ -6,41 +6,28 @@ import pytest
 from triflow.core.model import Model
 
 
-@pytest.fixture()
-def fourrier_args():
-    return ("-k * dx(dx(U))", "U", "k")
-
-
-@pytest.fixture()
-def model_monovariate_str(fourrier_args):
-    func, var, par = fourrier_args
-    model = Model(func=func,
+@pytest.mark.parametrize("func", ["-k * dx(U, 2) + dx(U, 1)",
+                                  ("-k * dx(U, 2) + dx(U, 1)", ),
+                                  ["-k * dx(U, 2) + dx(U, 1)"],
+                                  {"U": "-k * dx(U, 2) + dx(U, 1)"}])
+@pytest.mark.parametrize("var", [func("U") for func in (str, tuple, list)])
+@pytest.mark.parametrize("par", [func("k") for func in (str, tuple, list)])
+def test_model_monovariate(func, var, par):
+    model = Model(funcs=func,
                   vars=var,
                   pars=par)
     return model
 
 
-@pytest.fixture()
-def model_monovariate_list(fourrier_args):
-    func, var, par = fourrier_args
-    model = Model(func=[func],
-                  vars=[var],
-                  pars=[par])
+@pytest.mark.parametrize("func", [["k1 * dx(v, 2)",
+                                   "k2 * dx(u, 2)"],
+                                  {"u": "k1 * dx(v, 2)",
+                                   "v": "k2 * dx(u, 2)"}])
+@pytest.mark.parametrize("var", [func(["u", "v"])
+                                 for func in (tuple, list)])
+@pytest.mark.parametrize("par", [func(["k1", "k2"]) for func in (tuple, list)])
+def test_model_bivariate(func, var, par):
+    model = Model(funcs=func,
+                  vars=var,
+                  pars=par)
     return model
-
-
-@pytest.fixture()
-def model_monovariate_tuple(fourrier_args):
-    func, var, par = fourrier_args
-    model = Model(func=(func, ),
-                  vars=(var, ),
-                  pars=(par, ))
-    return model
-
-
-def test_model_inline_string_monovariate_vars(model_monovariate_str):
-    assert model_monovariate_str.vars == ('U', )
-
-
-def test_model_inline_tuple_monovariate_pars(model_monovariate_str):
-    assert model.pars == ('k', )
