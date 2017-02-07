@@ -21,21 +21,12 @@ def rebuild_solver(routine_name):
 class Solver(object):
     """ """
 
-    def __init__(self, routine):
+    def __init__(self, model):
         self.routine_name = None
-        if isinstance(routine, str):
-            self.routine_name = routine
-            routine = load_routines_fortran(routine)
-        (self.func_i, self.jacob_i,
-         self.U, self.parameters,
-         self.helpers,
-         ((self.Fbdc, self.Jbdc, self.Hsbdc,
-           self.fields_order,
-           self.bdc_fsymbols,
-           self.bdc_parameters))) = routine
-        self.window_range, self.nvar = self.U.shape
-        self.fields = np.vectorize(lambda x: str(x).split('_')[0],
-                                   otypes=[str])(self.U[0])
+        self.model = model
+        self.U = model.unknowns
+        self.window_range, self.nvar = len(model.vars), model.window_range
+        self.fields = model.vars
         logging.info('Champs: %s' % ' - '.join(self.fields))
 
     def check_pars(self, pars, parlist):
@@ -118,10 +109,13 @@ class Solver(object):
         window_range = self.window_range
         bdc_range = int((window_range - 1) / 2)
         Nx = int(data.size / nvar)
-        Fpars = self.check_pars(pars, self.parameters)
+        print(pars)
+        print(self.model.pars)
+        Fpars = self.check_pars(pars, self.model.pars)
+        print(Fpars)
         F = np.zeros(data.shape)
         for i in np.arange(bdc_range, Nx - bdc_range):
-            Fi = self.func_i(*data[(i - bdc_range) * nvar:
+            Fi = self.model.F(*data[(i - bdc_range) * nvar:
                                    (i + bdc_range + 1) * nvar], *Fpars)
             F[i * nvar: (i + 1) * nvar] = Fi[:, 0]
         bdcpars = self.check_pars(pars, self.bdc_parameters)
