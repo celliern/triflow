@@ -92,7 +92,7 @@ class Model:
                                       in np.array(self.J_matrix)
                                       .flatten(order='F')])
 
-    def F(self, unknowns, **pars):
+    def F(self, unknowns, pars):
         unknowns = np.array(unknowns).flatten('F')
         nvar, N = len(self.vars), int(unknowns.size / len(self.vars))
         fpars = {key: pars[key] for key in self.pars}
@@ -116,7 +116,7 @@ class Model:
             F[i, :] = ufunc((*uargs.tolist() + pargs))
         return F.flatten('F')
 
-    def J(self, unknowns, **pars):
+    def J(self, unknowns, pars):
         unknowns = np.array(unknowns).flatten('F')
         nvar, N = len(self.vars), int(unknowns.size / len(self.vars))
         fpars = {key: pars[key] for key in self.pars}

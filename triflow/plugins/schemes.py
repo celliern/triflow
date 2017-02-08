@@ -14,178 +14,106 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
-def FE_scheme(simul):
-    """ """
+class FE_scheme:
+    """docstring for FE_scheme"""
 
-    solv = ode(lambda t, x: simul.solver.compute_F(x,
-                                                   **simul.pars))
-    solv.set_integrator('dopri5')
-    solv.set_initial_value(simul.U)
-    while solv.successful:
-        U = solv.integrate(simul.t + simul.pars['dt'])
-        U = simul.hook(U)
-        yield U
+    def __init__(self, model):
+        self.solv = ode(lambda t, u, args: model.F(u, args))
+        self.solv.set_integrator('dopri5')
+
+    def __call__(self, U, t, dt, pars, hook=lambda x: x):
+        solv = self.solv
+        solv.set_initial_value(U, t)
+        solv.set_f_params(pars)
+        U = solv.integrate(t + dt)
+        if solv.successful:
+            U = hook(U)
+            return U, t + dt
+        else:
+            raise RuntimeError
 
 
-def BDF2_scheme(simul):
-    """ """
+class BDF2_scheme:
+    """docstring for FE_scheme"""
 
-    U = simul.U
-    U = simul.hook(U)
-    Id = sps.identity(simul.nvar * simul.pars['Nx'],
-                      format='csc')
-    Uhist = deque([], 2)
-    Uhist.append(U.copy())
-    simul.F = F = simul.solver.compute_F(U,
-                                         **simul.pars)
-    simul.J = J = simul.solver.compute_J_sparse(U,
-                                                **simul.pars)
-    B = simul.pars['dt'] * (F - J @ U) + U
-    J = (Id - simul.pars['dt'] * J)
+    def __init__(self, model):
+        self.model = model
+        self.Uhist = deque([], 2)
 
-    U = sps.linalg.lgmres(J, B, x0=U)[0]
-    U = simul.hook(U)
-    Uhist.append(U.copy())
-    yield U
-    while True:
-        Un = Uhist[-1]
-        Unm1 = Uhist[-2]
-        dt = simul.pars['dt']
-        simul.F = F = simul.solver.compute_F(Un,
-                                             **simul.pars)
-        simul.J = J = simul.solver.compute_J_sparse(U,
-                                                    **simul.pars)
+    def __call__(self, U, t, dt, pars, hook=lambda x: x):
+        N = int(U.size / self.model.nvar)
+        Id = sps.identity(self.model.nvar * N, format='csc')
+        if len(self.Uhist) <= 2:
+            F = self.model.F(U, pars)
+            J = self.model.J(U, pars)
+            B = dt * (F - J @ U) + U
+            J = (Id - dt * J)
+            U = sps.linalg.lgmres(J, B, x0=U)[0]
+            self.Uhist.append(U.copy())
+            return U, t + dt
+        Un = self.Uhist[-1]
+        Unm1 = self.Uhist[-2]
+        F = self.model.F(U, pars)
+        J = self.model.J(U, pars)
         B = ((4 / 3 * Id - 2 / 3 * dt * J) @ Un -
              1 / 3 * Unm1 +
              2 / 3 * dt * F)
         J = (Id -
              2 / 3 * dt * J)
         U = sps.linalg.lgmres(J, B, x0=U)[0]
-        U = simul.hook(U)
-        Uhist.append(U.copy())
-        yield U
+        U = hook(U)
+        self.Uhist.append(U.copy())
+        return U, t + dt
 
 
-def BDFalpha_scheme(simul):
-    """ """
-    Id = sps.identity(simul.nvar * simul.pars['Nx'],
-                      format='csc')
-    Uhist = deque([], 2)
-    Uhist.append(simul.U.copy())
+class theta_scheme:
+    """docstring for FE_scheme"""
 
-    simul.F = F = simul.solver.compute_F(simul.U,
-                                         **simul.pars)
-    U = simul.hook(simul.U)
-    simul.J = J = simul.solver.compute_J_sparse(U,
-                                                **simul.pars)
-    B = simul.pars['dt'] * (F - J @ simul.U) + U
-    J = (Id - simul.pars['dt'] * J)
+    def __init__(self, model):
+        self.model = model
 
-    U = sps.linalg.lgmres(J, B, x0=U)[0]
-    U = simul.hook(U)
-    Uhist.append(U.copy())
-    yield U
-    while True:
-        alpha = simul.pars['alpha']
-        Un = Uhist[-1]
-        Unm1 = Uhist[-2]
-        dt = simul.pars['dt']
-        simul.F = F = simul.solver.compute_F(Un,
-                                             **simul.pars)
-        simul.J = J = simul.solver.compute_J_sparse(U,
-                                                    **simul.pars)
-        B = ((Id + alpha * Id) @ (2 * Id - dt * J) @ Un -
-             (Id / 2 + alpha * Id) @ Unm1 +
-             dt * F)
-        J = (alpha + 3 / 2) * Id - dt * (1 + alpha) * J
-        U = sps.linalg.lgmres(J, B, x0=U)[0]
-        U = simul.hook(U)
-        Uhist.append(U.copy())
-        yield U
-
-
-def BE_scheme(simul):
-    """ """
-
-    U = simul.U
-    U = simul.hook(U)
-    while True:
-        dt = simul.pars['dt']
-        simul.F = F = simul.solver.compute_F(U,
-                                             **simul.pars)
-        simul.J = J = simul.solver.compute_J_sparse(U,
-                                                    **simul.pars)
-        B = dt * (F -
-                  simul.pars['theta'] * J @ U) + U
-        J = (sps.identity(simul.nvar * simul.pars['Nx'],
+    def __call__(self, U, t, dt, pars, hook=lambda x: x):
+        F = self.model.F(U, pars)
+        J = self.model.J(U, pars)
+        B = dt * (F - pars['theta'] * J @ U) + U
+        J = (sps.identity(U.size,
                           format='csc') -
-             simul.pars['theta'] * dt * J)
+             pars['theta'] * dt * J)
         U = sps.linalg.lgmres(J, B, x0=U)[0]
-        U = simul.hook(U)
-        yield U
+        U = hook(U)
+        return U, t + dt
 
 
-def ROS_scheme(simul):
-    """DOI: 10.1007/s10543-006-0095-7
-    A multirate time stepping strategy
-    for stiff ordinary differential equation
-    V. Savcenco and al.
+class ROS_scheme:
+    """docstring for FE_scheme"""
 
-    Parameters
-    ----------
+    def __init__(self, model):
+        self.gamma = 1 - 1 / 2 * np.sqrt(2)
+        self.model = model
 
-    Returns
-    -------
-
-
-    """
-
-    U = simul.U
-    U = simul.hook(U)
-    gamma = 1 - 1 / 2 * np.sqrt(2)
-    while True:
-        dt = simul.pars['dt']
-        simul.J = J = simul.solver.compute_J_sparse(U,
-                                                    **simul.pars)
-        J = sps.eye(U.size, format='csc') - gamma * dt * J
+    def __call__(self, U, t, dt, pars, hook=lambda x: x):
+        J = self.model.J(U, pars)
+        J = sps.eye(U.size, format='csc') - self.gamma * dt * J
         luf = sps.linalg.splu(J)
-        F = simul.solver.compute_F(U, **simul.pars)
+        F = self.model.F(U, pars)
         k1 = luf.solve(dt * F)
-        F = simul.solver.compute_F(U + k1, **simul.pars)
+        F = self.model.F(U + k1, pars)
         k2 = luf.solve(dt * F - 2 * k1)
 
         U = U + 3 / 2 * k1 + 1 / 2 * k2
-        U = simul.hook(U)
-        yield U
+        U = hook(U)
+        return U, t + dt
 
 
-def ROS_vart_scheme(simul):
-    """DOI: 10.1007/s10543-006-0095-7
-    A multirate time stepping strategy
-    for stiff ordinary differential equation
-    V. Savcenco and al.
+class ROS_vart_scheme:
+    """docstring for FE_scheme"""
 
-    Parameters
-    ----------
+    def __init__(self, model):
+        self.model = model
+        self.gamma = 1 - 1 / 2 * np.sqrt(2)
+        self.internal_dt = 1E-4
 
-    Returns
-    -------
-
-
-    """
-
-    U = simul.U
-    U = simul.hook(U)
-    gamma = 1 - 1 / 2 * np.sqrt(2)
-    t = simul.t
-
-    dt = 1E-4
-    next_time_step = t + simul.pars['dt']
-
-    # Uhist = deque([U], 3)
-    # thist = deque([t], 3)
-
-    def one_step(U, dt):
+    def one_step(self, U, dt, pars):
         """
 
         Parameters
@@ -201,45 +129,53 @@ def ROS_vart_scheme(simul):
         """
 
         err = None
-        while (err is None or err > simul.pars['tol']):
-            simul.J = J = simul.solver.compute_J_sparse(U,
-                                                        **simul.pars)
-            J = sps.eye(U.size, format='csc') - gamma * dt * J
+        while (err is None or err > pars['tol']):
+            J = self.model.J(U, pars)
+            J = sps.eye(U.size, format='csc') - self.gamma * dt * J
             luf = sps.linalg.splu(J)
-            F = simul.solver.compute_F(U, **simul.pars)
+            F = self.model.F(U, pars)
             k1 = luf.solve(dt * F)
-            F = simul.solver.compute_F(U + k1, **simul.pars)
+            F = self.model.F(U + k1, pars)
             k2 = luf.solve(dt * F - 2 * k1)
 
             Ubar = U + k1
             U_new = U + 3 / 2 * k1 + 1 / 2 * k2
 
             err = norm(U_new - Ubar, ord=np.inf)
-            dt = 0.9 * dt * np.sqrt(simul.pars['tol'] / err)
+            dt = 0.9 * dt * np.sqrt(pars['tol'] / err)
         return U_new, dt, err
-    simul.internal_iter = 0
-    while True:
-        Unew, dt_calc, simul.err = one_step(U, dt)
-        t = t + dt
-        if dt_calc > simul.pars['dt']:
-            dt_calc = simul.pars['dt']
-        dt_new = dt_calc
-        if t + dt_calc >= next_time_step:
-            dt_new = next_time_step - t
-        dt = dt_new
-        U = simul.hook(Unew)
-        simul.driver(t)
-        simul.internal_iter += 1
-        if np.isclose(t, next_time_step):
-            next_time_step += simul.pars['dt']
-            dt = dt_calc
-            yield U
-            simul.internal_iter = 0
-        if simul.internal_iter > simul.pars.get('max_iter',
-                                                simul.internal_iter + 1):
-            raise RuntimeError("Rosebrock internal iteration "
-                               "above max iterations authorized")
-        if dt < simul.pars.get('dt_min',
-                               dt * .5):
-            raise RuntimeError("Rosebrock internal time step "
-                               "less than authorized")
+
+    def __call__(self, U, t, dt, pars, hook=lambda x: x):
+        self.next_time_step = t + dt
+        self.internal_iter = 0
+        while True:
+            logging.debug(f'ROS_vart, iter {self.internal_iter}, t {t}')
+            Unew, dt_calc, self.err = self.one_step(U,
+                                                    self.internal_dt,
+                                                    pars)
+            logging.debug(f'dt computed after err below tol: {dt_calc}')
+            t = t + self.internal_dt
+            logging.debug(f'ROS_vart, t {t}')
+            if dt_calc > dt:
+                dt_calc = dt
+                logging.debug(f'dt computed bigger than asked, '
+                              'falling to dt {dt_calc}')
+            dt_new = dt_calc
+            if t + dt_calc >= self.next_time_step:
+                logging.debug('new t more than next expected time step')
+                dt_new = self.next_time_step - t
+                logging.debug(f'dt falling to {dt_new}')
+            self.internal_dt = dt_new
+            U = hook(Unew)
+            self.internal_iter += 1
+            if np.isclose(t, self.next_time_step):
+                self.next_time_step += dt
+                self.internal_dt = dt_calc
+                return U, self.next_time_step
+            if self.internal_iter > pars.get('max_iter',
+                                             self.internal_iter + 1):
+                raise RuntimeError("Rosebrock internal iteration "
+                                   "above max iterations authorized")
+            if self.internal_dt < pars.get('dt_min', self.internal_dt * .5):
+                raise RuntimeError("Rosebrock internal time step "
+                                   "less than authorized")
