@@ -2,27 +2,28 @@
 # coding=utf8
 
 import logging
+from itertools import product
 
 import numpy as np
 import scipy.sparse as sps
-from sympy import (Function, Matrix, MatrixSymbol, Symbol, Wild, symbols,
+from sympy import (Derivative, Function, Matrix, MatrixSymbol, Symbol, symbols,
                    sympify)
 from sympy.utilities.autowrap import ufuncify
-from typing import Union
 from toolz import memoize
+from typing import Union
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
 @memoize
-def get_indices(N, window_range, nvar):
+def get_indices(N, window_range, nvar, mode):
     i = np.arange(N)[:, np.newaxis]
     idx = np.arange(N * nvar).reshape((nvar, N), order='F')
     idx = np.pad(idx, ((0, 0),
                        (int((window_range - 1) / 2),
                         int((window_range - 1) / 2))),
-                 mode='wrap').flatten('F')
+                 mode=mode).flatten('F')
     unknowns_idx = np.arange(window_range *
                              nvar) + i * nvar
     rows = np.tile(np.arange(nvar),
@@ -34,6 +35,77 @@ def get_indices(N, window_range, nvar):
     return idx, unknowns_idx, rows, cols
 
 
+class ModelRoutine:
+    def __init__(self, matrix, model):
+        self.matrix = matrix
+        self.args = model.sargs
+        self.ufunc = np.array([ufuncify(self.args, func)
+                               for func
+                               in np.array(self.matrix)
+                               .flatten(order='F')])
+        self.model = model
+
+    def __repr__(self):
+        return self.matrix.__repr__()
+
+
+class F_Routine(ModelRoutine):
+    def __call__(self, unknowns, pars):
+        unknowns = np.array(unknowns).flatten('F')
+        nvar, N = len(self.model.vars), int(unknowns.size /
+                                            len(self.model.vars))
+        fpars = {key: pars[key] for key in self.model.pars}
+        fpars['dx'] = pars['dx']
+        mode = 'wrap' if self.model.periodic else 'edge'
+        F = np.zeros((nvar, N))
+
+        unknowns = np.pad(unknowns.reshape((nvar, N), order='F'),
+                          ((0, 0),
+                           ((int((self.model.window_range - 1) / 2)),
+                            int((self.model.window_range - 1) / 2))),
+                          mode=mode)
+        uargs = np.dstack([[U[i: U.size - self.model.window_range + i + 1]
+                            for i in range(self.model.window_range)]
+                           for U in unknowns])
+        uargs = np.rollaxis(uargs, 2, start=0)
+        uargs = uargs.reshape((uargs.shape[0] * uargs.shape[1],
+                               -1), order='F')
+
+        pargs = [pars[key] for key in self.model.pars] + [pars['dx']]
+        for i, ufunc in enumerate(self.ufunc):
+            F[i, :] = ufunc((*uargs.tolist() + pargs))
+        return F.flatten('F')
+
+
+class J_Routine(ModelRoutine):
+    def __call__(self, unknowns, pars, sparse=True):
+        unknowns = np.array(unknowns).flatten('F')
+        nvar, N = len(self.model.vars), int(unknowns.size /
+                                            len(self.model.vars))
+        fpars = {key: pars[key] for key in self.model.pars}
+        fpars['dx'] = pars['dx']
+        mode = 'wrap' if self.model.periodic else 'edge'
+        J = np.zeros((self.model.window_range * nvar ** 2, N))
+
+        (idx, unknowns_idx,
+         rows, cols) = get_indices(N,
+                                   self.model.window_range,
+                                   self.model.nvar,
+                                   mode)
+
+        uargs = unknowns[idx[unknowns_idx].T]
+        pargs = [pars[key] for key in self.model.pars] + [pars['dx']]
+        for i, ujacob in enumerate(self.ufunc):
+            Ji = ujacob((*uargs.tolist() + pargs))
+            J[i] = Ji
+        J = sps.coo_matrix((J.T.flatten(),
+                            (rows.flatten(),
+                             cols.flatten())),
+                           (N * self.model.nvar,
+                            N * self.model.nvar))
+        return J.tocsr() if sparse else J.todense()
+
+
 class Model:
     """docstring for Model"""
 
@@ -42,12 +114,20 @@ class Model:
                  vars: Union[str, list, tuple],
                  pars: Union[str, list, tuple, None],
                  periodic: bool=False) -> None:
+        self.N = Symbol('N', integer=True)
+        x, dx = self.x, self.dx = symbols('x dx')
+        self.sympify_namespace = {'x': self.x,
+                                  'dx': lambda U: Derivative(U, x),
+                                  'dxx': lambda U: Derivative(U, x, x),
+                                  'dxxx': lambda U: Derivative(U, x, x, x),
+                                  'dxxxx': lambda U: Derivative(U, x, x, x, x)}
+        self.sympify_namespace.update({'d%s%s' % ('x' * order, var):
+                                       Derivative(Symbol(var), x, order)
+                                       for order, var
+                                       in product(range(1, 5), vars)})
         logging.debug('enter __init__ Model')
         self.J_sparse_cache = None
         self.periodic = periodic
-
-        self.N = Symbol('N', integer=True)
-        self.x, self.dx = symbols('x dx')
 
         (self.funcs,
          self.vars,
@@ -59,8 +139,9 @@ class Model:
          self.symbolic_vars,
          self.symbolic_pars) = self._sympify_model(funcs, vars, pars)
 
-        self.total_symbolic_vars = {str(svar):
-                                    {(svar, 0)} for svar in self.symbolic_vars}
+        self.total_symbolic_vars = {str(svar.func):
+                                    {(svar.func, 0)}
+                                    for svar in self.symbolic_vars}
 
         approximated_funcs = self._approximate_derivative(self.symbolic_funcs,
                                                           self.symbolic_vars)
@@ -78,67 +159,8 @@ class Model:
                 for unknown in unknowns]
             for func in approximated_funcs])
 
-        self.F_matrix = Matrix(F_array)
-        self.J_matrix = Matrix(J_array)
-
-    def compile(self):
-        self.ufuncs_bulk = np.array([ufuncify(self.sargs,
-                                              func)
-                                     for func
-                                     in np.array(self.F_matrix)])
-        self.ujacobs_bulk = np.array([ufuncify(self.sargs,
-                                               jacob)
-                                      for jacob
-                                      in np.array(self.J_matrix)
-                                      .flatten(order='F')])
-
-    def F(self, unknowns, pars):
-        unknowns = np.array(unknowns).flatten('F')
-        nvar, N = len(self.vars), int(unknowns.size / len(self.vars))
-        fpars = {key: pars[key] for key in self.pars}
-        fpars['dx'] = pars['dx']
-        F = np.zeros((nvar, N))
-        if self.periodic:
-            unknowns = np.pad(unknowns.reshape((nvar, N), order='F'),
-                              ((0, 0),
-                               ((int((self.window_range - 1) / 2)),
-                                int((self.window_range - 1) / 2))),
-                              mode='wrap')
-        uargs = np.dstack([[U[i: U.size - self.window_range + i + 1]
-                            for i in range(self.window_range)]
-                           for U in unknowns])
-        uargs = np.rollaxis(uargs, 2, start=0)
-        uargs = uargs.reshape((uargs.shape[0] * uargs.shape[1],
-                               -1), order='F')
-
-        pargs = [pars[key] for key in self.pars] + [pars['dx']]
-        for i, ufunc in enumerate(self.ufuncs_bulk):
-            F[i, :] = ufunc((*uargs.tolist() + pargs))
-        return F.flatten('F')
-
-    def J(self, unknowns, pars):
-        unknowns = np.array(unknowns).flatten('F')
-        nvar, N = len(self.vars), int(unknowns.size / len(self.vars))
-        fpars = {key: pars[key] for key in self.pars}
-        fpars['dx'] = pars['dx']
-        J = np.zeros((self.window_range * nvar ** 2, N))
-
-        (idx, unknowns_idx,
-         rows, cols) = get_indices(N,
-                                   self.window_range,
-                                   self.nvar)
-
-        uargs = unknowns[idx[unknowns_idx].T]
-        pargs = [pars[key] for key in self.pars] + [pars['dx']]
-        for i, ujacob in enumerate(self.ujacobs_bulk):
-            Ji = ujacob((*uargs.tolist() + pargs))
-            J[i] = Ji
-        J = sps.coo_matrix((J.T.flatten(),
-                            (rows.flatten(),
-                             cols.flatten())),
-                           (N * self.nvar,
-                            N * self.nvar))
-        return J.tocsr()
+        self.F = F_Routine(Matrix(F_array), self)
+        self.J = J_Routine(Matrix(J_array), self)
 
     def set_periodic_bdc(self):
         self.periodic = True
@@ -188,6 +210,7 @@ class Model:
         return unknowns
 
     def _coerce_input(self, funcs, vars, pars):
+
         if isinstance(funcs, (str, )):
             funcs = [funcs]
         if isinstance(vars, (str, )):
@@ -216,7 +239,7 @@ class Model:
             Up1 = Symbol('%s_p1' % var_label)
             self.total_symbolic_vars[var_label].add((Um1, -1))
             self.total_symbolic_vars[var_label].add((Up1, 1))
-            return (Up1 - 2 * U + Um1) / dx**2
+            return (Up1 - 2 * U + Um1) / dx ** 2
         if order == 3:
             Um1 = Symbol('%s_m1' % var_label)
             Um2 = Symbol('%s_m2' % var_label)
@@ -227,6 +250,18 @@ class Model:
             self.total_symbolic_vars[var_label].add((Um2, -2))
             self.total_symbolic_vars[var_label].add((Up2, 2))
             return (-1 / 2 * Um2 + Um1 - Up1 + 1 / 2 * Up2) / dx ** 3
+        if order == 4:
+            Um1 = Symbol('%s_m1' % var_label)
+            Um2 = Symbol('%s_m2' % var_label)
+            Up1 = Symbol('%s_p1' % var_label)
+            Up2 = Symbol('%s_p2' % var_label)
+            self.total_symbolic_vars[var_label].add((Um1, -1))
+            self.total_symbolic_vars[var_label].add((Up1, 1))
+            self.total_symbolic_vars[var_label].add((Um2, -2))
+            self.total_symbolic_vars[var_label].add((Up2, 2))
+            return (Um2 - 4 * Um1 + 6 * U - 4 * Up1 + Up2) / dx ** 4
+        raise NotImplementedError('Finite difference up'
+                                  'to 5th order not implemented yet')
 
     def _sympify_model(self,
                        funcs: tuple,
@@ -234,32 +269,32 @@ class Model:
                        pars: tuple) -> tuple:
         logging.debug('enter _sympify_model')
 
-        symbolic_vars = symbols(vars)
+        symbolic_vars = tuple([Function(var)(self.x) for var in vars])
         symbolic_pars = symbols(pars)
-        symbolic_funcs = tuple([sympify(func)
+        symbolic_funcs = tuple([sympify(func,
+                                        locals=self.sympify_namespace)
+                                .subs(zip(map(Symbol, vars),
+                                          symbolic_vars)).doit()
                                 for func
                                 in funcs])
         return symbolic_funcs, symbolic_vars, symbolic_pars
 
     def _approximate_derivative(self,
-                                discrete_funcs: tuple,
-                                discrete_vars: tuple) -> tuple:
-        wild_var = Wild('var')
-        wild_order = Wild('order')
-        pattern = Function('dx')(wild_var, wild_order)
+                                symbolic_funcs: tuple,
+                                symbolic_vars: tuple) -> tuple:
 
         logging.debug('enter _approximate_derivative')
         approximated_funcs = []
-        for dfunc in discrete_funcs:
-            afunc = dfunc
-            derivatives = dfunc.find(pattern)
-            for derivative in derivatives:
-                matched = derivative.match(pattern)
-                var = matched[wild_var]
-                order = matched[wild_order]
+        for func in symbolic_funcs:
+            afunc = func
+            for derivative in func.find(Derivative):
+                var = Symbol(str(derivative.args[0].func))
+                order = len(derivative.args) - 1
                 afunc = afunc.replace(
                     derivative,
                     self.finite_diff_scheme(var,
                                             order))
+            afunc = afunc.subs([(var, Symbol(str(var.func)))
+                                for var in symbolic_vars])
             approximated_funcs.append(afunc)
         return tuple(approximated_funcs)
