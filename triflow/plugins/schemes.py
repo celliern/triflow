@@ -6,10 +6,7 @@ import logging
 import scipy.sparse as sps
 from scipy.linalg import norm
 from scipy.integrate import ode
-from collections import deque
-from scipy.optimize import fsolve
 from toolz import memoize
-from collections import deque
 import numpy as np
 
 
@@ -34,7 +31,8 @@ class ROW_general:
         self.b_pred = b_pred
         self.s = len(b)
 
-    def __call__(self, U, t, dt, pars, hook=lambda U, t, pars: U):
+    def __call__(self, fields, t, dt, pars,
+                 hook=lambda fields, t, pars: (fields, pars)):
         if pars.get('time_stepping', False):
             try:
                 if self.b_pred is None:
@@ -44,42 +42,49 @@ class ROW_general:
                         'variable time stepping, falling '
                         'to constant time step = %f' % dt
                     )
-                return self.variable_step(U, t, dt, pars,
+                return self.variable_step(fields, t, dt, pars,
                                           hook=hook)
             except NotImplementedError as e:
                 logging.warning(e)
 
-        U, t, _ = self.fixed_step(U, t, dt, pars,
-                                  hook=hook)
-        U = hook(U, t, pars)
-        return U, t
+        fields, t, _ = self.fixed_step(fields, t, dt, pars,
+                                       hook=hook)
+        fields, pars = hook(fields, t, pars)
+        return fields, t
 
-    def fixed_step(self, U, t, dt, pars, hook=lambda U, t, pars: U):
-        U = hook(U, t, pars)
-        J = self.model.J(U, pars)
-        Id = self.__cache__(U.size)
+    def fixed_step(self, fields, t, dt, pars,
+                   hook=lambda fields, t, pars: (fields, pars)):
+        fields = fields.copy()
+        fields, pars = hook(fields, t, pars)
+        J = self.model.J(fields, pars)
+        Id = self.__cache__(fields.uflat.size)
         A = Id - self.gamma[0, 0] * dt * J
         luf = sps.linalg.splu(A)
         ks = []
         for i in np.arange(self.s):
-            Ui = U + sum([self.alpha[i, j] * ks[j] for j in range(i)])
-            F = self.model.F(Ui, pars)
+            fields_i = fields.fill(fields.uflat +
+                                   sum([self.alpha[i, j] * ks[j]
+                                        for j in range(i)]))
+            F = self.model.F(fields_i, pars)
             ks.append(luf.solve(dt * F + dt * (J @ sum([self.gamma[i, j] *
                                                         ks[j]
                                                         for j
                                                         in range(i)])
                                                if i > 0 else 0)))
+        U = fields.uflat.copy()
         U = U + sum([bi * ki for bi, ki in zip(self.b, ks)])
 
         U_pred = (U + sum([bi * ki
                            for bi, ki
                            in zip(self.b_pred, ks)])
                   if self.b_pred is not None else None)
+        fields = fields.fill(U)
 
-        return U, t + dt, (norm(U - U_pred, np.inf)
-                           if U_pred is not None else None)
+        return fields, t + dt, (norm(U - U_pred, np.inf)
+                                if U_pred is not None else None)
 
-    def variable_step(self, U, t, dt, pars, hook=lambda U, t, pars: U):
+    def variable_step(self, fields, t, dt, pars,
+                      hook=lambda fields, t, pars: (fields, pars)):
 
         self.next_time_step = t + dt
         self.internal_iter = 0
@@ -89,14 +94,14 @@ class ROW_general:
             logging.debug(f'ROS_vart, iter {self.internal_iter}, t {t}')
             self.err = None
             while (self.err is None or self.err > pars['tol']):
-                Unew, _, self.err = self.fixed_step(U,
-                                                    t,
-                                                    dt,
-                                                    pars,
-                                                    hook)
+                newfields, _, self.err = self.fixed_step(fields,
+                                                         t,
+                                                         dt,
+                                                         pars,
+                                                         hook)
                 logging.debug(f"error: {self.err}")
                 dt = (0.9 * dt * np.sqrt(pars['tol'] / self.err))
-            U = Unew
+            fields = newfields
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
             # if dt_calc > dt:
@@ -112,8 +117,8 @@ class ROW_general:
             self.internal_iter += 1
             if np.isclose(t, self.next_time_step):
                 self.internal_dt = dt
-                U = hook(U, t, pars)
-                return U, self.next_time_step
+                fields, pars = hook(fields, t, pars)
+                return fields, self.next_time_step
             if self.internal_iter > pars.get('max_iter',
                                              self.internal_iter + 1):
                 raise RuntimeError("Rosebrock internal iteration "
@@ -249,60 +254,35 @@ class RODASPR(ROW_general):
 class scipy_ode:
     """docstring for FE"""
 
-    def __init__(self, model, integrator='dopri5', **integrator_kwargs):
-        self.solv = ode(lambda t, u, pars, hook: model.F(hook(u, t, pars),
-                                                         pars),
-                        jac=lambda t, u, pars, hook: model.J(hook(u, t, pars),
-                                                             pars,
-                                                             sparse=False))
+    def __init__(self, model, integrator='vode', **integrator_kwargs):
+        def func_scipy_proxy(t, U, fields, pars, hook):
+            fields = fields.fill(U)
+            fields, pars = hook(fields, t, pars)
+            return model.F(fields, pars)
+
+        def jacob_scipy_proxy(t, U, fields, pars, hook):
+            fields = fields.fill(U)
+            fields, pars = hook(fields, t, pars)
+            return model.J(fields, pars, sparse=False)
+
+        self.solv = ode(func_scipy_proxy,
+                        jac=jacob_scipy_proxy)
         self.solv.set_integrator(integrator, **integrator_kwargs)
 
-    def __call__(self, U, t, dt, pars, hook=lambda U, t, pars: U):
+    def __call__(self, fields, t, dt, pars,
+                 hook=lambda fields, t, pars: (fields, pars)):
         solv = self.solv
-        U = hook(U, t, pars)
-        solv.set_initial_value(U, t)
-        solv.set_f_params(pars, hook)
-        solv.set_jac_params(pars, hook)
+        fields, pars = hook(fields, t, pars)
+        solv.set_initial_value(fields.uflat, t)
+        solv.set_f_params(fields, pars, hook)
+        solv.set_jac_params(fields, pars, hook)
         U = solv.integrate(t + dt)
+        fields = fields.fill(U)
         if solv.successful:
-            U = hook(U, t + dt, pars)
-            return U, t + dt
+            fields, _ = hook(fields, t + dt, pars)
+            return fields, t + dt
         else:
             raise RuntimeError
-
-
-class BDF2:
-    """docstring for FE"""
-
-    def __init__(self, model):
-        self.model = model
-        self.Uhist = deque([], 2)
-
-    def __call__(self, U, t, dt, pars, hook=lambda U, t, pars: U):
-        U = hook(U, t, pars)
-        N = int(U.size / self.model.nvar)
-        Id = sps.identity(self.model.nvar * N, format='csc')
-        if len(self.Uhist) <= 2:
-            F = self.model.F(U, pars)
-            J = self.model.J(U, pars)
-            B = dt * (F - J @ U) + U
-            J = (Id - dt * J)
-            U = sps.linalg.lgmres(J, B, x0=U)[0]
-            self.Uhist.append(U.copy())
-            return U, t + dt
-        Un = self.Uhist[-1]
-        Unm1 = self.Uhist[-2]
-        F = self.model.F(U, pars)
-        J = self.model.J(U, pars)
-        B = ((4 / 3 * Id - 2 / 3 * dt * J) @ Un -
-             1 / 3 * Unm1 +
-             2 / 3 * dt * F)
-        J = (Id -
-             2 / 3 * dt * J)
-        U = sps.linalg.lgmres(J, B, x0=U)[0]
-        U = hook(U, t + dt, pars)
-        self.Uhist.append(U.copy())
-        return U, t + dt
 
 
 class Theta:
@@ -312,25 +292,18 @@ class Theta:
         self.model = model
         self.theta = theta
 
-    def __call__(self, U, t, dt, pars, hook=lambda U, t, pars: U):
-        U = hook(U, t, pars)
-        F = self.model.F(U, pars)
-        J = self.model.J(U, pars)
+    def __call__(self, fields, t, dt, pars,
+                 hook=lambda fields, t, pars: (fields, pars),
+                 solver=sps.linalg.spsolve):
+        fields = fields.copy()
+        fields, pars = hook(fields, t, pars)
+        F = self.model.F(fields, pars)
+        J = self.model.J(fields, pars)
+        U = fields.uflat
         B = dt * (F - self.theta * J @ U) + U
         J = (sps.identity(U.size,
                           format='csc') -
              self.theta * dt * J)
-        U = sps.linalg.lgmres(J, B, x0=U)[0]
-        U = hook(U, t + dt, pars)
-        return U, t + dt
-
-
-class stationnary:
-    """docstring for FE_scheme"""
-
-    def __init__(self, model):
-        self.model = model
-
-    def __call__(self, U, pars, hook=lambda U, t, pars: U):
-        return fsolve(lambda U, pars: self.model.F(hook(U, 0, pars), pars),
-                      U, args=(pars, ))
+        fields = fields.fill(solver(J, B))
+        fields, _ = hook(fields, t + dt, pars)
+        return fields, t + dt
