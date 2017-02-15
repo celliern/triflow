@@ -3,16 +3,13 @@
 
 import logging
 from itertools import product
-
 import numpy as np
-import scipy.sparse as sps
 from sympy import (Derivative, Function, Matrix, Symbol, symbols,
                    sympify)
-from sympy.utilities.autowrap import ufuncify
-from toolz import memoize
 from functools import partial
 from typing import Union
 from recordclass import recordclass
+from triflow.core.routines import F_Routine, J_Routine, H_Routine
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -95,23 +92,11 @@ def generate_fields_container(vars, fields):
     return Fields
 
 
-@memoize
-def get_indices(N, window_range, nvar, mode):
-    i = np.arange(N)[:, np.newaxis]
-    idx = np.arange(N * nvar).reshape((nvar, N), order='F')
-    idx = np.pad(idx, ((0, 0),
-                       (int((window_range - 1) / 2),
-                        int((window_range - 1) / 2))),
-                 mode=mode).flatten('F')
-    unknowns_idx = np.arange(window_range *
-                             nvar) + i * nvar
-    rows = np.tile(np.arange(nvar),
-                   window_range * nvar) + i * nvar
-    cols = np.repeat(np.arange(window_range * nvar),
-                     nvar) + i * nvar
-    rows = rows
-    cols = idx[cols]
-    return idx, unknowns_idx, rows, cols
+def reduce_model(funcs, vars, pars, fields, helpers, periodic):
+    model = Model(funcs, vars, pars,
+                  fields, helpers,
+                  periodic, reduced=True)
+    return model
 
 
 class Model:
@@ -123,7 +108,8 @@ class Model:
                  pars: Union[str, list, tuple, None]=None,
                  fields: Union[str, list, tuple, None]=None,
                  helpers: Union[dict, tuple, None]=None,
-                 periodic: bool=False) -> None:
+                 periodic: bool=False,
+                 reduced: bool=False) -> None:
         self.N = Symbol('N', integer=True)
         x, dx = self.x, self.dx = symbols('x dx')
         y, dy = self.y, self.dy = symbols('y dy')
@@ -187,14 +173,13 @@ class Model:
         self.dfields = self._extract_unknowns(
             vars + fields,
             bounds, self.total_symbolic_vars).flatten('F')
+        self._compile(F_array, J_array, approximated_helpers, reduced=reduced)
 
-        self._compile(F_array, J_array, approximated_helpers)
-
-    def _compile(self, F_array, J_array, approximated_helpers):
-        self.F = F_Routine(Matrix(F_array), self)
-        self.H = {key: H_Routine(value, self)
+    def _compile(self, F_array, J_array, approximated_helpers, reduced=False):
+        self.F = F_Routine(Matrix(F_array), self, reduced=reduced)
+        self.H = {key: H_Routine(value, self, reduced=reduced)
                   for key, value in approximated_helpers.items()}
-        self.J = J_Routine(Matrix(J_array), self)
+        self.J = J_Routine(Matrix(J_array), self, reduced=reduced)
 
     @property
     def fields_template(self):
@@ -357,109 +342,7 @@ class Model:
             approximated_funcs.append(afunc.expand())
         return tuple(approximated_funcs)
 
-
-class ModelRoutine:
-    def __init__(self, matrix, model):
-        self.matrix = matrix
-        self.args = model.sargs
-        self.ufunc = np.array(list(map(partial(ufuncify, self.args),
-                                       np.array(self.matrix)
-                                       .flatten(order='F'))))
-        self.model = model
-
-    def __repr__(self):
-        return self.matrix.__repr__()
-
-
-class H_Routine(ModelRoutine):
-    def __call__(self, fields, pars):
-        N = fields.size
-        middle_point = int((self.model.window_range - 1) / 2)
-        fpars = {key: pars[key] for key in self.model.pars}
-        fpars['dx'] = pars['dx']
-        mode = 'wrap' if self.model.periodic else 'edge'
-        F = np.zeros((1, N))
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.model.window_range)],
-                               axis=1).T
-        pargs = [pars[key] for key in self.model.pars] + [pars['dx']]
-        for i, ufunc in enumerate(self.ufunc):
-            F[i] = ufunc((*uargs.tolist() + pargs)).squeeze()
-        return F.flatten('F')
-
-
-class F_Routine(ModelRoutine):
-    def __call__(self, fields, pars):
-        nvar, N = len(fields.vars), fields.size
-        middle_point = int((self.model.window_range - 1) / 2)
-        fpars = {key: pars[key] for key in self.model.pars}
-        fpars['dx'] = pars['dx']
-        mode = 'wrap' if self.model.periodic else 'edge'
-        F = np.zeros((nvar, N))
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.model.window_range)],
-                               axis=1).T
-        pargs = [pars[key] for key in self.model.pars] + [pars['dx']]
-        for i, ufunc in enumerate(self.ufunc):
-            F[i, :] = ufunc((*uargs.tolist() + pargs))
-        return F.flatten('F')
-
-
-class J_Routine(ModelRoutine):
-    def __call__(self, fields, pars, sparse=True):
-        nvar, N = len(fields.vars), fields.size
-        middle_point = int((self.model.window_range - 1) / 2)
-        fpars = {key: pars[key] for key in self.model.pars}
-        fpars['dx'] = pars['dx']
-        mode = 'wrap' if self.model.periodic else 'edge'
-        J = np.zeros((self.model.window_range * nvar ** 2, N))
-
-        (idx, unknowns_idx,
-         rows, cols) = get_indices(N,
-                                   self.model.window_range,
-                                   nvar,
-                                   mode)
-
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.model.window_range)],
-                               axis=1).T
-        pargs = [pars[key] for key in self.model.pars] + [pars['dx']]
-        for i, ujacob in enumerate(self.ufunc):
-            Ji = ujacob((*uargs.tolist() + pargs))
-            J[i] = Ji
-        J = sps.csr_matrix((J.T.flatten(),
-                            (rows.flatten(),
-                             cols.flatten())),
-                           (N * self.model.nvar,
-                            N * self.model.nvar))
-        return J if sparse else J.todense()
-
-    def num_approx(self, fields, pars, eps=1E-8):
-        nvar, N = len(fields.vars), fields.size
-        fpars = {key: pars[key] for key in self.model.pars}
-        fpars['dx'] = pars['dx']
-        J = np.zeros((N * nvar, N * nvar))
-        indices = np.indices(fields.uarray.shape)
-        for i, (var_index, node_index) in enumerate(zip(*map(np.ravel,
-                                                             indices))):
-            fields_plus = fields.copy()
-            fields_plus.uarray[var_index, node_index] += eps
-            fields_moins = fields.copy()
-            fields_moins.uarray[var_index, node_index] -= eps
-            Fplus = self.model.F(fields_plus, pars)
-            Fmoins = self.model.F(fields_moins, pars)
-            J[i] = (Fplus - Fmoins) / (2 * eps)
-
-        return J.T
+    def __reduce__(self):
+        return (reduce_model, (self.funcs, self.vars,
+                               self.pars, self.fields,
+                               self.helpers, self.periodic))
