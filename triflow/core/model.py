@@ -9,7 +9,8 @@ from sympy import (Derivative, Function, Matrix, Symbol, symbols,
 from functools import partial
 from typing import Union
 from recordclass import recordclass
-from triflow.core.routines import F_Routine, J_Routine, H_Routine
+from pickle import dumps, loads, dump, load
+from triflow.core.routines import (F_Routine, J_Routine, H_Routine)
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -92,10 +93,20 @@ def generate_fields_container(vars, fields):
     return Fields
 
 
-def reduce_model(funcs, vars, pars, fields, helpers, periodic):
+def load_model(filename):
+    with open(filename, 'rb') as f:
+        return load(f)
+
+
+def reduce_model(funcs, vars, pars,
+                 fields, helpers,
+                 pickled_F, pickled_J, pickled_H):
     model = Model(funcs, vars, pars,
-                  fields, helpers,
-                  periodic, reduced=True)
+                  fields, helpers, reduced=True)
+    model.F = loads(pickled_F)
+    model.J = loads(pickled_J)
+    model.H = {key: loads(value) for key, value in pickled_H.items()}
+
     return model
 
 
@@ -108,14 +119,12 @@ class Model:
                  pars: Union[str, list, tuple, None]=None,
                  fields: Union[str, list, tuple, None]=None,
                  helpers: Union[dict, tuple, None]=None,
-                 periodic: bool=False,
                  reduced: bool=False) -> None:
         self.N = Symbol('N', integer=True)
         x, dx = self.x, self.dx = symbols('x dx')
         y, dy = self.y, self.dy = symbols('y dy')
 
         logging.debug('enter __init__ Model')
-        self.periodic = periodic
 
         (self.funcs,
          self.vars,
@@ -173,26 +182,21 @@ class Model:
         self.dfields = self._extract_unknowns(
             vars + fields,
             bounds, self.total_symbolic_vars).flatten('F')
-        self._compile(F_array, J_array, approximated_helpers, reduced=reduced)
+        if not reduced:
+            self._compile(F_array, J_array, approximated_helpers)
 
-    def _compile(self, F_array, J_array, approximated_helpers, reduced=False):
-        self.F = F_Routine(Matrix(F_array), self, reduced=reduced)
-        self.H = {key: H_Routine(value, self, reduced=reduced)
+    def _compile(self, F_array, J_array, approximated_helpers):
+        self.F = F_Routine(Matrix(F_array), self.sargs,
+                           self.window_range, self.pars)
+        self.H = {key: H_Routine(value, self.sargs,
+                                 self.window_range, self.pars)
                   for key, value in approximated_helpers.items()}
-        self.J = J_Routine(Matrix(J_array), self, reduced=reduced)
+        self.J = J_Routine(Matrix(J_array), self.sargs,
+                           self.window_range, self.pars)
 
     @property
     def fields_template(self):
         return generate_fields_container(self.vars, self.fields)
-
-    def set_periodic_bdc(self):
-        self.periodic = True
-
-    def set_left_bdc(self, kind, value):
-        pass
-
-    def set_right_bdc(self, kind, value):
-        pass
 
     @property
     def args(self):
@@ -203,6 +207,10 @@ class Model:
         return ([self.x] +
                 list(self.dfields) +
                 list(self.symbolic_pars) + [self.dx])
+
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            return dump(self, f)
 
     def _extract_bounds(self, vars, dict_symbol):
         bounds = (0, 0)
@@ -343,6 +351,10 @@ class Model:
         return tuple(approximated_funcs)
 
     def __reduce__(self):
+        pickled_F = dumps(self.F)
+        pickled_J = dumps(self.J)
+        pickled_H = {key: dumps(value) for key, value in self.H.items()}
         return (reduce_model, (self.funcs, self.vars,
                                self.pars, self.fields,
-                               self.helpers, self.periodic))
+                               self.helpers, pickled_F, pickled_J, pickled_H
+                               ))
