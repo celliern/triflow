@@ -173,8 +173,8 @@ class Model:
             vars,
             bounds, self.total_symbolic_vars).flatten('F')
 
-        F_array = np.array(approximated_funcs)
-        J_array = np.array([
+        self.F_array = F_array = np.array(approximated_funcs)
+        self.J_array = J_array = np.array([
             [func.diff(unknown).expand()
                 for unknown in unknowns]
             for func in approximated_funcs])
