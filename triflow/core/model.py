@@ -102,7 +102,7 @@ def reduce_model(funcs, vars, pars,
                  fields, helpers,
                  pickled_F, pickled_J, pickled_H):
     model = Model(funcs, vars, pars,
-                  fields, helpers, reduced=True)
+                  fields, helpers)
     model.F = loads(pickled_F)
     model.J = loads(pickled_J)
     model.H = {key: loads(value) for key, value in pickled_H.items()}
@@ -118,8 +118,7 @@ class Model:
                  vars: Union[str, list, tuple],
                  pars: Union[str, list, tuple, None]=None,
                  fields: Union[str, list, tuple, None]=None,
-                 helpers: Union[dict, tuple, None]=None,
-                 reduced: bool=False) -> None:
+                 helpers: Union[dict, tuple, None]=None) -> None:
         self.N = Symbol('N', integer=True)
         x, dx = self.x, self.dx = symbols('x dx')
         y, dy = self.y, self.dy = symbols('y dy')
@@ -182,16 +181,18 @@ class Model:
         self.dfields = self._extract_unknowns(
             vars + fields,
             bounds, self.total_symbolic_vars).flatten('F')
-        if not reduced:
-            self._compile(F_array, J_array, approximated_helpers)
+        self._compile(F_array, J_array, approximated_helpers)
 
     def _compile(self, F_array, J_array, approximated_helpers):
-        self.F = F_Routine(Matrix(F_array), self.sargs,
+        logging.debug('compile F')
+        self.F = F_Routine(F_array, self.sargs,
                            self.window_range, self.pars)
+        logging.debug('compile H')
         self.H = {key: H_Routine(value, self.sargs,
                                  self.window_range, self.pars)
                   for key, value in approximated_helpers.items()}
-        self.J = J_Routine(Matrix(J_array), self.sargs,
+        logging.debug('compile J')
+        self.J = J_Routine(J_array, self.sargs,
                            self.window_range, self.pars)
 
     @property
