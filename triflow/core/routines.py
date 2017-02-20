@@ -119,11 +119,14 @@ class F_Routine(ModelRoutine):
 
 class J_Routine(ModelRoutine):
     def __init__(self, matrix, args, window_range, pars, reduced=False):
-        super().__init__(matrix, args, window_range, pars, reduced=False)
-        self.matrix = self.matrix.flatten('F')
+        super().__init__(matrix, args, window_range, pars, reduced=True)
+        matrix = self.matrix
+        matrix = matrix.flatten('F')
         self.sparse_indices = np.where(matrix != 0)
 
-        self.matrix = self.matrix[self.sparse_indices]
+        self.matrix = matrix[self.sparse_indices]
+        if not reduced:
+            self.make_ufuncs()
 
     def make_ufuncs(self):
         self.ufunc = theano_function(inputs=self.args,

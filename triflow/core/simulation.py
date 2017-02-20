@@ -5,90 +5,41 @@ import itertools as it
 import logging
 from uuid import uuid1
 
-import numpy as np
-
-from ..plugins import displays, schemes
+from ..plugins import schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
-def rebuild_simul(id, solver, U, t, display,
-                  writers, signals,
-                  drivers, internal_iter, err,
-                  scheme, i, pars, conf, status, history):
-    new_simul = Simulation(solver, U, t,
-                           id=id,
-                           **pars)
-    new_simul.display = display
-    new_simul.writers = writers.copy()
-    new_simul.signals = signals.copy()
-    new_simul.drivers = drivers.copy()
-    new_simul.internal_iter = internal_iter
-    new_simul.err = err
-    new_simul.scheme = scheme
-    new_simul.i = i
-    new_simul.conf = conf
-    new_simul.status = status
-    new_simul.history = history
-    return new_simul
-
-
 class Simulation(object):
     """ """
 
-    def __init__(self, solver, U0, t0=0, id=None, **pars):
+    def __init__(self, model, fields, t, pars, id=None,
+                 hook=lambda fields, t, pars: (fields, pars)):
         self.id = str(uuid1()) if id is None else id
-        self.solver = solver
+        self.model = model
         self.pars = pars
-        self.nvar = self.solver.nvar
-        U0 = solver.flatten_fields(U0)
+        self.nvar = fields.size
 
-        logging.debug('U field after flattend: %s' % (' - '.join(map(str,
-                                                                     U0.shape)
-                                                                 )
-                                                      )
-                      )
-
-        self.U = U0
-        self.t = t0
+        self.fields = fields
+        self.t = t
         self.i = 0
-        self.x, self.pars['dx'] = np.linspace(0, pars['L'], pars['Nx'],
-                                              retstep=True)
-        self.iterator = self.compute()
-        self.internal_iter = None
-        self.err = None
+        self.iterator = it.takewhile(self.takewhile, self.compute())
         self.drivers = []
         self.writers = []
-        self.display = displays.simple_display
-        self.scheme = schemes.ROS_vart_scheme
+        self.scheme = schemes.RODASPR(model)
         self.signals = {}
-        self.conf = {}
         self.status = 'created'
         self.history = None
+        self.hook = hook
 
     def compute(self):
-        """ """
-        nvar = self.nvar
-        self.pars['Nx'] = int(self.U.size / nvar)
-        self.U = self.hook(self.U)
-
-        display = self._init_display_()
-        writers = self._init_writers_()
-        numerical_scheme = self._init_scheme_()
-        self.status = 'started'
-        yield next(display)
-
-        for self.i, self.U in enumerate(filter(
-                self.filter,
-                it.takewhile(self.takewhile,
-                             numerical_scheme))):
-            self.t += self.pars['dt']
-            self.driver(self.t)
-            self.write(writers)
-            self.history = next(display)
-            yield self.history
-        self.status = 'started'
+        while True:
+            self.fields, self.pars = self.hook(self.fields, self.t, self.pars)
+            self.fields, self.t = self.scheme(self.fields,
+                                              self.t, self.pars['dt'],
+                                              self.pars, hook=self.hook)
+            yield self.fields, self.t
 
     def compute_until_finished(self):
         logging.info('simulation %s computing until the end' % self.id)
@@ -105,67 +56,8 @@ class Simulation(object):
     def add_driver(self, driver):
         self.drivers.append(driver)
 
-    def add_writer(self, writer, replace=True):
-        try:
-            assert not(writer.writer_type in [writer.writer_type
-                                              for writer
-                                              in self.writers]), \
-                'Already %s writer attached' % writer.writer_type
-        except AttributeError:
-            logging.warning('writer_type not found')
-        except AssertionError:
-            logging.warning('Already %s writer attached, replacing..' %
-                            writer.writer_type)
-            [self.writers.remove(oldwriter)
-             for oldwriter in self.writers
-             if getattr(oldwriter, 'writer_type', None) == writer.type]
-        self.writers.append(writer)
-
-    def _init_writers_(self):
-        return [writer(self) for writer in self.writers]
-
-    def _init_display_(self):
-        return self.display(self)
-
-    def set_display(self, display):
-        self.display = display
-
-    def set_hook(self, hook):
-        self.hook = hook
-
     def set_scheme(self, scheme):
-        if scheme == 'theta':
-            if self.pars['theta'] != 0:
-                self.scheme = schemes.BE_scheme
-                return
-            self.scheme = schemes.FE_scheme
-            return
-        if scheme == 'BDF':
-            self.scheme = schemes.BDF2_scheme
-            return
-        if scheme == 'BDF-alpha':
-            self.scheme = schemes.BDFalpha_scheme
-            return
-        if scheme == 'SDIRK':
-            self.scheme = schemes.SDIRK_scheme
-            return
-        if scheme == 'ROS':
-            self.scheme = schemes.ROS_scheme
-            return
-        if scheme == 'ROS_vart':
-            self.scheme = schemes.ROS_vart_scheme
-            return
-        if callable(scheme):
-            self.scheme = scheme
-            return
-        raise NotImplementedError('method not implemented')
-
-    def _init_scheme_(self):
-        return self.scheme(self)
-
-    def write(self, writers):
-        for writer in writers:
-            next(writer)
+        self.scheme = scheme(self.model)
 
     def driver(self, t):
         """
@@ -188,7 +80,7 @@ class Simulation(object):
         for field, signal in self.signals.items():
             self.pars['%sini' % field] = signal(t)
 
-    def takewhile(self, U):
+    def takewhile(self, outputs):
         """
 
         Parameters
@@ -203,83 +95,16 @@ class Simulation(object):
         exit when tmax is reached if in the parameters.
         """
 
-        if any(U[::self.nvar] < 0):
-            logging.error('h above 0, solver stopping')
-            self.status = 'error'
-            raise RuntimeError('h above 0')
         if self.pars.get('tmax', None) is None:
             return True
-        if self.t >= self.pars.get('tmax', None):
+        if self.t > self.pars.get('tmax', None):
             self.status = 'finished'
             return False
         return True
-
-    def filter(self, U):
-        """
-
-        Parameters
-        ----------
-        U :
-
-
-        Returns
-        -------
-        Tell when return the solution to the user.
-        Default return all solutions reaching dt.
-        """
-
         return True
-
-    def hook(self, U):
-        """
-
-        Parameters
-        ----------
-        U :
-
-
-        Returns
-        -------
-
-        """
-
-        return U
 
     def __iter__(self):
         return self.iterator
 
     def __next__(self):
         return next(self.iterator)
-
-    def copy(self):
-        newid = self.id
-        new_simul = Simulation(self.solver, self.U, self.t,
-                               id=newid,
-                               **self.pars)
-        new_simul.display = self.display
-        new_simul.writers = self.writers.copy()
-        new_simul.signals = self.signals.copy()
-        new_simul.drivers = self.drivers.copy()
-        new_simul.internal_iter = self.internal_iter
-        new_simul.err = self.err
-        new_simul.scheme = self.scheme
-        new_simul.i = self.i
-        new_simul.conf = self.conf
-        new_simul.status = self.status
-        new_simul.history = self.history
-        return new_simul
-
-    @property
-    def data(self):
-        return self.solver.get_fields(self.U)
-
-    def __copy__(self):
-        return self.copy()
-
-    def __reduce__(self):
-
-        return rebuild_simul, (self.id, self.solver, self.U, self.t,
-                               self.display, self.writers, self.signals,
-                               self.drivers, self.internal_iter, self.err,
-                               self.scheme, self.i, self.pars, self.conf,
-                               self.status, self.history)
