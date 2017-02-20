@@ -4,7 +4,7 @@
 import logging
 from itertools import product
 import numpy as np
-from sympy import (Derivative, Function, Matrix, Symbol, symbols,
+from sympy import (Derivative, Function, Symbol, symbols,
                    sympify)
 from functools import partial
 from typing import Union
@@ -102,7 +102,7 @@ def reduce_model(funcs, vars, pars,
                  fields, helpers,
                  pickled_F, pickled_J, pickled_H):
     model = Model(funcs, vars, pars,
-                  fields, helpers)
+                  fields, helpers, reduced=True)
     model.F = loads(pickled_F)
     model.J = loads(pickled_J)
     model.H = {key: loads(value) for key, value in pickled_H.items()}
@@ -118,7 +118,8 @@ class Model:
                  vars: Union[str, list, tuple],
                  pars: Union[str, list, tuple, None]=None,
                  fields: Union[str, list, tuple, None]=None,
-                 helpers: Union[dict, tuple, None]=None) -> None:
+                 helpers: Union[dict, tuple, None]=None,
+                 reduced=False) -> None:
         self.N = Symbol('N', integer=True)
         x, dx = self.x, self.dx = symbols('x dx')
         y, dy = self.y, self.dy = symbols('y dy')
@@ -181,7 +182,8 @@ class Model:
         self.dfields = self._extract_unknowns(
             vars + fields,
             bounds, self.total_symbolic_vars).flatten('F')
-        self._compile(F_array, J_array, approximated_helpers)
+        if not reduced:
+            self._compile(F_array, J_array, approximated_helpers)
 
     def _compile(self, F_array, J_array, approximated_helpers):
         logging.debug('compile F')

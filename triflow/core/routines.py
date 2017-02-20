@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
-
+from pickle import loads, dumps
 import numpy as np
 import scipy.sparse as sps
 from sympy.printing.theanocode import theano_function
@@ -29,6 +29,12 @@ def get_indices(N, window_range, nvar, mode, sparse_indices):
     return idx, unknowns_idx, rows, cols
 
 
+def reduce_routine(matrix, args, window_range, pars, dumped_routine):
+    model = ModelRoutine(matrix, args, window_range, pars, reduced=True)
+    model.ufunc = loads(dumped_routine)
+    return model
+
+
 class ModelRoutine:
     def __init__(self, matrix, args, window_range, pars, reduced=False):
         self.pars = pars
@@ -47,6 +53,11 @@ class ModelRoutine:
 
     def __repr__(self):
         return self.matrix.__repr__()
+
+    def __reduce__(self):
+        return reduce_routine, (self.matrix, self.args,
+                                self.window_range, self.pars,
+                                dumps(self.ufunc))
 
 
 class H_Routine(ModelRoutine):

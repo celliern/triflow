@@ -101,13 +101,9 @@ class ROW_general:
                                                          hook)
                 logging.debug(f"error: {self.err}")
                 dt = (0.9 * dt * np.sqrt(pars['tol'] / self.err))
-            fields = newfields
+            fields = newfields.copy()
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
-            # if dt_calc > dt:
-            #     dt_calc = dt
-            #     logging.debug(f'dt computed bigger than asked, '
-            #                   'falling to dt {dt_calc}')
             if t + dt >= self.next_time_step:
                 logging.debug('new t more than next expected time step')
                 dt = self.next_time_step - t

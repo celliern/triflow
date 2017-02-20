@@ -24,22 +24,63 @@ For now, all the models are written as function generating the F vector and the 
 
     \frac{\partial U}{\partial t} = F(U)
 
-The symbolic model is written using Sympy_ (the python symbolic library). The spatial scheme is written "by hand" (see the examples on the model page), but will be automated in the future.
+The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection can be written as:
 
-For now, the stream-wise dimension should be discretized with the finite difference method, and it is possible to deal with additional dimension directly in the model, with pseudo-spectral or interpolation methods.
+.. code-block:: python
 
-The stream-wise boundary conditions on the left and right side are written in a separate function, the other boundary conditions have to be set in the model.
+    from triflow import Model
 
-The way the model is deal with is not compatible with cross-stream finite difference discretisation (yet).
+    func = "k * dxxU - c * dxU"
+    # OR
+    func = "k * dx(U, 2) - c * dx(U, 1)"
+    var = "U"
+    pars = ["k", "c"]
+
+    model = Model(func, var, pars)
 
 Model compilation
 ------------------
 
-The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding: the Triflow library takes advantage of that in order to speedup the solving and avoid a bottleneck during the evaluation of the function F.
+The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, a tool has been written in order to convert sympy complex expressions to Theano_ graph which can be easily compiled.
 
-The Numpy_ library (the common tool to deal with high performance array manipulation) provides the tool f2py able to compile and import Fortran subroutine in python making them available to the solver. Further work is planned to write the routine in C to reduce the stack complexity.
+In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).
 
-The library provides the model binaries for the 1D model. The more complex ones as the full Fourier models should be compiled by the user.
+The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model).
+
+Fields containers
+------------------
+
+A special container has been designed to handle initial values of the dependant solutions (the unknowns), the independant variables (spatial coordinates), the constant fields and the post-processed variable (known as helper function).
+
+A factory is linked to the model and is accessible via the model.fields_template property :
+
+.. code-block:: python
+
+    import numpy as np
+    from triflow import Model
+
+    model = Model("k * dxxU - c * dxU",
+                  "U", ["k", "c"])
+
+    x, dx = np.linspace(0, 1, 100, retstep=True)
+    U = np.cos(2 * np.pi * x / 5)
+    fields = model.fields_template(x=x, U=U)
+
+The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations.
+
+.. code-block:: python
+
+    print(fields.x)
+    print(fields.U)
+
+    fields.U = 5
+    >>> raise an Error
+
+    fields.U[:] = 5
+    print(fields.U)
+    >>> [5, 5, 5, ..., 5, 5]
+
+Be aware of difference between the attribute giving access to a view of the main array and the one returning a copy of the subarray: the first one allow an on-the-fly modification of the fields (in order to inject boundary condition for exemple), the second one should be only used as read-only meaning.
 
 Numerical scheme, temporal solver
 ----------------------------------
@@ -51,12 +92,96 @@ Different temporal schemes are provided in the plugins module:
 * a forward Euler scheme
 * a backward Euler scheme
 * a :math:`\theta` mixed scheme
-* a BDF scheme
-* A ROW scheme with fixed time stepping
-* A ROW scheme with variable time stepping
+* A ROW schemes from order 3 up to 6 with fixed and variable time stepping.
+* A proxy schemes giving access to all the scipy.integrate.ode schemes.
 
-Each of them have advantages and disadvantages. The default is the variable time stepping ROW scheme.
+Each of them have advantages and disadvantages.
 
+They can accept somme extra arguments during their instantiation (for exemple the :math:`\theta` parameter for the :math:`\theta` mixed scheme), and are called with the actual fields, time, time-step, parameters, and accept an optionnal hook modifying fields and parameters each time the solver compute the function or its jacobian.
+
+The following code compute juste one time-step with a Crank-Nicolson scheme.
+
+.. code-block:: python
+
+    import numpy as np
+    from triflow import Model, schemes
+
+    model = Model("k * dxxU - c * dxU",
+                  "U", ["k", "c"])
+
+    x, dx = np.linspace(0, 1, 100, retstep=True)
+    U = np.cos(2 * np.pi * x / 5)
+    fields = model.fields_template(x=x, U=U)
+
+    parameters = dict(c=1, k=1, dx=dx)
+
+    t = 0
+    dt = 1
+
+    scheme = schemes.Theta(model, theta=.5) # Crank-Nicolson scheme
+
+    new_fields, new_t = scheme(fields, t, dt, parameters)
+
+We obtain with the following code a full resolution up to the target time.
+
+.. code-block:: python
+
+    import numpy as np
+    from triflow import Model, schemes
+
+    model = Model("k * dxxU - c * dxU",
+                  "U", ["k", "c"])
+
+    x, dx = np.linspace(0, 1, 100, retstep=True)
+    U = np.cos(2 * np.pi * x / 5)
+    fields = model.fields_template(x=x, U=U)
+
+    parameters = dict(c=1, k=1, dx=dx)
+
+    tmax = 1000
+    t = 0
+    dt = 1
+
+    scheme = schemes.Theta(model, theta=.5) # Crank-Nicolson scheme
+
+    while t <= tmax:
+        fields, t = scheme(fields, t, dt, parameters)
+
+hook and boundary consitions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The hook function is used in order to deal with variable and conditional parameters and boundary condition.
+
+Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the parameter wrap. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
+
+.. code-block:: python
+
+    import numpy as np
+    from triflow import Model, schemes
+
+    model = Model("k * dxxU",
+                  "U", ["k"])
+
+    x, dx = np.linspace(0, 1, 100, retstep=True)
+    U = np.cos(2 * np.pi * x / 5)
+    fields = model.fields_template(x=x, U=U)
+
+    parameters = dict(c=1, k=1, dx=dx)
+
+    tmax = 1000
+    t = 0
+    dt = 1
+
+    scheme = schemes.Theta(model, theta=.5) # Crank-Nicolson scheme
+
+    def dirichlet_condition(fields, t, pars):
+        fields.U[0] = 0
+        fields.U[-1] = 5
+        return fields, pars
+
+    while t <= tmax:
+        fields, t = scheme(fields, t, dt,
+                           parameters, hook=dirichlet_condition)
 
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _Numpy: http://www.sympy.org/en/index.html
