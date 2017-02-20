@@ -2,6 +2,7 @@
 # coding=utf8
 
 from triflow.core.model import Model, load_model
+from triflow.plugins import schemes
 
 import logging
 from logging import NullHandler

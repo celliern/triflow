@@ -12,6 +12,8 @@ Welcome to triflow's documentation!
 
    installation
    intro
+   model
+   schemes
 
 
 

@@ -31,8 +31,6 @@ The symbolic model is written as a simple mathematic equation. For exemple, a di
     from triflow import Model
 
     func = "k * dxxU - c * dxU"
-    # OR
-    func = "k * dx(U, 2) - c * dx(U, 1)"
     var = "U"
     pars = ["k", "c"]
 
@@ -63,18 +61,12 @@ A factory is linked to the model and is accessible via the model.fields_template
                   "U", ["k", "c"])
 
     x, dx = np.linspace(0, 1, 100, retstep=True)
-    U = np.cos(2 * np.pi * x / 5)
+    U = np.cos(2 * np.pi * x * 5)
     fields = model.fields_template(x=x, U=U)
 
 The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations.
 
 .. code-block:: python
-
-    print(fields.x)
-    print(fields.U)
-
-    fields.U = 5
-    >>> raise an Error
 
     fields.U[:] = 5
     print(fields.U)
@@ -110,7 +102,7 @@ The following code compute juste one time-step with a Crank-Nicolson scheme.
                   "U", ["k", "c"])
 
     x, dx = np.linspace(0, 1, 100, retstep=True)
-    U = np.cos(2 * np.pi * x / 5)
+    U = np.cos(2 * np.pi * x * 5)
     fields = model.fields_template(x=x, U=U)
 
     parameters = dict(c=1, k=1, dx=dx)
@@ -133,7 +125,7 @@ We obtain with the following code a full resolution up to the target time.
                   "U", ["k", "c"])
 
     x, dx = np.linspace(0, 1, 100, retstep=True)
-    U = np.cos(2 * np.pi * x / 5)
+    U = np.cos(2 * np.pi * x * 5)
     fields = model.fields_template(x=x, U=U)
 
     parameters = dict(c=1, k=1, dx=dx)
@@ -152,7 +144,7 @@ hook and boundary consitions
 
 The hook function is used in order to deal with variable and conditional parameters and boundary condition.
 
-Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the parameter wrap. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
+Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the mode "wrap" leading to periodic fields. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
 
 .. code-block:: python
 
@@ -162,21 +154,23 @@ Inside the model, the fields are padded in order to solve the equation. If the p
     model = Model("k * dxxU",
                   "U", ["k"])
 
-    x, dx = np.linspace(0, 1, 100, retstep=True)
-    U = np.cos(2 * np.pi * x / 5)
+    x, dx = np.linspace(0, 1, 50, retstep=True)
+    U = np.cos(2 * np.pi * x * 1.5)
     fields = model.fields_template(x=x, U=U)
 
-    parameters = dict(c=1, k=1, dx=dx)
+    parameters = dict(k=1e-3, dx=dx,
+                      time_stepping=True,
+                      tol=1E-2, periodic=False)
 
-    tmax = 1000
+    tmax = 1
     t = 0
-    dt = 1
+    dt = .01
 
-    scheme = schemes.Theta(model, theta=.5) # Crank-Nicolson scheme
+    scheme = schemes.RODASPR(model)
 
     def dirichlet_condition(fields, t, pars):
-        fields.U[0] = 0
-        fields.U[-1] = 5
+        fields.U[0] = 1
+        fields.U[-1] = 1
         return fields, pars
 
     while t <= tmax:

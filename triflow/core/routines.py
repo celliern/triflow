@@ -29,8 +29,9 @@ def get_indices(N, window_range, nvar, mode, sparse_indices):
     return idx, unknowns_idx, rows, cols
 
 
-def reduce_routine(matrix, args, window_range, pars, dumped_routine):
-    model = ModelRoutine(matrix, args, window_range, pars, reduced=True)
+def reduce_routine(matrix, args, window_range, pars,
+                   class_routine, dumped_routine):
+    model = class_routine(matrix, args, window_range, pars, reduced=True)
     model.ufunc = loads(dumped_routine)
     return model
 
@@ -57,7 +58,7 @@ class ModelRoutine:
     def __reduce__(self):
         return reduce_routine, (self.matrix, self.args,
                                 self.window_range, self.pars,
-                                dumps(self.ufunc))
+                                self.__class__, dumps(self.ufunc))
 
 
 class H_Routine(ModelRoutine):
@@ -117,14 +118,16 @@ class F_Routine(ModelRoutine):
 
 
 class J_Routine(ModelRoutine):
-
-    def make_ufuncs(self):
-        matrix = self.matrix.flatten('F')
+    def __init__(self, matrix, args, window_range, pars, reduced=False):
+        super().__init__(matrix, args, window_range, pars, reduced=False)
+        self.matrix = self.matrix.flatten('F')
         self.sparse_indices = np.where(matrix != 0)
 
-        matrix = matrix[self.sparse_indices]
+        self.matrix = self.matrix[self.sparse_indices]
+
+    def make_ufuncs(self):
         self.ufunc = theano_function(inputs=self.args,
-                                     outputs=matrix.tolist(),
+                                     outputs=self.matrix.tolist(),
                                      on_unused_input='ignore',
                                      dim=1)
 
