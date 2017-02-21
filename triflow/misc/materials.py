@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from triflow.mdict import magical_dict
+from sym_dict import SymDict
 
 
 def fluid():
-    relations_template = magical_dict()
+    relations_template = SymDict()
     relations_template.add_relation('(nu**2 / (g * sin(Beta))) ** (1 / 3) -'
                                     ' l_v')
     relations_template.add_relation('(nu / (g * sin(Beta)) ** 2) ** (1 / 3) -'

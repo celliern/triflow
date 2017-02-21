@@ -31,7 +31,19 @@ def get_indices(N, window_range, nvar, mode, sparse_indices):
 
 def reduce_routine(matrix, args, window_range, pars,
                    class_routine, dumped_routine):
-    model = class_routine(matrix, args, window_range, pars, reduced=True)
+    model = class_routine(matrix, args,
+                          window_range, pars,
+                          reduced=True)
+    model.ufunc = loads(dumped_routine)
+    return model
+
+
+def reduce_jacobian(matrix, args, window_range, pars,
+                    class_routine, dumped_routine, sparse_indices):
+    model = class_routine(matrix, args,
+                          window_range, pars,
+                          reduced=True)
+    model.sparse_indices = sparse_indices
     model.ufunc = loads(dumped_routine)
     return model
 
@@ -118,21 +130,23 @@ class F_Routine(ModelRoutine):
 
 
 class J_Routine(ModelRoutine):
-    def __init__(self, matrix, args, window_range, pars, reduced=False):
-        super().__init__(matrix, args, window_range, pars, reduced=True)
+
+    def make_ufuncs(self):
         matrix = self.matrix
         matrix = matrix.flatten('F')
         self.sparse_indices = np.where(matrix != 0)
 
         self.matrix = matrix[self.sparse_indices]
-        if not reduced:
-            self.make_ufuncs()
-
-    def make_ufuncs(self):
         self.ufunc = theano_function(inputs=self.args,
                                      outputs=self.matrix.tolist(),
                                      on_unused_input='ignore',
                                      dim=1)
+
+    def __reduce__(self):
+        return reduce_jacobian, (self.matrix, self.args,
+                                 self.window_range, self.pars,
+                                 self.__class__, dumps(self.ufunc),
+                                 self.sparse_indices)
 
     def __call__(self, fields, pars, sparse=True):
         nvar, N = len(fields.vars), fields.size
