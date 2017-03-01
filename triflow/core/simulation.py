@@ -24,7 +24,6 @@ class Simulation(object):
         self.fields = fields
         self.t = t
         self.i = 0
-        self.iterator = it.takewhile(self.takewhile, self.compute())
         self.drivers = []
         self.writers = []
         self.scheme = schemes.RODASPR(model)
@@ -104,7 +103,7 @@ class Simulation(object):
         return True
 
     def __iter__(self):
-        return self.iterator
+        return it.takewhile(self.takewhile, self.compute())
 
     def __next__(self):
         return next(self.iterator)

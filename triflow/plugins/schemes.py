@@ -61,10 +61,11 @@ class ROW_general:
         A = Id - self.gamma[0, 0] * dt * J
         luf = sps.linalg.splu(A)
         ks = []
+        fields_i = fields.copy()
         for i in np.arange(self.s):
-            fields_i = fields.fill(fields.uflat +
-                                   sum([self.alpha[i, j] * ks[j]
-                                        for j in range(i)]))
+            fields_i.fill(fields.uflat +
+                          sum([self.alpha[i, j] * ks[j]
+                               for j in range(i)]))
             F = self.model.F(fields_i, pars)
             ks.append(luf.solve(dt * F + dt * (J @ sum([self.gamma[i, j] *
                                                         ks[j]
@@ -78,7 +79,7 @@ class ROW_general:
                            for bi, ki
                            in zip(self.b_pred, ks)])
                   if self.b_pred is not None else None)
-        fields = fields.fill(U)
+        fields.fill(U)
 
         return fields, t + dt, (norm(U - U_pred, np.inf)
                                 if U_pred is not None else None)

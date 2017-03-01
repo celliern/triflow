@@ -2,15 +2,20 @@
 # coding=utf8
 
 import logging
-from itertools import product
-import numpy as np
-from sympy import (Derivative, Function, Symbol, symbols,
-                   sympify)
 from functools import partial
-from typing import Union
+from itertools import product
+from pickle import dump, dumps, load, loads
+
+import numpy as np
+import theano as th
+from theano import tensor as T
+from theano.ifelse import ifelse
+import theano.sparse as ths
 from recordclass import recordclass
-from pickle import dumps, loads, dump, load
-from triflow.core.routines import (F_Routine, J_Routine, H_Routine)
+from sympy import Derivative, Function, Symbol, symbols, sympify
+from sympy.printing.theanocode import theano_code
+from triflow.core.routines import F_Routine, J_Routine
+from typing import Union
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -34,12 +39,17 @@ def generate_sympify_namespace(independent_variable, vars, fields):
     return namespace
 
 
+def reduce_fields(vars, fields, args, kwargs):
+    rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
+    return rc(*args, **kwargs)
+
+
 def generate_fields_container(vars, fields):
     rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
 
     class Fields(rc):
-
         def __init__(self, *args, **kwargs):
+            self.reduce_container = [args, kwargs]
             self.vars = vars
             self.fields = fields
             self.size = len(self.x)
@@ -49,7 +59,11 @@ def generate_fields_container(vars, fields):
             self.array = np.array(data)
             self.dtype = [(var, float) for var in self.keys]
             for var in self.keys:
-                self.__setattr__(var, self.rec[var])
+                self.__setattr__(var, self.rec[var].squeeze())
+
+        def __reduce__(self):
+            return (partial(reduce_fields, vars, fields),
+                    (self.reduce_container[0], self.reduce_container[1]))
 
         @property
         def flat(self):
@@ -70,12 +84,11 @@ def generate_fields_container(vars, fields):
             return uflat
 
         def fill(self, Uflat):
-            new_fields = self.copy()
-            new_fields.uarray[:] = Uflat.reshape(new_fields.uarray.shape)
-            return new_fields
+            self.uarray[:] = Uflat.reshape(self.uarray.shape)
+            return self
 
         def __getitem__(self, index):
-            return self.rec[index]
+            return self.rec[index].squeeze()
 
         def __iter__(self):
             return (self.array[i] for i in range(self.size))
@@ -160,11 +173,6 @@ class Model:
         approximated_funcs = self._approximate_derivative(self.symbolic_funcs,
                                                           self.symbolic_vars,
                                                           self.symbolic_fields)
-        approximated_helpers = {key: self._approximate_derivative(
-            [value],
-            self.symbolic_vars,
-            self.symbolic_fields
-        ) for key, value in self.symbolic_helpers.items()}
         self.bounds = bounds = self._extract_bounds(vars,
                                                     self.total_symbolic_vars)
         self.window_range = bounds[-1] - bounds[0] + 1
@@ -173,29 +181,158 @@ class Model:
             vars,
             bounds, self.total_symbolic_vars).flatten('F')
 
-        self.F_array = F_array = np.array(approximated_funcs)
-        self.J_array = J_array = np.array([
+        self.F_array = np.array(approximated_funcs)
+        self.J_array = np.array([
             [func.diff(unknown).expand()
                 for unknown in unknowns]
-            for func in approximated_funcs])
+            for func in approximated_funcs]).flatten('F')
+        self.sparse_indices = np.where(self.J_array != 0)
+
+        self.J_array = self.J_array[self.sparse_indices]
 
         self.dfields = self._extract_unknowns(
             vars + fields,
             bounds, self.total_symbolic_vars).flatten('F')
-        if not reduced:
-            self._compile(F_array, J_array, approximated_helpers)
 
-    def _compile(self, F_array, J_array, approximated_helpers):
+        if not reduced:
+            F, J, args, self.map_extended = self._theano_convert(self.F_array,
+                                                                 self.J_array)
+            f = th.function(inputs=args,
+                            outputs=F,
+                            on_unused_input='ignore')
+            j = th.function(inputs=args,
+                            outputs=J,
+                            on_unused_input='ignore')
+            self.th_args = args
+            self.th_vectors = [F, J]
+            self._compile(self.F_array, self.J_array, f, j)
+
+    def _theano_convert(self, F_array, J_array):
+        th_args = list(map(partial(theano_code,
+                                   broadcastables={arg: (False,)
+                                                   for arg
+                                                   in [self.x,
+                                                       *self.dfields,
+                                                       *self.symbolic_pars]}),
+                           self.sargs))
+        ins = th.gof.graph.inputs(th_args)
+        mapargs = {inp.name: inp
+                   for inp in ins if isinstance(inp, T.TensorVariable)}
+        x_th = T.dvector('x')
+        periodic = T.bscalar('periodic')
+        middle_point = int((self.window_range - 1) / 2)
+        nvar = len(self.vars)
+        N = x_th.size
+        L = x_th[-1]
+        computed_dx = L / N
+        bounds = self.bounds
+        window_range = self.window_range
+        subs = {mapargs['dx']: computed_dx}
+        map_extended = {}
+        for varname, discretisation_tree in self.total_symbolic_vars.items():
+            pad_left, pad_right = bounds
+            per_extended_var = T.concatenate([mapargs[varname][pad_left:],
+                                              mapargs[varname],
+                                              mapargs[varname][:pad_right]])
+            edge_extended_var = T.concatenate([T.repeat(mapargs[varname][:1],
+                                                        middle_point),
+                                               mapargs[varname],
+                                               T.repeat(mapargs[varname][-1:],
+                                                        middle_point)])
+            extended_var = ifelse(periodic,
+                                  per_extended_var,
+                                  edge_extended_var)
+            map_extended[varname] = extended_var
+            for order in range(pad_left, pad_right + 1):
+                if order != 0:
+                    var = (f"{varname}_{'m' if order < 0 else 'p'}"
+                           f"{np.abs(order)}")
+                    new_var = extended_var[order - pad_left:
+                                           extended_var.size +
+                                           order - pad_right]
+                    subs.update({mapargs[var]:
+                                 new_var})
+        F = list(map(partial(theano_code,
+                             broadcastables={arg: (False,)
+                                             for arg
+                                             in [self.x,
+                                                 *self.dfields,
+                                                 *self.symbolic_pars]}),
+                     F_array.flatten().tolist()))
+
+        J = list(map(partial(theano_code,
+                             broadcastables={arg: (False,)
+                                             for arg
+                                             in [self.x,
+                                                 *self.dfields,
+                                                 *self.symbolic_pars]}),
+                     J_array.flatten().tolist()))
+        F = (T.concatenate(th.clone(F, replace=subs))
+             .reshape((nvar, N)).T.flatten())
+        J = th.clone(J, replace=subs)
+
+        sparse_indices = self.sparse_indices
+
+        J = T.stack([T.repeat(j, N) if j.ndim == 0 else j for j in J]).T
+        i = T.arange(N).dimshuffle([0, 'x'])
+        idx = T.arange(N * nvar).reshape((N, nvar)).T
+        edge_extended_idx = T.concatenate([T.repeat(idx[:, :1],
+                                                    middle_point,
+                                                    axis=1),
+                                           idx,
+                                           T.repeat(idx[:, -1:],
+                                                    middle_point,
+                                                    axis=1)],
+                                          axis=1).T.flatten()
+        per_extended_idx = T.concatenate([idx[:, -middle_point:],
+                                          idx,
+                                          idx[:, :middle_point]],
+                                         axis=1).T.flatten()
+        extended_idx = ifelse(periodic,
+                              per_extended_idx, edge_extended_idx)
+
+        rows = T.tile(T.arange(nvar),
+                      window_range * nvar) + i * nvar
+        cols = T.repeat(T.arange(window_range * nvar),
+                        nvar) + i * nvar
+        rows = rows[:, sparse_indices].reshape(J.shape).flatten()
+        cols = extended_idx[cols][:, sparse_indices].reshape(J.shape).flatten()
+
+        permutation = T.argsort(cols)
+
+        J = J.flatten()[permutation]
+        rows = rows[permutation]
+        cols = cols[permutation]
+
+        _, count = T.extra_ops.Unique(False, False, True)(cols)
+
+        count = T.concatenate([[0], count])
+
+        def compress_col(count, out):
+            return out + count
+
+        seq = T.zeros_like(count)
+        outputs_info = T.as_tensor_variable(np.asarray(0, seq.dtype))
+        indptr, updates = th.scan(fn=compress_col,
+                                  outputs_info=outputs_info,
+                                  sequences=count)
+        shape = T.stack([N * nvar, N * nvar])
+        sparse_J = ths.CSC(J, rows, indptr, shape)
+
+        th_args = [x_th, *[mapargs[key]
+                           for key
+                           in self.vars + self.fields + self.pars],
+                   periodic]
+
+        return F, sparse_J, th_args, map_extended
+
+    def _compile(self, F_array, J_array, f, j):
         logging.debug('compile F')
-        self.F = F_Routine(F_array, self.sargs,
-                           self.window_range, self.pars)
-        logging.debug('compile H')
-        self.H = {key: H_Routine(value, self.sargs,
-                                 self.window_range, self.pars)
-                  for key, value in approximated_helpers.items()}
+        self.F = F_Routine(F_array, self.vars + self.fields,
+                           self.pars, f)
         logging.debug('compile J')
-        self.J = J_Routine(J_array, self.sargs,
-                           self.window_range, self.pars)
+        self.J = J_Routine(J_array, self.vars + self.fields,
+                           self.pars, j)
 
     @property
     def fields_template(self):

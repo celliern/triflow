@@ -1,113 +1,28 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from pickle import loads, dumps
 import numpy as np
-import scipy.sparse as sps
-from sympy.printing.theanocode import theano_function
-from toolz import memoize
-
-
-@memoize
-def get_indices(N, window_range, nvar, mode, sparse_indices):
-    i = np.arange(N)[:, np.newaxis]
-    idx = np.arange(N * nvar).reshape((nvar, N), order='F')
-    idx = np.pad(idx, ((0, 0),
-                       (int((window_range - 1) / 2),
-                        int((window_range - 1) / 2))),
-                 mode=mode).flatten('F')
-    sparse_indices = [list(sparse_indices)]
-    unknowns_idx = np.arange(window_range *
-                             nvar) + i * nvar
-    rows = np.tile(np.arange(nvar),
-                   window_range * nvar) + i * nvar
-    cols = np.repeat(np.arange(window_range * nvar),
-                     nvar) + i * nvar
-    rows = rows[:, sparse_indices]
-    cols = idx[cols][:, sparse_indices]
-
-    return idx, unknowns_idx, rows, cols
-
-
-def reduce_routine(matrix, args, window_range, pars,
-                   class_routine, dumped_routine):
-    model = class_routine(matrix, args,
-                          window_range, pars,
-                          reduced=True)
-    model.ufunc = loads(dumped_routine)
-    return model
-
-
-def reduce_jacobian(matrix, args, window_range, pars,
-                    class_routine, dumped_routine, sparse_indices):
-    model = class_routine(matrix, args,
-                          window_range, pars,
-                          reduced=True)
-    model.sparse_indices = sparse_indices
-    model.ufunc = loads(dumped_routine)
-    return model
 
 
 class ModelRoutine:
-    def __init__(self, matrix, args, window_range, pars, reduced=False):
-        self.pars = pars
-        self.window_range = window_range
+    def __init__(self, matrix, args, pars, ufunc,
+                 reduced=False):
+        self.pars = list(pars) + ['periodic']
         self.matrix = matrix
         self.args = args
-        if not reduced:
-            self.make_ufuncs()
-
-    def make_ufuncs(self):
-        # self.routine_dir = Path(tempdir(prefix='triflow_routines_'))
-        self.ufunc = theano_function(inputs=self.args,
-                                     outputs=self.matrix.flatten().tolist(),
-                                     on_unused_input='ignore',
-                                     dim=1)
+        self.ufunc = ufunc
 
     def __repr__(self):
         return self.matrix.__repr__()
 
-    def __reduce__(self):
-        return reduce_routine, (self.matrix, self.args,
-                                self.window_range, self.pars,
-                                self.__class__, dumps(self.ufunc))
-
-
-class H_Routine(ModelRoutine):
-    def __call__(self, fields, pars):
-        N = fields.size
-        middle_point = int((self.window_range - 1) / 2)
-        mode = 'wrap' if pars.get('periodic', False) else 'edge'
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.window_range)],
-                               axis=1).T
-        pargs = [pars[key] + fields.x.squeeze() * 0
-                 for key
-                 in self.pars] + [pars['dx'] + fields.x.squeeze() * 0]
-        F = np.array(self.ufunc((*uargs.tolist() + pargs))).flatten()
-        return F
-
 
 class F_Routine(ModelRoutine):
     def __call__(self, fields, pars):
-        N = fields.size
-        middle_point = int((self.window_range - 1) / 2)
-        mode = 'wrap' if pars.get('periodic', False) else 'edge'
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.window_range)],
-                               axis=1).T
-        pargs = [pars[key] + fields.x.squeeze() * 0
+        uargs = [fields.x, *[fields[key] for key in self.args]]
+        pargs = [pars[key] + fields.x * 0 if key != 'periodic' else pars[key]
                  for key
-                 in self.pars] + [pars['dx'] + fields.x.squeeze() * 0]
-        F = np.array(self.ufunc((*uargs.tolist() + pargs))).flatten('F')
+                 in self.pars]
+        F = self.ufunc(*uargs, *pargs)
         return F
 
     def diff_approx(self, fields, pars, eps=1E-8):
@@ -130,55 +45,11 @@ class F_Routine(ModelRoutine):
 
 
 class J_Routine(ModelRoutine):
-
-    def make_ufuncs(self):
-        matrix = self.matrix
-        matrix = matrix.flatten('F')
-        self.sparse_indices = np.where(matrix != 0)
-
-        self.matrix = matrix[self.sparse_indices]
-        self.ufunc = theano_function(inputs=self.args,
-                                     outputs=self.matrix.tolist(),
-                                     on_unused_input='ignore',
-                                     dim=1)
-
-    def __reduce__(self):
-        return reduce_jacobian, (self.matrix, self.args,
-                                 self.window_range, self.pars,
-                                 self.__class__, dumps(self.ufunc),
-                                 self.sparse_indices)
-
     def __call__(self, fields, pars, sparse=True):
-        nvar, N = len(fields.vars), fields.size
-        middle_point = int((self.window_range - 1) / 2)
-        fpars = {key: pars[key] for key in self.pars}
-        fpars['dx'] = pars['dx']
-        mode = 'wrap' if pars.get('periodic', False) else 'edge'
-        J = np.zeros((self.window_range * nvar ** 2, N))
-
-        (idx, unknowns_idx,
-         rows, cols) = get_indices(N,
-                                   self.window_range,
-                                   nvar,
-                                   mode,
-                                   tuple(self.sparse_indices[0]))
-
-        unknowns = np.pad(fields.array,
-                          ((middle_point, middle_point),
-                           (0, 0)), mode=mode)
-        uargs = np.concatenate([fields.x] +
-                               [unknowns[i: N + i, 1:]
-                                for i in range(self.window_range)],
-                               axis=1).T
-        pargs = [pars[key] + fields.x.squeeze() * 0
+        uargs = [fields.x, *[fields[key] for key in self.args]]
+        pargs = [pars[key] + fields.x * 0 if key != 'periodic' else pars[key]
                  for key
-                 in self.pars] + [pars['dx'] + fields.x.squeeze() * 0]
+                 in self.pars]
+        J = self.ufunc(*uargs, *pargs)
 
-        J = self.ufunc((*uargs.tolist() + pargs))
-        J = np.vstack(J)
-        J = sps.csr_matrix((J.T.flatten(),
-                            (rows.flatten(),
-                             cols.flatten())),
-                           (N * nvar,
-                            N * nvar))
         return J if sparse else J.todense()
