@@ -306,17 +306,7 @@ class Model:
 
         _, count = T.extra_ops.Unique(False, False, True)(cols)
 
-        count = T.concatenate([[0], count])
-
-        def compress_col(count, out):
-            return out + count
-
-        seq = T.zeros_like(count)
-        outputs_info = T.as_tensor_variable(np.asarray(0, seq.dtype))
-        indptr, updates = th.scan(fn=compress_col,
-                                  outputs_info=outputs_info,
-                                  sequences=count,
-                                  allow_gc=False)
+        indptr = T.cumsum(T.concatenate([[0], count]))
         shape = T.stack([N * nvar, N * nvar])
         sparse_J = ths.CSC(J, rows, indptr, shape)
 
