@@ -92,7 +92,6 @@ class ROW_general:
         dt = self.internal_dt = (dt if self.internal_dt is None
                                  else self.internal_dt)
         while True:
-            logging.debug(f'ROS_vart, iter {self.internal_iter}, t {t}')
             self.err = None
             while (self.err is None or self.err > pars['tol']):
                 newfields, _, self.err = self.fixed_step(fields,
