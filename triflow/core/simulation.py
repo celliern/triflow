@@ -19,26 +19,26 @@ class Simulation(object):
         self.id = str(uuid1()) if id is None else id
         self.model = model
         self.pars = pars
-        self.nvar = fields.size
 
         self.fields = fields
         self.t = t
         self.i = 0
-        self.drivers = []
-        self.writers = []
         self.scheme = schemes.RODASPR(model)
-        self.signals = {}
         self.status = 'created'
-        self.history = None
         self.hook = hook
+        self.iterator = self.compute()
 
     def compute(self):
+        fields = self.fields
+        t = self.t 
+        pars = self.pars
         while True:
-            self.fields, self.pars = self.hook(self.fields, self.t, self.pars)
-            self.fields, self.t = self.scheme(self.fields,
-                                              self.t, self.pars['dt'],
-                                              self.pars, hook=self.hook)
-            yield self.fields, self.t
+            fields, pars = self.hook(fields, t, pars)
+            fields, t = self.scheme(fields, t, pars['dt'], pars, hook=self.hook)
+            self.fields = fields
+            self.t = t
+            self.pars = pars
+            yield fields, t
 
     def compute_until_finished(self):
         logging.info('simulation %s computing until the end' % self.id)
@@ -49,35 +49,8 @@ class Simulation(object):
         self.status = 'over'
         return iteration
 
-    def add_signal(self, field, signal):
-        self.signals[field] = signal
-
-    def add_driver(self, driver):
-        self.drivers.append(driver)
-
     def set_scheme(self, scheme):
         self.scheme = scheme(self.model)
-
-    def driver(self, t):
-        """
-        Modify the parameters at each internal time steps. The driver have
-        to be appened to the attribute drivers.
-        Parameters
-        ----------
-        t : actual time
-
-
-        Returns
-        -------
-        None
-
-        """
-
-        for driver in self.drivers:
-            driver(self, t)
-
-        for field, signal in self.signals.items():
-            self.pars['%sini' % field] = signal(t)
 
     def takewhile(self, outputs):
         """
