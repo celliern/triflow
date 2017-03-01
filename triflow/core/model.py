@@ -315,7 +315,8 @@ class Model:
         outputs_info = T.as_tensor_variable(np.asarray(0, seq.dtype))
         indptr, updates = th.scan(fn=compress_col,
                                   outputs_info=outputs_info,
-                                  sequences=count)
+                                  sequences=count,
+                                  allow_gc=False)
         shape = T.stack([N * nvar, N * nvar])
         sparse_J = ths.CSC(J, rows, indptr, shape)
 
