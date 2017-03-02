@@ -45,11 +45,16 @@ def reduce_fields(vars, fields, args, kwargs):
 
 
 def generate_fields_container(vars, fields):
-    rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
+    # rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
 
-    class Fields(rc):
-        def __init__(self, *args, **kwargs):
-            self.reduce_container = [args, kwargs]
+    class Fields:
+        def __init__(self, **kwargs):
+            assert set(kwargs.keys()) == set(['x'] +
+                                             list(vars) +
+                                             list(fields))
+            for key, value in kwargs.items():
+                self.__setattr__(key, value)
+            self.reduce_container = kwargs
             self.vars = vars
             self.fields = fields
             self.size = len(self.x)
@@ -85,7 +90,6 @@ def generate_fields_container(vars, fields):
 
         def fill(self, Uflat):
             self.uarray[:] = Uflat.reshape(self.uarray.shape)
-            return self
 
         def __getitem__(self, index):
             return self.rec[index].squeeze()
@@ -94,11 +98,11 @@ def generate_fields_container(vars, fields):
             return (self.array[i] for i in range(self.size))
 
         def copy(self):
-            NewField = generate_fields_container(self.vars,
-                                                 self.fields)
             old_values = {var: getattr(self, var).squeeze()
                           for var in self.keys}
-            return NewField(**old_values)
+            # NewField = generate_fields_container(self.vars, self.fields)
+
+            return self.__class__(**old_values)
 
         def __repr__(self):
             return self.rec.__repr__()
