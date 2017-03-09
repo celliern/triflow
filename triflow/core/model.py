@@ -2,23 +2,25 @@
 # coding=utf8
 
 import logging
+import sys
 from functools import partial
 from itertools import product
-from pickle import dump, dumps, load, loads
+from pickle import dump, load
 
 import numpy as np
 import theano as th
-from theano import tensor as T
-from theano.ifelse import ifelse
 import theano.sparse as ths
-from recordclass import recordclass
 from sympy import Derivative, Function, Symbol, symbols, sympify
 from sympy.printing.theanocode import theano_code
+from theano import tensor as T
+from theano.ifelse import ifelse
 from triflow.core.routines import F_Routine, J_Routine
 from typing import Union
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+sys.setrecursionlimit(40000)
 
 
 def partial_derivative(symbolic_independent_variable, i, U):
@@ -45,7 +47,6 @@ def reduce_fields(vars, fields, args, kwargs):
 
 
 def generate_fields_container(vars, fields):
-    # rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
 
     class Fields:
         def __init__(self, **kwargs):
@@ -117,12 +118,11 @@ def load_model(filename):
 
 def reduce_model(funcs, vars, pars,
                  fields, helpers,
-                 pickled_F, pickled_J, pickled_H):
+                 f, j):
     model = Model(funcs, vars, pars,
                   fields, helpers, reduced=True)
-    model.F = loads(pickled_F)
-    model.J = loads(pickled_J)
-    model.H = {key: loads(value) for key, value in pickled_H.items()}
+    model.th_routines = [f, j]
+    model._compile(model.F_array, model.J_array, f, j)
 
     return model
 
@@ -209,6 +209,7 @@ class Model:
                             on_unused_input='ignore')
             self.th_args = args
             self.th_vectors = [F, J]
+            self.th_routines = [f, j]
             self._compile(self.F_array, self.J_array, f, j)
 
     def _theano_convert(self, F_array, J_array):
@@ -486,10 +487,8 @@ class Model:
         return tuple(approximated_funcs)
 
     def __reduce__(self):
-        pickled_F = dumps(self.F)
-        pickled_J = dumps(self.J)
-        pickled_H = {key: dumps(value) for key, value in self.H.items()}
+        f, j = self.th_routines
         return (reduce_model, (self.funcs, self.vars,
                                self.pars, self.fields,
-                               self.helpers, pickled_F, pickled_J, pickled_H
+                               self.helpers, f, j
                                ))
