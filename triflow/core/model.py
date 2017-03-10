@@ -308,10 +308,11 @@ class Model:
         J = J.flatten()[permutation]
         rows = rows[permutation]
         cols = cols[permutation]
+        count = T.zeros((N * nvar + 1,), dtype=int)
+        uq, cnt = T.extra_ops.Unique(False, False, True)(cols)
+        count = T.set_subtensor(count[uq + 1], cnt)
 
-        _, count = T.extra_ops.Unique(False, False, True)(cols)
-
-        indptr = T.cumsum(T.concatenate([[0], count]))
+        indptr = T.cumsum(count)
         shape = T.stack([N * nvar, N * nvar])
         sparse_J = ths.CSC(J, rows, indptr, shape)
 

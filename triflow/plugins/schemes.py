@@ -252,12 +252,12 @@ class scipy_ode:
 
     def __init__(self, model, integrator='vode', **integrator_kwargs):
         def func_scipy_proxy(t, U, fields, pars, hook):
-            fields = fields.fill(U)
+            fields.fill(U)
             fields, pars = hook(fields, t, pars)
             return model.F(fields, pars)
 
         def jacob_scipy_proxy(t, U, fields, pars, hook):
-            fields = fields.fill(U)
+            fields.fill(U)
             fields, pars = hook(fields, t, pars)
             return model.J(fields, pars, sparse=False)
 
@@ -273,7 +273,7 @@ class scipy_ode:
         solv.set_f_params(fields, pars, hook)
         solv.set_jac_params(fields, pars, hook)
         U = solv.integrate(t + dt)
-        fields = fields.fill(U)
+        fields.fill(U)
         if solv.successful:
             fields, _ = hook(fields, t + dt, pars)
             return fields, t + dt
@@ -300,6 +300,6 @@ class Theta:
         J = (sps.identity(U.size,
                           format='csc') -
              self.theta * dt * J)
-        fields = fields.fill(solver(J, B))
+        fields.fill(solver(J, B))
         fields, _ = hook(fields, t + dt, pars)
         return fields, t + dt
