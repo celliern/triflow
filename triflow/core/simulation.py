@@ -30,11 +30,12 @@ class Simulation(object):
 
     def compute(self):
         fields = self.fields
-        t = self.t 
+        t = self.t
         pars = self.pars
         while True:
             fields, pars = self.hook(fields, t, pars)
-            fields, t = self.scheme(fields, t, pars['dt'], pars, hook=self.hook)
+            fields, t = self.scheme(fields, t, pars['dt'],
+                                    pars, hook=self.hook)
             self.fields = fields
             self.t = t
             self.pars = pars

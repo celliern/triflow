@@ -41,11 +41,6 @@ def generate_sympify_namespace(independent_variable, vars, fields):
     return namespace
 
 
-def reduce_fields(vars, fields, args, kwargs):
-    rc = recordclass('Fields', ['x'] + list(vars) + list(fields))
-    return rc(*args, **kwargs)
-
-
 def generate_fields_container(vars, fields):
 
     class Fields:
@@ -66,10 +61,6 @@ def generate_fields_container(vars, fields):
             self.dtype = [(var, float) for var in self.keys]
             for var in self.keys:
                 self.__setattr__(var, self.rec[var].squeeze())
-
-        def __reduce__(self):
-            return (partial(reduce_fields, vars, fields),
-                    (self.reduce_container[0], self.reduce_container[1]))
 
         @property
         def flat(self):
