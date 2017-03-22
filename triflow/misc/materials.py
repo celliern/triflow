@@ -65,6 +65,8 @@ def fluid_turb():
     relations_template.add_relation('l_factor - 1 / bhN')
     relations_template.add_relation('theta_flat - 1 / (1 + B)')
     relations_template.add_relation('phi_flat + B * theta_flat')
+    relations_template.add_relation('cosB - cos(bottom_angle)')
+    relations_template.add_relation('sinB - sin(bottom_angle)')
     relations_template['g'] = 9.81
     return relations_template
 
