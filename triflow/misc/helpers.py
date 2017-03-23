@@ -42,7 +42,8 @@ class TurbCallable:
     def __call__(self, fields, t, pars):
         q = fields.q
         inter = self.inter
-        for key, _ in zip(*inter.trad):
+
+        for key in inter.trad:
             fields[key][:] = inter.get(key, q)
         return fields, pars
 
