@@ -478,9 +478,9 @@ class Model:
             approximated_funcs.append(afunc.expand())
         return tuple(approximated_funcs)
 
-    def __reduce__(self):
-        f, j = self.th_routines
-        return (reduce_model, (self.funcs, self.vars,
-                               self.pars, self.fields,
-                               self.helpers, f, j
-                               ))
+    # def __reduce__(self):
+    #     f, j = self.th_routines
+    #     return (reduce_model, (self.funcs, self.vars,
+    #                            self.pars, self.fields,
+    #                            self.helpers, f, j
+    #                            ))
