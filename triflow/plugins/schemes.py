@@ -89,7 +89,7 @@ class ROW_general:
 
         self.next_time_step = t + dt
         self.internal_iter = 0
-        dt = self.internal_dt = (dt if self.internal_dt is None
+        dt = self.internal_dt = (1E-6 if self.internal_dt is None
                                  else self.internal_dt)
         while True:
             self.err = None
