@@ -1,11 +1,14 @@
-appdirs==1.4.0
-hashids==1.2.0
 mpmath==0.19
 numpy==1.12.0
-packaging==16.8
 path.py==10.1
 pyparsing==2.1.10
 scipy==0.18.1
 six==1.10.0
 sympy==1.0
 toolz==0.8.2
+coolname
+theano
+nose_parameterized
+symbolic_dict
+bokeh
+visdom

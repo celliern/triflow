@@ -2,6 +2,7 @@
 # coding=utf8
 
 import numpy as np
+import sympy as sp
 
 
 class ModelRoutine:
@@ -13,7 +14,7 @@ class ModelRoutine:
         self.ufunc = ufunc
 
     def __repr__(self):
-        return self.matrix.__repr__()
+        return sp.Matrix(self.matrix.tolist()).__repr__()
 
 
 class F_Routine(ModelRoutine):
@@ -28,7 +29,7 @@ class F_Routine(ModelRoutine):
     def diff_approx(self, fields, pars, eps=1E-8):
         nvar, N = len(fields.vars), fields.size
         fpars = {key: pars[key] for key in self.pars}
-        fpars['dx'] = pars['dx']
+        fpars['dx'] = (fields.x[-1] - fields.x[0]) / fields.x.size
         J = np.zeros((N * nvar, N * nvar))
         indices = np.indices(fields.uarray.shape)
         for i, (var_index, node_index) in enumerate(zip(*map(np.ravel,

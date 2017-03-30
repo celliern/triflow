@@ -3,20 +3,19 @@
 
 import itertools as it
 import logging
-from uuid import uuid1
 
-from ..plugins import schemes
+from coolname import generate_slug
+from triflow.plugins import schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
 class Simulation(object):
-    """ """
 
     def __init__(self, model, fields, t, pars, id=None,
                  hook=lambda fields, t, pars: (fields, pars)):
-        self.id = str(uuid1()) if id is None else id
+        self.id = id if not id else generate_slug(2)
         self.model = model
         self.pars = pars
 
@@ -41,17 +40,8 @@ class Simulation(object):
             self.pars = pars
             yield fields, t
 
-    def compute_until_finished(self):
-        logging.info('simulation %s computing until the end' % self.id)
-        self.pars['tmax']
-        for iteration in self.iterator:
-            logging.info('simulation reached time %.2f, iteration %i' %
-                         (self.t, self.i))
-        self.status = 'over'
-        return iteration
-
-    def set_scheme(self, scheme):
-        self.scheme = scheme(self.model)
+    def set_scheme(self, scheme, *args, **kwargs):
+        self.scheme = scheme(self.model, *args, **kwargs)
 
     def takewhile(self, outputs):
         """
@@ -73,7 +63,6 @@ class Simulation(object):
         if self.t > self.pars.get('tmax', None):
             self.status = 'finished'
             return False
-        return True
         return True
 
     def __iter__(self):

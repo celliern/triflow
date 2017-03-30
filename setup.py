@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name='triflow',
     # la version du code
-    version="0.2.6",
+    version="0.2.7",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -22,13 +22,7 @@ setup(
     # Active la prise en compte du fichier MANIFEST.in
     include_package_data=True,
 
-    entry_points={
-        'console_scripts':
-        ['triflow_cache_full='\
-         'triflow.models.cache_main_models:cache_full',
-         'triflow_cache_simple='\
-         'triflow.models.cache_main_models:cache_simple'],
-    },
+    entry_points={},
 
     # Une url qui pointe vers la page officielle de votre lib
     url='http://github.com/celliern/triflow',

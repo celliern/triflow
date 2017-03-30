@@ -17,14 +17,13 @@ The library fits well with an interactive usage (in a jupyter notebook). The dep
 Model writing
 -----------------
 
-This part will have a huge arrangement in the future: do not trust the ape!
-For now, all the models are written as function generating the F vector and the Jacobian matrix of the model defined as
+All the models are written as function generating the F vector and the Jacobian matrix of the model defined as
 
 .. math::
 
     \frac{\partial U}{\partial t} = F(U)
 
-The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection can be written as:
+The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection model can be written as:
 
 .. code-block:: python
 
@@ -36,6 +35,48 @@ The symbolic model is written as a simple mathematic equation. For exemple, a di
 
     model = Model(func, var, pars)
 
+the model give us access after that to the compiled routines for F and the corresponding Jacobian matrix as:
+
+.. code-block:: python
+
+    print(model.F)
+    ... Matrix([[-2*U*k/dx**2 + 0.5*U_m1*c/dx + U_m1*k/dx**2 - 0.5*U_p1*c/dx + U_p1*k/dx**2]])
+
+    print(model.J)
+    ... Matrix([[0.5*c/dx + k/dx**2], [-2*k/dx**2], [-0.5*c/dx + k/dx**2]])
+
+The Jacobian is computed in a sparse form. These object are callable, and will return the numerical values if the fields and the parameters are provided:
+
+.. code-block:: python
+
+    print(model.F(fields, parameters))
+    ... array([...])
+
+    print(model.J(fields, parameters))
+    ... <NxN sparse matrix of type '<class 'numpy.float64'>'
+    with M stored elements in Compressed Sparse Column format>
+
+a numerical approximation is available for debug purpose with
+
+.. code-block:: python
+    print(model.F(fields, parameters))
+    ... array([[...]])
+
+be aware that numerical approximation of the Jacobian is far less efficient than the provided optimized routine.
+
+optional arguments : fields and parameters
+------------------------------------------
+
+The model take two mandatory parameters: 'funcs' and 'vars'. The first define the evaluation of the time derivative, the second the name of the dependant variables.
+
+It can take two optional arguments :
+
+* pars, a list of parameters name. They can be scalar or vector with the same dimension as the dependant variables.
+* fields, a list of outside variables : they have to be vector with the same dimension of the dependant variable.
+
+So, what is main difference between them? The difference is that you have the possibility to use spatial derivative of the fields in the model. Because the fields are parsed and the derivative approximated, it make the graph optimization of the model grows.
+
+
 Model compilation
 ------------------
 
@@ -43,7 +84,7 @@ The model has to be compiled before being employed. The sympy library provides a
 
 In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).
 
-The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model).
+The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (> 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the Theano_ documentation for more details).
 
 Fields containers
 ------------------
@@ -52,7 +93,7 @@ A special container has been designed to handle initial values of the dependant 
 
 A factory is linked to the model and is accessible via the model.fields_template property :
 
-.. code-block:: python
+.. code-block:: python3
 
     import numpy as np
     from triflow import Model
@@ -66,7 +107,7 @@ A factory is linked to the model and is accessible via the model.fields_template
 
 The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations.
 
-.. code-block:: python
+.. code-block:: python3
 
     fields.U[:] = 5
     print(fields.U)
@@ -93,7 +134,7 @@ They can accept somme extra arguments during their instantiation (for exemple th
 
 The following code compute juste one time-step with a Crank-Nicolson scheme.
 
-.. code-block:: python
+.. code-block:: python3
 
     import numpy as np
     from triflow import Model, schemes
@@ -116,7 +157,7 @@ The following code compute juste one time-step with a Crank-Nicolson scheme.
 
 We obtain with the following code a full resolution up to the target time.
 
-.. code-block:: python
+.. code-block:: python3
 
     import numpy as np
     from triflow import Model, schemes
@@ -146,7 +187,7 @@ The hook function is used in order to deal with variable and conditional paramet
 
 Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the mode "wrap" leading to periodic fields. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
 
-.. code-block:: python
+.. code-block:: python3
 
     import numpy as np
     from triflow import Model, schemes
@@ -176,6 +217,42 @@ Inside the model, the fields are padded in order to solve the equation. If the p
     while t <= tmax:
         fields, t = scheme(fields, t, dt,
                            parameters, hook=dirichlet_condition)
+
+Displays
+^^^^^^^^
+
+Hooks are called every internal time step and allow granular modification of the parameters or fields.
+
+Displays have to be called by the user and can not modify the fields or parameters, but can display or save data during the simulation.
+
+Like the hooks, they are basically callable or coroutine taking fields or the other to output post-processed data. The built-ins displays are detailed on the section of the same name. The following example show how we can plot the dependant variable U and the number of internal iteration during the simulation.
+
+.. code-block:: python3
+
+    import numpy as np
+    from triflow import Model, Simulation
+    from triflow.plugins.displays import bokeh_probes_update
+
+
+    model = Model(funcs="k * dxxU - c * dxU", vars="U", pars=["k", "c"])
+    parameters = dict(time_stepping=True,
+                      tol=1E-1, dt=1, tmax=100,
+                      periodic=True,
+                      c=1, k=1E-6)
+
+    x = np.linspace(-2 * np.pi, 2 * np.pi, 100, endpoint=False)
+    U = np.cos(x) + 2
+
+    fields = model.fields_template(x=x, U=U)
+    simul = Simulation(model, fields, 0, parameters)
+
+    def internal_iter(t, simul):
+        return simul.scheme.internal_iter
+
+    bokeh_probe = bokeh_probes_update({'niter': internal_iter})
+
+    for fields, t in simul:
+        bokeh_probe.send((t, simul))
 
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _Numpy: http://www.sympy.org/en/index.html

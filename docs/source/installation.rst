@@ -40,3 +40,5 @@ You can install the last version of the library using pip and the github reposit
 .. code:: bash
 
     pip install git+git://github.com/celliern/triflow.git
+
+The library will be available in PyPI and Conda as soon as the api will be stable enough.
