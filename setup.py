@@ -27,6 +27,25 @@ setup(
     # Une url qui pointe vers la page officielle de votre lib
     url='http://github.com/celliern/triflow',
 
+    install_requires=[
+            'mpmath',
+            'numpy',
+            'path',
+            'pyparsing',
+            'scipy',
+            'six',
+            'sympy',
+            'toolz',
+            'sym_dict',
+            'coolname',
+            'theano',
+            'nose_parameterized'],
+    extras_require={
+        'visdom': ["visdom"],
+        'bokeh': ["bokeh"],
+        'datreant': ["datreant.core"],
+    },
+
     # Il est d'usage de mettre quelques metadata à propos de sa lib
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
 

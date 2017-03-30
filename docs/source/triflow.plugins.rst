@@ -4,6 +4,14 @@ triflow.plugins package
 Submodules
 ----------
 
+triflow.plugins.displays module
+-------------------------------
+
+.. automodule:: triflow.plugins.displays
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 triflow.plugins.schemes module
 ------------------------------
 

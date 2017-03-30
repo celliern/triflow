@@ -7,13 +7,14 @@ Welcome to triflow's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    installation
    intro
    model
    schemes
+   modules
 
 
 

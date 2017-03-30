@@ -25,7 +25,7 @@ All the models are written as function generating the F vector and the Jacobian 
 
 The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection model can be written as:
 
-.. code-block:: python
+.. code-block:: python3
 
     from triflow import Model
 
@@ -37,7 +37,7 @@ The symbolic model is written as a simple mathematic equation. For exemple, a di
 
 the model give us access after that to the compiled routines for F and the corresponding Jacobian matrix as:
 
-.. code-block:: python
+.. code-block:: python3
 
     print(model.F)
     ... Matrix([[-2*U*k/dx**2 + 0.5*U_m1*c/dx + U_m1*k/dx**2 - 0.5*U_p1*c/dx + U_p1*k/dx**2]])
@@ -47,7 +47,7 @@ the model give us access after that to the compiled routines for F and the corre
 
 The Jacobian is computed in a sparse form. These object are callable, and will return the numerical values if the fields and the parameters are provided:
 
-.. code-block:: python
+.. code-block:: python3
 
     print(model.F(fields, parameters))
     ... array([...])
@@ -58,7 +58,8 @@ The Jacobian is computed in a sparse form. These object are callable, and will r
 
 a numerical approximation is available for debug purpose with
 
-.. code-block:: python
+.. code-block:: python3
+
     print(model.F(fields, parameters))
     ... array([[...]])
 
@@ -254,6 +255,7 @@ Like the hooks, they are basically callable or coroutine taking fields or the ot
     for fields, t in simul:
         bokeh_probe.send((t, simul))
 
+.. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _Numpy: http://www.sympy.org/en/index.html
 .. _scipy sparse column matrix format: https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.sparse.csc_matrix.html

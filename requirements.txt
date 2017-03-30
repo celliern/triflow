@@ -6,9 +6,9 @@ scipy==0.18.1
 six==1.10.0
 sympy==1.0
 toolz==0.8.2
-coolname
-theano
-nose_parameterized
-symbolic_dict
-bokeh
-visdom
+sym_dict==0.2.2
+coolname==0.2.1
+theano==0.9.0
+nose_parameterized==0.5.0
+bokeh==0.12.4
+visdom==0.1.1
