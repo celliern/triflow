@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name='triflow',
     # la version du code
-    version="0.3.0",
+    version="0.3.1",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -30,7 +30,7 @@ setup(
     install_requires=[
             'mpmath',
             'numpy',
-            'path',
+            'path.py',
             'pyparsing',
             'scipy',
             'six',
