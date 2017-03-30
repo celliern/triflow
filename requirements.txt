@@ -12,3 +12,5 @@ theano==0.9.0
 nose_parameterized==0.5.0
 bokeh==0.12.4
 visdom==0.1.1
+sphinxcontrib.napoleon==0.6.1
+sphinx_rtd_theme==0.2.4
