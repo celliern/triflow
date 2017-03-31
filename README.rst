@@ -80,7 +80,7 @@ All the models are written as function generating the F vector and the Jacobian 
 
 The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection model can be written as:
 
-.. code-block:: python3
+.. code-block:: python
 
     from triflow import Model
 
@@ -94,7 +94,7 @@ Example
 -------
 
 
-.. code-block:: python3
+.. code-block:: python
 
     import numpy as np
     from triflow import Model, Simulation
