@@ -20,7 +20,7 @@ schemes.scipy_ode
 
 .. code-block:: python3
 
-    scheme = schemes.Theta(model, integrator, kwd_integrator)
+    scheme = schemes.scipy_ode(model, integrator, kwd_integrator)
 
 This scheme is a wrapper around the scipy.integrate.ode.
 
