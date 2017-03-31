@@ -7,7 +7,7 @@ import itertools as it
 from collections import deque
 
 import numpy as np
-import visdom
+
 
 def coroutine(func):
     def wrapper(*arg, **kwargs):
@@ -126,6 +126,7 @@ def visdom_update(addr='http://127.0.0.1',
             visdom_upt.send((fields, t))
 
     """
+    import visdom
     vis = visdom.Visdom(addr)
     fields, t = yield
     wins = {}

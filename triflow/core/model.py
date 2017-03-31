@@ -45,11 +45,8 @@ def generate_fields_container(vars, fields):
 
     class Fields:
         def __init__(self, **kwargs):
-            assert set(kwargs.keys()) == set(['x'] +
-                                             list(vars) +
-                                             list(fields))
-            for key, value in kwargs.items():
-                self.__setattr__(key, value)
+            for key in set(['x'] + list(vars) + list(fields)):
+                self.__setattr__(key, kwargs[key])
             self.reduce_container = kwargs
             self.vars = vars
             self.fields = fields
@@ -92,7 +89,6 @@ def generate_fields_container(vars, fields):
         def copy(self):
             old_values = {var: getattr(self, var).squeeze()
                           for var in self.keys}
-            # NewField = generate_fields_container(self.vars, self.fields)
 
             return self.__class__(**old_values)
 
@@ -122,12 +118,12 @@ class Model:
     """docstring for Model"""
 
     def __init__(self,
-                 funcs: Union[str, list, tuple, dict],
-                 vars: Union[str, list, tuple],
-                 pars: Union[str, list, tuple, None]=None,
-                 fields: Union[str, list, tuple, None]=None,
-                 helpers: Union[dict, tuple, None]=None,
-                 reduced=False) -> None:
+                 funcs,
+                 vars,
+                 pars=None,
+                 fields=None,
+                 helpers=None,
+                 reduced=False):
         self.N = Symbol('N', integer=True)
         x, dx = self.x, self.dx = symbols('x dx')
         y, dy = self.y, self.dy = symbols('y dy')
