@@ -15,7 +15,7 @@ class Simulation(object):
 
     def __init__(self, model, fields, t, pars, id=None,
                  hook=lambda fields, t, pars: (fields, pars)):
-        self.id = id if not id else generate_slug(2)
+        self.id = generate_slug(2) if not id else id
         self.model = model
         self.pars = pars
 
