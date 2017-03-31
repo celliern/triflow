@@ -181,7 +181,7 @@ We obtain with the following code a full resolution up to the target time.
     while t <= tmax:
         fields, t = scheme(fields, t, dt, parameters)
 
-hook and boundary consitions
+hook and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The hook function is used in order to deal with variable and conditional parameters and boundary condition.
