@@ -208,7 +208,13 @@ def _reduce_model(eq_diffs, dep_vars, pars,
 
 
 class Model:
-    """
+    """Contain finite difference approximation and routine of the dynamical system
+
+    Take a mathematical form as input, use Sympy to transform it as a symbolic
+    expression, perform the finite difference approximation and expose theano
+    optimized routine for both the right hand side of the dynamical system and
+    Jacobian matrix approximation.
+
     Args:
         differential_equations (iterable of str or str): the right hand sides
             of the partial differential equations written as
@@ -246,6 +252,10 @@ class Model:
         >>> model = Model(["k1 * dxxU - c1 * dxV",
                            "k2 * dxxV - c2 * dxU",],
                            ["U", "V"], ["k1", "k2", "c1", "c2"])
+
+    TODOs:
+        Include t as symbolic variable to allow time dependent functions
+            (non-autonomous dynamical systems)
     """
 
     def __init__(self,

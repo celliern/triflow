@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 # coding=utf8
+"""This module provides a Signal class usefull for time variable boundary
+conditions.
+
+Available signals:
+    * ConstantSignal: just an offset signal
+    * ForcedSignal: a sinusoidal wave
+    * WhiteNoise: a noisy signal
+    * BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction
+    of the available modes.
+"""
 
 import logging
 from scipy.fftpack import rfft, irfft
@@ -74,26 +84,23 @@ class BrownNoise(Signal):
                  signal_period: float, n: int=1000,
                  noise_ampl: float=.01,
                  fcut: float=.5,
-                 offset: float=0,
                  seed: int or None=None):
         super().__init__(signal_period,
                          n=n,
                          noise_ampl=noise_ampl,
                          fcut=fcut,
-                         offset=offset,
                          seed=seed)
 
     def _signal_template(self,
                          signal_period: float, n: int=1000,
                          noise_ampl: float=.01,
                          fcut: float=.5,
-                         offset: float=0,
                          seed: int or None=None):
         randgen = np.random.RandomState(seed=seed)
         input_modes = rfft(randgen.rand(self.size) * 2 - 1)
         if fcut is not None:
             input_modes[int(fcut * self.size):] = 0
-        return noise_ampl * irfft(input_modes) + offset
+        return noise_ampl * irfft(input_modes)
 
     def wave(self, t: float or np.array) -> float or np.array:
         signal = self.interp_function(t % self.signal_period)
@@ -104,13 +111,11 @@ class WhiteNoise(BrownNoise):
     def __init__(self,
                  signal_period: float, n: int=1000,
                  noise_ampl: float=.01,
-                 offset: float=0,
                  seed: int or None=None):
         super().__init__(signal_period,
                          n=n,
                          noise_ampl=noise_ampl,
                          fcut=None,
-                         offset=offset,
                          seed=seed)
 
 

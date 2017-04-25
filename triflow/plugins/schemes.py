@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 # coding=utf8
 
+"""This module regroups all the implemented temporal schemes.
+They are written as callable class which take the model and some control
+arguments at the init, and perform a computation step every time they are
+called.
+
+The following solvers are implemented:
+    * Backward and Forward Euler, Crank-Nicolson method (with the Theta class)
+    * Some Rosenbrock Wanner schemes (up to the 6th order) with time controler
+    * All the scipy.integrate.ode integrators with the scipy_ode class.
+"""
+
 import logging
 
 import scipy.sparse as sps
@@ -15,117 +26,150 @@ logging = logging.getLogger(__name__)
 
 
 class ROW_general:
-    """http://www.digibib.tu-bs.de/?docid=00055262"""
+    """Rosenbrock Wanner class of temporal solvers
+
+    The implementation and the different parameters can be found in
+    http://www.digibib.tu-bs.de/?docid=00055262
+    """
 
     @memoize
     def __cache__(self, N):
         Id = sps.eye(N, format='csc')
         return Id
 
-    def __init__(self, model, alpha, gamma, b, b_pred=None):
-        self.internal_dt = None
-        self.model = model
-        self.alpha = alpha
-        self.gamma = gamma
-        self.b = b
-        self.b_pred = b_pred
-        self.s = len(b)
+    def __init__(self, model, alpha, gamma, b, b_pred=None,
+                 time_stepping=False):
+        self._internal_dt = None
+        self._model = model
+        self._alpha = alpha
+        self._gamma = gamma
+        self._b = b
+        self._b_pred = b_pred
+        self._s = len(b)
+        self._time_control = time_stepping
 
-    def __call__(self, fields, t, dt, pars,
-                 hook=lambda fields, t, pars: (fields, pars)):
-        if pars.get('time_stepping', False):
+    def __call__(self, t, fields, dt, pars,
+                 hook=lambda t, fields, pars: (fields, pars)):
+        """Perform a step of the solver: took a time and a system state as a
+        triflow Fields container and return the next time step with updated
+        container.
+
+        Args:
+            t (float): actual time step
+            fields (triflow.Fields): actual system state in a triflow Fields
+            container
+            dt (float): temporal step-size
+            pars (dict): physical parameters of the model
+            hook (callable, optional): any callable taking the actual time,
+                fields and parameters and return modified fields and
+                parameters. Will be called every internal time step and can
+                be used to include time dependent or conditionnal parameters,
+                boundary conditions...
+
+        Returns:
+            tuple (t, fields): updated time and fields container
+
+        Raises:
+            NotImplementedError: raised if a time stepping is requested but
+            the scheme do not provide the b predictor coefficients.
+        """
+        if self._time_control:
             try:
-                if self.b_pred is None:
+                if self._b_pred is None:
                     raise NotImplementedError(
                         'No b predictor provided for '
                         'this scheme, unable to use '
                         'variable time stepping, falling '
                         'to constant time step = %f' % dt
                     )
-                return self.variable_step(fields, t, dt, pars,
-                                          hook=hook)
+                return self._variable_step(t, fields, dt, pars,
+                                           hook=hook)
             except NotImplementedError as e:
                 logging.warning(e)
 
-        fields, t, _ = self.fixed_step(fields, t, dt, pars,
-                                       hook=hook)
-        fields, pars = hook(fields, t, pars)
-        return fields, t
+        t, fields, _ = self._fixed_step(t, fields, dt, pars,
+                                        hook=hook)
+        fields, pars = hook(t, fields, pars)
+        return t, fields
 
-    def fixed_step(self, fields, t, dt, pars,
-                   hook=lambda fields, t, pars: (fields, pars)):
+    def _fixed_step(self, t, fields, dt, pars,
+                    hook=lambda t, fields, pars: (fields, pars)):
         fields = fields.copy()
-        fields, pars = hook(fields, t, pars)
-        J = self.model.J(fields, pars)
+        fields, pars = hook(t, fields, pars)
+        J = self._model.J(fields, pars)
         Id = self.__cache__(fields.uflat.size)
-        A = Id - self.gamma[0, 0] * dt * J
+        A = Id - self._gamma[0, 0] * dt * J
         luf = sps.linalg.splu(A)
         ks = []
         fields_i = fields.copy()
-        for i in np.arange(self.s):
+        for i in np.arange(self._s):
             fields_i.fill(fields.uflat +
-                          sum([self.alpha[i, j] * ks[j]
+                          sum([self._alpha[i, j] * ks[j]
                                for j in range(i)]))
-            F = self.model.F(fields_i, pars)
-            ks.append(luf.solve(dt * F + dt * (J @ sum([self.gamma[i, j] *
+            F = self._model.F(fields_i, pars)
+            ks.append(luf.solve(dt * F + dt * (J @ sum([self._gamma[i, j] *
                                                         ks[j]
                                                         for j
                                                         in range(i)])
                                                if i > 0 else 0)))
         U = fields.uflat.copy()
-        U = U + sum([bi * ki for bi, ki in zip(self.b, ks)])
+        U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
         U_pred = (U + sum([bi * ki
                            for bi, ki
-                           in zip(self.b_pred, ks)])
-                  if self.b_pred is not None else None)
+                           in zip(self._b_pred, ks)])
+                  if self._b_pred is not None else None)
         fields.fill(U)
 
-        return fields, t + dt, (norm(U - U_pred, np.inf)
+        return t + dt, fields, (norm(U - U_pred, np.inf)
                                 if U_pred is not None else None)
 
-    def variable_step(self, fields, t, dt, pars,
-                      hook=lambda fields, t, pars: (fields, pars)):
+    def _variable_step(self, t, fields, dt, pars,
+                       hook=lambda t, fields, pars: (fields, pars)):
 
-        self.next_time_step = t + dt
-        self.internal_iter = 0
-        dt = self.internal_dt = (1E-6 if self.internal_dt is None
-                                 else self.internal_dt)
+        self._next_time_step = t + dt
+        self._internal_iter = 0
+        dt = self._internal_dt = (1E-6 if self._internal_dt is None
+                                  else self._internal_dt)
         while True:
-            self.err = None
-            while (self.err is None or self.err > pars['tol']):
-                newfields, _, self.err = self.fixed_step(fields,
-                                                         t,
-                                                         dt,
-                                                         pars,
-                                                         hook)
-                logging.debug(f"error: {self.err}")
-                dt = (0.9 * dt * np.sqrt(pars['tol'] / self.err))
+            self._err = None
+            while (self._err is None or self._err > pars['tol']):
+                newfields, _, self._err = self.fixed_step(fields,
+                                                          t,
+                                                          dt,
+                                                          pars,
+                                                          hook)
+                logging.debug(f"error: {self._err}")
+                dt = (0.9 * dt * np.sqrt(pars['tol'] / self._err))
             fields = newfields.copy()
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
-            if t + dt >= self.next_time_step:
+            if t + dt >= self._next_time_step:
                 logging.debug('new t more than next expected time step')
-                dt = self.next_time_step - t
+                dt = self._next_time_step - t
                 logging.debug(f'dt falling to {dt}')
-            self.internal_dt = dt
-            t = t + self.internal_dt
-            self.internal_iter += 1
-            if np.isclose(t, self.next_time_step):
-                self.internal_dt = dt
-                fields, pars = hook(fields, t, pars)
-                return fields, self.next_time_step
-            if self.internal_iter > pars.get('max_iter',
-                                             self.internal_iter + 1):
+            self._internal_dt = dt
+            t = t + self._internal_dt
+            self._internal_iter += 1
+            if np.isclose(t, self._next_time_step):
+                self._internal_dt = dt
+                fields, pars = hook(t, fields, pars)
+                return self._next_time_step, fields
+            if self._internal_iter > pars.get('max_iter',
+                                              self._internal_iter + 1):
                 raise RuntimeError("Rosebrock internal iteration "
                                    "above max iterations authorized")
-            if self.internal_dt < pars.get('dt_min', self.internal_dt * .5):
+            if self._internal_dt < pars.get('dt_min', self._internal_dt * .5):
                 raise RuntimeError("Rosebrock internal time step "
                                    "less than authorized")
 
 
 class ROS2(ROW_general):
-    """Second order Rosenbrock scheme, without time stepping"""
+    """Second order Rosenbrock scheme, without time stepping
+
+    Args:
+        model (triflow.Model): triflow Model
+    """
 
     def __init__(self, model):
         gamma = np.array([[2.928932188134E-1, 0],
@@ -133,13 +177,19 @@ class ROS2(ROW_general):
         alpha = np.array([[0, 0],
                           [1, 0]])
         b = np.array([1 / 2, 1 / 2])
-        super().__init__(model, alpha, gamma, b)
+        super().__init__(model, alpha, gamma, b, time_stepping=False)
 
 
 class ROS3PRw(ROW_general):
-    """docstring for FE"""
+    """Third order Rosenbrock scheme, with time stepping
 
-    def __init__(self, model):
+    Args:
+        model (triflow.Model): triflow Model
+        time_stepping (bool, optional, default True): allow a variable
+            internal time-step to ensure good agreement between computing
+            performance and accuracy."""
+
+    def __init__(self, model, time_stepping=True):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
@@ -157,13 +207,21 @@ class ROS3PRw(ROW_general):
         gamma[1, 0] = -2.3660254037844388e+00
         gamma[2, 0] = -8.6791218280355165e-01
         gamma[2, 1] = -8.7306695894642317e-01
-        super().__init__(model, alpha, gamma, b, b_pred=b_pred)
+        super().__init__(model, alpha, gamma, b, b_pred=b_pred,
+                         time_stepping=time_stepping)
 
 
 class ROS3PRL(ROW_general):
-    """docstring for FE"""
+    """4th order Rosenbrock scheme, with time stepping
 
-    def __init__(self, model):
+    Args:
+        model (triflow.Model): triflow Model
+        time_stepping (bool, optional, default True): allow a variable
+            internal time-step to ensure good agreement between computing
+            performance and accuracy.
+    """
+
+    def __init__(self, model, time_stepping=True):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
         gamma_i = 4.3586652150845900e-01
@@ -190,13 +248,21 @@ class ROS3PRL(ROW_general):
         gamma[3, 0] = -4.9788969914518677e-01
         gamma[3, 1] = 3.8607515441580453e-01
         gamma[3, 2] = -3.2405197677907682e-01
-        super().__init__(model, alpha, gamma, b, b_pred=b_pred)
+        super().__init__(model, alpha, gamma, b, b_pred=b_pred,
+                         time_stepping=time_stepping)
 
 
 class RODASPR(ROW_general):
-    """docstring for FE"""
+    """6th order Rosenbrock scheme, with time stepping
 
-    def __init__(self, model):
+    Args:
+        model (triflow.Model): triflow Model
+        time_stepping (bool, optional, default True): allow a variable
+            internal time-step to ensure good agreement between computing
+            performance and accuracy.
+    """
+
+    def __init__(self, model, time_stepping=True):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [-7.9683251690137014E-1,
@@ -244,62 +310,123 @@ class RODASPR(ROW_general):
         gamma[5, 2] = -6.74235e0
         gamma[5, 3] = -1.061963e-1
         gamma[5, 4] = -3.57142857e-1
-        super().__init__(model, alpha, gamma, b, b_pred=b_pred)
+        super().__init__(model, alpha, gamma, b, b_pred=b_pred,
+                         time_stepping=time_stepping)
 
 
 class scipy_ode:
-    """docstring for FE"""
+    """Proxy written around the scipy.integrate.ode class. Give access to all
+    the scpy integrators.
+
+    Args:
+        model (triflow.Model): triflow Model
+        integrator (str, optional, default 'vode'): name of the chosen scipy
+            integration scheme.
+        **integrator_kwargs: extra arguments provided to the scipy integration
+            scheme.
+    """
 
     def __init__(self, model, integrator='vode', **integrator_kwargs):
         def func_scipy_proxy(t, U, fields, pars, hook):
             fields.fill(U)
-            fields, pars = hook(fields, t, pars)
+            fields, pars = hook(t, fields, pars)
             return model.F(fields, pars)
 
         def jacob_scipy_proxy(t, U, fields, pars, hook):
             fields.fill(U)
-            fields, pars = hook(fields, t, pars)
+            fields, pars = hook(t, fields, pars)
             return model.J(fields, pars, sparse=False)
 
-        self.solv = ode(func_scipy_proxy,
-                        jac=jacob_scipy_proxy)
-        self.solv.set_integrator(integrator, **integrator_kwargs)
+        self._solv = ode(func_scipy_proxy,
+                         jac=jacob_scipy_proxy)
+        self._solv.set_integrator(integrator, **integrator_kwargs)
 
-    def __call__(self, fields, t, dt, pars,
-                 hook=lambda fields, t, pars: (fields, pars)):
-        solv = self.solv
-        fields, pars = hook(fields, t, pars)
+    def __call__(self, t, fields, dt, pars,
+                 hook=lambda t, fields, pars: (fields, pars)):
+        """Perform a step of the solver: took a time and a system state as a
+        trflow Fields container and return the next time step with updated
+        container.
+
+        Args:
+            t (float): actual time step
+            fields (triflow.Fields): actual system state in a triflow Fields
+            container
+            dt (float): temporal step-size
+            pars (dict): physical parameters of the model
+            hook (callable, optional): any callable taking the actual time,
+                fields and parameters and return modified fields and
+                parameters. Will be called every internal time step and can
+                be used to include time dependent or conditionnal parameters,
+                boundary conditions...
+
+        Returns:
+            tuple (t, fields): updated time and fields container
+        """
+
+        solv = self._solv
+        fields, pars = hook(t, fields, pars)
         solv.set_initial_value(fields.uflat, t)
         solv.set_f_params(fields, pars, hook)
         solv.set_jac_params(fields, pars, hook)
         U = solv.integrate(t + dt)
         fields.fill(U)
         if solv.successful:
-            fields, _ = hook(fields, t + dt, pars)
-            return fields, t + dt
+            fields, _ = hook(t + dt, fields, pars)
+            return t + dt, fields
         else:
             raise RuntimeError
 
 
 class Theta:
-    """docstring for FE_scheme"""
+    """Simple theta-based scheme where theta is a weight
+        if theta = 0, the scheme is a forward-euler scheme
+        if theta = 1, the scheme is a backward-euler scheme
+        if theta = 0.5, the scheme is called a Crank-Nicolson scheme
 
-    def __init__(self, model, theta=1):
-        self.model = model
-        self.theta = theta
+    Args:
+        model (triflow.Model): triflow Model
+        theta (int, optional, default 1): weight of the theta-scheme
+        solver (callable, optional, default scipy.sparse.linalg.spsolve):
+            method able to solve a Ax = b linear equation with A a sparse
+            matrix. Take A and b as argument and return x.
+    """
 
-    def __call__(self, fields, t, dt, pars,
-                 hook=lambda fields, t, pars: (fields, pars),
-                 solver=sps.linalg.spsolve):
+    def __init__(self, model, theta=1, solver=sps.linalg.spsolve):
+        self._model = model
+        self._theta = theta
+        self._solver = solver
+
+    def __call__(self, t, fields, dt, pars,
+                 hook=lambda t, fields, pars: (fields, pars)):
+        """Perform a step of the solver: took a time and a system state as a
+        trflow Fields container and return the next time step with updated
+        container.
+
+        Args:
+            t (float): actual time step
+            fields (triflow.Fields): actual system state in a triflow Fields
+            container
+            dt (float): temporal step-size
+            pars (dict): physical parameters of the model
+            hook (callable, optional): any callable taking the actual time,
+                fields and parameters and return modified fields and
+                parameters. Will be called every internal time step and can
+                be used to include time dependent or conditionnal parameters,
+                boundary conditions...
+
+        Returns:
+            tuple (t, fields): updated time and fields container
+        """
+
         fields = fields.copy()
-        fields, pars = hook(fields, t, pars)
-        F = self.model.F(fields, pars)
-        J = self.model.J(fields, pars)
+        fields, pars = hook(t, fields, pars)
+        F = self._model.F(fields, pars)
+        J = self._model.J(fields, pars)
         U = fields.uflat
-        B = dt * (F - self.theta * J @ U) + U
+        B = dt * (F - self._theta * J @ U) + U
         J = (sps.identity(U.size,
                           format='csc') -
-             self.theta * dt * J)
-        fields.fill(solver(J, B))
-        fields, _ = hook(fields, t + dt, pars)
-        return fields, t + dt
+             self._theta * dt * J)
+        fields.fill(self._solver(J, B))
+        fields, _ = hook(t + dt, fields, pars)
+        return t + dt, fields

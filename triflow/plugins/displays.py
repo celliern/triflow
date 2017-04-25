@@ -1,15 +1,19 @@
 #!/usr/bin/env python
-"""Summary
+"""This module regroups different displays: function and coroutine written
+in order to give extra informationto the user during the simulation
+(plot, post-processing...)
 """
 # coding=utf8
 
-import itertools as it
+from itertools import count
+from functools import wraps
 from collections import deque
 
 import numpy as np
 
 
 def coroutine(func):
+    @wraps(func)
     def wrapper(*arg, **kwargs):
         generator = func(*arg, **kwargs)
         next(generator)
@@ -22,23 +26,20 @@ def amnesic_mean():
     """Coroutine able to compute mean of a sample without keeping
     data in memory.
 
-    Example
-    -------
-    In that example we check if the mean value returned by the coroutine feeded
-    by normal pseudo random values goes close to 0::
-        import numpy as np
+    Examples:
+        In that example we check if the mean value returned by the
+        coroutine feeded by normal pseudo random values goes close to 0
 
-        mean_coroutine = amnesic_mean()
-
-        for value in np.random.randn(5000):
-            x_mean = mean_coroutine.send(value)
-        print(x_mean)
-        ... ~0
-
+        >>> import numpy as np
+        >>> mean_coroutine = amnesic_mean()
+        >>> for value in np.random.randn(5000):
+        ...     x_mean = mean_coroutine.send(value)
+        >>> print(np.isclose(x_mean, 0))
+        True
     """
     increment = yield
     total = increment
-    for i in it.count():
+    for i in count():
         increment = yield total / (i + 1)
         total += increment
 
@@ -49,31 +50,29 @@ def window_data(window_len=None):
     of the time and the fields, with optionnal window lenght. Useful to save
     only a part of the solution.
 
-    Parameters
-    ----------
-    window_len : int or None (default)
-        number of last iterations kept. All data kept if None
+    Args:
+        window_len (int or None (default)): number of last iterations kept.
+            All data kept if None
 
-    Example
-    -------
-    ::
-        from triflow import Model, Simulation
-        import numpy as np
+    Example:
+        ::
+            from triflow import Model, Simulation
+            import numpy as np
 
-        model = Model(funcs="dxxU", vars="U")
-        parameters = dict(time_stepping=True, tol=1E-2, dt=1,
-                          periodic=True, tmax=10)
+            model = Model(funcs="dxxU", vars="U")
+            parameters = dict(time_stepping=True, tol=1E-2, dt=1,
+                              periodic=True, tmax=10)
 
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
-        U = np.cos(x)
+            x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
+            U = np.cos(x)
 
-        fields = model.fields_template(x=x, U=U)
-        simul = Simulation(model, fields, 0, parameters)
+            fields = model.fields_template(x=x, U=U)
+            simul = Simulation(model, fields, 0, parameters)
 
-        window_save_gen = window_data()
+            window_save_gen = window_data()
 
-        for fields, t in simul:
-            saved_data = window_save_gen.send((fields, t))
+            for fields, t in simul:
+                saved_data = window_save_gen.send((fields, t))
 
     """
     fields, t = yield
@@ -93,37 +92,33 @@ def visdom_update(addr='http://127.0.0.1',
     """Coroutine sending fields data in a interactive plot leaving on a visdom
     server (which has to be launched).
 
-    Parameters
-    ----------
-    addr: str (default "http://127.0.0.1")
-        adress of the visdom server.
-    env: str (default "main")
-        Visdom environnement where the plot will be send.
-    vars: list or None (default None)
-        list of the plotted variables. Default all the dependant
-        variables of the model.
+    Args:
+        addr (str (default "http://127.0.0.1")): adress of the visdom server.
+        env (str (default "main")): Visdom environnement where
+            the plot will be send.
+        vars (list or None (default None)): list of the plotted variables.
+            Default all the dependant variables of the model.
 
 
-    Example
-    -------
-    ::
-        from triflow import Model, Simulation
-        import numpy as np
+    Example:
+        ::
+            from triflow import Model, Simulation
+            import numpy as np
 
-        model = Model(funcs="dxxU", vars="U")
-        parameters = dict(time_stepping=True, tol=1E-2, dt=1,
-                          periodic=True, tmax=10)
+            model = Model(funcs="dxxU", vars="U")
+            parameters = dict(time_stepping=True, tol=1E-2, dt=1,
+                              periodic=True, tmax=10)
 
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
-        U = np.cos(x)
+            x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
+            U = np.cos(x)
 
-        fields = model.fields_template(x=x, U=U)
-        simul = Simulation(model, fields, 0, parameters)
+            fields = model.fields_template(x=x, U=U)
+            simul = Simulation(model, fields, 0, parameters)
 
-        visdom_upt = visdom_update()
+            visdom_upt = visdom_update()
 
-        for fields, t in simul:
-            visdom_upt.send((fields, t))
+            for fields, t in simul:
+                visdom_upt.send((fields, t))
 
     """
     import visdom
@@ -150,39 +145,32 @@ def bokeh_fields_update(vars=None, line_kwargs={}, fig_kwargs={}):
     a jupyter notebook.
     bokeh.io.output_notebook() have to be called before using this coroutine.
 
-    Parameters
-    ----------
-    vars: list or None (default None)
-        list of the plotted variables. Default all the dependant
-        variables of the model.
-    line_kwargs: dict of dict
-        dictionnary with vars as key and a dictionnary of keywords arguments
-        passed to the lines plots
-    fig_kwargs: dict of dict
-        dictionnary with vars as key and a dictionnary of keywords arguments
-        passed to the figs plots
+    Args:
+        vars (list or None (default None)): list of the plotted variables.
+            Default all the dependant variables of the model.
+        line_kwargs (dict of dict): dictionnary with vars as key and a
+            dictionnary of keywords arguments passed to the lines plots
+        fig_kwargs (dict of dict): dictionnary with vars as key and a
+            dictionnary of keywords arguments passed to the figs plots
 
-    Example
-    -------
-    ::
-        from triflow import Model, Simulation
-        import numpy as np
+    Examples:
+        >>> from triflow import Model, Simulation
+        >>> import numpy as np
 
-        model = Model(funcs="dxxU", vars="U")
-        parameters = dict(time_stepping=True, tol=1E-2, dt=1,
-                          periodic=True, tmax=10)
+        >>> model = Model(funcs="dxxU", vars="U")
+        >>> parameters = dict(time_stepping=True, tol=1E-2, dt=1,
+        ...                   periodic=True, tmax=10)
 
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
-        U = np.cos(x)
+        >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
+        >>> U = np.cos(x)
 
-        fields = model.fields_template(x=x, U=U)
-        simul = Simulation(model, fields, 0, parameters)
+        >>> fields = model.fields_template(x=x, U=U)
+        >>> simul = Simulation(model, fields, 0, parameters)
 
-        bokeh_upt = bokeh_update()
+        >>> bokeh_upt = bokeh_update()
 
-        for fields, t in simul:
-            bokeh_upt.send((fields, t))
-
+        >>> for fields, t in simul:
+        ...     bokeh_upt.send((fields, t))
     """
     from bokeh.io import push_notebook
     from bokeh.plotting import figure, show, ColumnDataSource
@@ -212,45 +200,40 @@ def bokeh_probes_update(probes, line_kwargs={}, fig_kwargs={}):
     displayed in a jupyter notebook.
     bokeh.io.output_notebook() have to be called before using this coroutine.
 
-    Parameters
-    ----------
-    probes: dictionnary of callable
-        Dictionnary with {name: callable} used to plot the probes.
-        The signature is the same as in the hooks and return the value
-        we want to plot::
-            def probe(fields, t, pars):
-                ...
-                return myprobe
-        my probe has to be a single value.
+    Args:
+        probes (dictionnary of callable): Dictionnary with {name: callable}
+            used to plot the probes.
+            The signature is the same as in the hooks and return the value
+            we want to plot::
+                >>> def probe(fields, t, pars):
+                ... ...
+                >>> return myprobe
+            my probe has to be a single value.
 
-    line_kwargs: dict of dict
-        dictionnary with vars as key and a dictionnary of keywords arguments
-        passed to the lines plots
+        line_kwargs (dict of dict): dictionnary with vars as key and a
+            dictionnary of keywords arguments passed to the lines plots
 
-    fig_kwargs: dict of dict
-        dictionnary with vars as key and a dictionnary of keywords arguments
-        passed to the figs plots
+        fig_kwargs (dict of dict): dictionnary with vars as key and a
+            dictionnary of keywords arguments passed to the figs plots
 
-    Example
-    -------
-    ::
-        from triflow import Model, Simulation
-        import numpy as np
+    Examples:
+        >>> from triflow import Model, Simulation
+        >>> import numpy as np
 
-        model = Model(funcs="dxxU", vars="U")
-        parameters = dict(time_stepping=True, tol=1E-2, dt=1,
-                          periodic=True, tmax=10)
+        >>> model = Model(funcs="dxxU", vars="U")
+        >>> parameters = dict(time_stepping=True, tol=1E-2, dt=1,
+        ...                   periodic=True, tmax=10)
 
-        x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
-        U = np.cos(x)
+        >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)
+        >>> U = np.cos(x)
 
-        fields = model.fields_template(x=x, U=U)
-        simul = Simulation(model, fields, 0, parameters)
+        >>> fields = model.fields_template(x=x, U=U)
+        >>> simul = Simulation(model, fields, 0, parameters)
 
-        bokeh_upt = bokeh_update()
+        >>> bokeh_upt = bokeh_update()
 
-        for fields, t in simul:
-            bokeh_upt.send((fields, t))
+        >>> for fields, t in simul:
+        ...     bokeh_upt.send((fields, t))
 
     """
     from bokeh.io import push_notebook

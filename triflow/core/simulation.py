@@ -12,61 +12,126 @@ logging = logging.getLogger(__name__)
 
 
 class Simulation(object):
+    """High level container used to run simulation build on triflow Model
 
-    def __init__(self, model, fields, t, pars, id=None,
-                 hook=lambda fields, t, pars: (fields, pars)):
+    This object is an iterable which will yield every time step until
+    the parameters 'tmax' is reached if provided. By default, the solver use
+    a 6th order ROW solver, an implicit method with integrated time-stepping.
+
+    Args:
+        model (triflow.Model): Contain finite difference approximation
+            and routine of the dynamical system
+        t (float): initial time
+        fields (triflow.Fields): triflow container filled with initial
+            conditions
+        physical_parameters (dict): physical parameters of the simulation
+        id (None, optional): name of the simulation.
+            A 2 word slug will be generated if not provided.
+        hook (callable, optional): any callable taking the actual time, fields
+            and parameters and return modified fields and parameters. Will be
+            called every internal time step and can be used to include time
+            dependent or conditionnal parameters, boundary conditions...
+
+    Attributes:
+        dt (float): output time step
+        fields (triflow.Fields): triflow container filled with actual data
+        i (int): actual iteration
+        id (str): name of the simulation
+        model (triflow.Model): triflow Model used in the simulation
+        physical_parameters (dict): physical parameters of the simulation
+        status (str): status of the simulation, one of the following one:
+            ('created', 'running', 'finished', 'failed')
+        t (float): actual time
+        tmax (float or None, default None): stopping time of the simulation.
+            Not stopping if set to None.
+
+    Examples:
+        >>> import numpy as np
+        >>> import triflow
+        >>> model = triflow.Model(["k1 * dxxU",
+        ...                        "k2 * dxxV"],
+        ...                       ["U", "V"],
+        ...                       ["k1", "k2"])
+        >>> x = np.linspace(0, 100, 1000, endpoint=False)
+        >>> U = np.cos(x * 2 * np.pi / 100)
+        >>> V = np.sin(x * 2 * np.pi / 100)
+        >>> fields = model.fields_template(x=x, U=U, V=V)
+        >>> pars = {'k1': 1, 'k2': 1, 'periodic': True}
+        >>> simulation = triflow.Simulation(model, 0, fields,
+        ...                                 pars, dt=5, tmax=50)
+        >>> for t, fields in simulation:
+        ...    print(f"time: {t:g}", end='\r')
+        time: 50
+    """
+
+    def __init__(self, model, t, fields, physical_parameters, dt,
+                 id=None, hook=lambda t, fields, pars: (fields, pars),
+                 tmax=None, **kwargs):
         self.id = generate_slug(2) if not id else id
         self.model = model
-        self.pars = pars
+        self.physical_parameters = physical_parameters
 
         self.fields = fields
         self.t = t
+        self.dt = dt
+        self.tmax = tmax
         self.i = 0
-        self.scheme = schemes.RODASPR(model)
+        self._scheme = schemes.RODASPR(model)
         self.status = 'created'
-        self.hook = hook
-        self.iterator = self.compute()
+        self._hook = hook
+        self._iterator = self.compute()
 
     def compute(self):
+        """Generator which yield the actual state of the system every dt.
+
+        Yields:
+            tuple (t, fields): Actual time and updated fields container.
+        """
         fields = self.fields
         t = self.t
-        pars = self.pars
-        while True:
-            fields, pars = self.hook(fields, t, pars)
-            fields, t = self.scheme(fields, t, pars['dt'],
-                                    pars, hook=self.hook)
-            self.fields = fields
-            self.t = t
-            self.pars = pars
-            yield fields, t
+        pars = self.physical_parameters
+        try:
+            while True:
+                fields, pars = self._hook(t, fields, pars)
+                t, fields = self._scheme(t, fields, self.dt,
+                                         pars, hook=self._hook)
+                self.fields = fields
+                self.t = t
+                self.pars = pars
+                yield t, fields
+        except RuntimeError:
+            self.status = 'failed'
+            raise
 
     def set_scheme(self, scheme, *args, **kwargs):
-        self.scheme = scheme(self.model, *args, **kwargs)
+        """provide a different scheme
 
-    def takewhile(self, outputs):
+        Args:
+            scheme (callable):
+                an callable object which take the simulation state and
+                return the next step.
+                Its signature is scheme.__call__(fields, t, dt, pars, hook)
+                and it should return the next time and the updated fields.
+                It take the model and extra positional and named arguments.
+            *args: Description
+            **kwargs: Description
+
+        Returns:
+            TYPE: Description
         """
+        self._scheme = scheme(self.model, *args, **kwargs)
 
-        Parameters
-        ----------
-        U :
+    def _takewhile(self, outputs):
 
-
-        Returns
-        -------
-        Stopping condition for the simulation: without overide
-        this will raise an error if the film thickness go less than 0 and
-        exit when tmax is reached if in the parameters.
-        """
-
-        if self.pars.get('tmax', None) is None:
+        if self.tmax is None:
             return True
-        if self.t > self.pars.get('tmax', None):
+        if self.t > self.tmax:
             self.status = 'finished'
             return False
         return True
 
     def __iter__(self):
-        return it.takewhile(self.takewhile, self.compute())
+        return it.takewhile(self._takewhile, self.compute())
 
     def __next__(self):
         return next(self.iterator)
