@@ -34,13 +34,20 @@ def _generate_sympify_namespace(independent_variable,
         helper_functions (iterable of str): names of the helper functions
 
     Returns:
-        dict: dictionnary containing the symbol to parse as keys and the sympy
-        expression to evaluate instead as values.
-    """
+        dict: dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.
+    """ # noqa
+
     symbolic_independent_variable = Symbol(independent_variable)
+
+    def partial_derivative(symbolic_independent_variable,
+                           i, expr, *args, **kwargs):
+        return Derivative(expr, symbolic_independent_variable,
+                          i, *args, **kwargs)
+
     namespace = {independent_variable: symbolic_independent_variable}
     namespace.update({'d%s' % (independent_variable * i):
-                      partial(symbolic_independent_variable, i)
+                      partial(partial_derivative,
+                              symbolic_independent_variable, i)
                       for i in range(1, 5)})
     namespace.update({'d%s%s' % (independent_variable * order, var):
                       Derivative(Function(var)(independent_variable),
@@ -48,6 +55,7 @@ def _generate_sympify_namespace(independent_variable,
                       for order, var in product(range(1, 5),
                                                 dependent_variables +
                                                 helper_functions)})
+    logging.debug(f"sympy namespace: {namespace}")
     return namespace
 
 
@@ -55,18 +63,12 @@ def _generate_fields_container(dependent_variables, helper_functions):
     """Factory building a smart container for
 
     Args:
-        dependent_variables (iterable of str):
-            name of the dependent variables
-        helper_functions (iterable of str):
-            name of the helper functions
+        dependent_variables (iterable of str): name of the dependent variables
+        helper_functions (iterable of str): name of the helper functions
 
     Returns:
-        Fields: container which expose the data as a structured numpy array,
-        give access to the dependants variables and the herlpers function as
-        attributes (as a numpy rec array) and is able to give access to a flat
-        view of the dependent variables only (which is needed by the ode
-        solvers for all the linear algebra manipulation).
-    """
+        Fields: container which expose the data as a structured numpy array, give access to the dependants variables and the herlpers function as attributes (as a numpy rec array) and is able to give access to a flat view of the dependent variables only (which is needed by the ode solvers for all the linear algebra manipulation).
+    """ # noqa
 
     class Fields:
         """Specialized container which expose the data as a structured numpy array,
@@ -76,24 +78,14 @@ def _generate_fields_container(dependent_variables, helper_functions):
         solvers for all the linear algebra manipulation).
 
         Args:
-            **inputs (numpy.array):
-                named argument in the following order:
-                    - x: discretized spatial domain
-                    - dependent variables
-                    - helper functions
-                all of these are mendatory and a KeyError will be raised if a
-                data is missing.
+            **inputs (numpy.array): named argument providing x, the dependent variables and the helper functions. All of these are mendatory and a KeyError will be raised if a data is missing.
 
         Attributes:
-            array (numpy.array):
-                vanilla numpy array containing the data
-            dependent_variables (iterable of str):
-                name of the dependent variables
-            helper_functions (iterable of str):
-                name of the helper functions
-            size (int):
-                Number of discretisation nodes
-        """
+            array (numpy.array): vanilla numpy array containing the data
+            dependent_variables (iterable of str): name of the dependent variables
+            helper_functions (iterable of str): name of the helper functions
+            size (int): Number of discretisation nodes
+        """ # noqa
 
         def __init__(self, **inputs):
             self._keys = (['x'] +
@@ -115,18 +107,16 @@ def _generate_fields_container(dependent_variables, helper_functions):
         def flat(self):
             """return a flat view of the fields
 
-            Returns:
-                numpy.ndarray.view: flat view of the main numpy array
-            """
+            Returns: numpy.ndarray.view: flat view of the main numpy array
+            """ # noqa
             return self.array.ravel()
 
         @property
         def structured(self):
             """return a structured array of the main numpy array as a view
 
-            Returns:
-                numpy.ndarray.view: structured view of the main numpy array
-            """
+            Returns: numpy.ndarray.view: structured view of the main numpy array
+            """ # noqa
             return self.array.view(dtype=self._dtype)
 
         @property
@@ -134,10 +124,8 @@ def _generate_fields_container(dependent_variables, helper_functions):
             """return a view array of the main numpy array with only the
             dependant variables.
 
-            Returns:
-                numpy.ndarray.view: view of the dependent variables of the
-                main numpy array
-            """
+            Returns: numpy.ndarray.view: view of the dependent variables of the main numpy array
+            """ # noqa
             return self.array[:, 1: (1 + len(self.dependent_variables))]
 
         @property
@@ -148,10 +136,8 @@ def _generate_fields_container(dependent_variables, helper_functions):
             Be carefull, modification of these data will not be reflected on
             the main array!
 
-            Returns:
-                numpy.ndarray: **copy** of the dependent variables of the
-                main numpy array
-            """
+            Returns: numpy.ndarray: **copy** of the dependent variables of the main numpy array
+            """ # noqa
             uflat = self.array[:, 1: (1 +
                                       len(self.dependent_variables))].ravel()
             uflat.flags.writeable = False
@@ -194,7 +180,7 @@ def load_model(filename):
 
     Returns:
         triflow.Model: triflow pre-compiled model
-    """
+    """ # noqa
     with open(filename, 'rb') as f:
         return load(f)
 
@@ -216,47 +202,35 @@ class Model:
     Jacobian matrix approximation.
 
     Args:
-        differential_equations (iterable of str or str): the right hand sides
-            of the partial differential equations written as
-            :math:`\frac{\partial U}{\partial t} = F(U)`, where the spatial
-            derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy
-            notation `Derivative(U, x, x)`
-        dependent_variables (iterable of str or str): the dependent variables
-            with the same order as the temporal derivative of the previous arg.
-        parameters (iterable of str or str, optional, default None):
-            list of the parameters. Can be feed with a scalar of an array
-            with the same size
-        help_functions (None, optional): All fields which have not to be solved
-            with the time derivative but will be derived in space.
+        differential_equations (iterable of str or str): the right hand sides of the partial differential equations written as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`
+        dependent_variables (iterable of str or str): the dependent variables with the same order as the temporal derivative of the previous arg.
+        parameters (iterable of str or str, optional, default None): list of the parameters. Can be feed with a scalar of an array with the same size
+        help_functions (None, optional): All fields which have not to be solved with the time derivative but will be derived in space.
     Attributes:
-        F (triflow.F_Routine): Callable used to compute the right hand side of
-            the dynamical system
-        F_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the
-            right hand side of the dynamical system
-        J (triflow.J_Routine): Callable used to compute the Jacobian of
-            the dynamical system
-        J_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the
-            Jacobian side of the dynamical system
+        F (triflow.F_Routine): Callable used to compute the right hand side of the dynamical system
+        F_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the right hand side of the dynamical system
+        J (triflow.J_Routine): Callable used to compute the Jacobian of the dynamical system
+        J_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the Jacobian side of the dynamical system
     Properties:
-        fields_template: Model specific Fields container used to store and
-            access to the model variables in an efficient way.
+        fields_template: Model specific Fields container used to store and access to the model variables in an efficient way.
 
     Methods:
         save: Save a binary of the Model with pre-optimized F and J routines
 
     Examples:
         A simple diffusion equation:
+        >>> from triflow import Model
         >>> model = Model("k * dxxU", "U", "k")
 
         A coupled system of convection-diffusion equation:
+        >>> from triflow import Model
         >>> model = Model(["k1 * dxxU - c1 * dxV",
-                           "k2 * dxxV - c2 * dxU",],
-                           ["U", "V"], ["k1", "k2", "c1", "c2"])
+        ...                "k2 * dxxV - c2 * dxU",],
+        ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
 
     TODOs:
-        Include t as symbolic variable to allow time dependent functions
-            (non-autonomous dynamical systems)
-    """
+        Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
+    """ # noqa
 
     def __init__(self,
                  differential_equations,
@@ -310,6 +284,7 @@ class Model:
             self._symb_diff_eqs,
             self._symb_dep_vars,
             self._symb_help_funcs)
+        logging.debug(f"approximated equations: {approximated_diff_eqs}")
 
         # We compute the size of the the ghost area at the limit of
         # the spatial domain
@@ -516,16 +491,16 @@ class Model:
                 list(self.symbolic_pars) + [self.dx])
 
     def save(self, filename):
-        """Summary
+        """Save the model as a binary pickle file.
 
         Args:
-            filename (TYPE): Description
+            filename (str): name of the file where the model is saved.
 
         Returns:
-            TYPE: Description
+            None
         """
         with open(filename, 'wb') as f:
-            return dump(self, f)
+            dump(self, f)
 
     def _extract_bounds(self, variables, dict_symbol):
         bounds = (0, 0)

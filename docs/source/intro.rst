@@ -29,11 +29,11 @@ The symbolic model is written as a simple mathematic equation. For exemple, a di
 
     from triflow import Model
 
-    func = "k * dxxU - c * dxU"
-    var = "U"
+    eq_diff = "k * dxxU - c * dxU"
+    dep_var = "U"
     pars = ["k", "c"]
 
-    model = Model(func, var, pars)
+    model = Model(eq_diff, dep_var, pars)
 
 the model give us access after that to the compiled routines for F and the corresponding Jacobian matrix as:
 

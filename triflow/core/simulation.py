@@ -19,18 +19,14 @@ class Simulation(object):
     a 6th order ROW solver, an implicit method with integrated time-stepping.
 
     Args:
-        model (triflow.Model): Contain finite difference approximation
-            and routine of the dynamical system
+        model (triflow.Model): Contain finite difference approximation and routine of the dynamical system
         t (float): initial time
-        fields (triflow.Fields): triflow container filled with initial
-            conditions
+        fields (triflow.Fields): triflow container filled with initial conditions
         physical_parameters (dict): physical parameters of the simulation
-        id (None, optional): name of the simulation.
-            A 2 word slug will be generated if not provided.
-        hook (callable, optional): any callable taking the actual time, fields
-            and parameters and return modified fields and parameters. Will be
-            called every internal time step and can be used to include time
-            dependent or conditionnal parameters, boundary conditions...
+        id (None, optional): name of the simulation. A 2 word slug will be generated if not provided.
+        hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+        scheme (callable, optional, default triflow.schemes.RODASPR): an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
+        *args, **kwargs: extra arguments passed to the scheme.
 
     Attributes:
         dt (float): output time step
@@ -39,11 +35,9 @@ class Simulation(object):
         id (str): name of the simulation
         model (triflow.Model): triflow Model used in the simulation
         physical_parameters (dict): physical parameters of the simulation
-        status (str): status of the simulation, one of the following one:
-            ('created', 'running', 'finished', 'failed')
+        status (str): status of the simulation, one of the following one: ('created', 'running', 'finished', 'failed')
         t (float): actual time
-        tmax (float or None, default None): stopping time of the simulation.
-            Not stopping if set to None.
+        tmax (float or None, default None): stopping time of the simulation. Not stopping if set to None.
 
     Examples:
         >>> import numpy as np
@@ -60,9 +54,10 @@ class Simulation(object):
         >>> simulation = triflow.Simulation(model, 0, fields,
         ...                                 pars, dt=5, tmax=50)
         >>> for t, fields in simulation:
-        ...    print(f"time: {t:g}", end='\r')
-        time: 50
-    """
+        ...    pass
+        >>> print(t)
+        50
+    """ # noqa
 
     def __init__(self, model, t, fields, physical_parameters, dt,
                  id=None, hook=lambda t, fields, pars: (fields, pars),
@@ -76,7 +71,7 @@ class Simulation(object):
         self.dt = dt
         self.tmax = tmax
         self.i = 0
-        self._scheme = schemes.RODASPR(model)
+        self._scheme = schemes.RODASPR(model, **kwargs)
         self.status = 'created'
         self._hook = hook
         self._iterator = self.compute()
@@ -107,18 +102,13 @@ class Simulation(object):
         """provide a different scheme
 
         Args:
-            scheme (callable):
-                an callable object which take the simulation state and
-                return the next step.
-                Its signature is scheme.__call__(fields, t, dt, pars, hook)
-                and it should return the next time and the updated fields.
-                It take the model and extra positional and named arguments.
-            *args: Description
-            **kwargs: Description
+            scheme (callable): an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
+            *args: extra positional arguments provided to the scheme
+            **kwargs: extra named arguments provided to the scheme
 
         Returns:
-            TYPE: Description
-        """
+            None
+        """ # noqa
         self._scheme = scheme(self.model, *args, **kwargs)
 
     def _takewhile(self, outputs):

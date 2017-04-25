@@ -7,9 +7,8 @@ Available signals:
     * ConstantSignal: just an offset signal
     * ForcedSignal: a sinusoidal wave
     * WhiteNoise: a noisy signal
-    * BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction
-    of the available modes.
-"""
+    * BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction of the available modes.
+""" # noqa
 
 import logging
 from scipy.fftpack import rfft, irfft

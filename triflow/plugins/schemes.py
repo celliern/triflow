@@ -38,7 +38,7 @@ class ROW_general:
         return Id
 
     def __init__(self, model, alpha, gamma, b, b_pred=None,
-                 time_stepping=False):
+                 time_stepping=False, tol=None, max_iter=None, dt_min=None):
         self._internal_dt = None
         self._model = model
         self._alpha = alpha
@@ -47,6 +47,9 @@ class ROW_general:
         self._b_pred = b_pred
         self._s = len(b)
         self._time_control = time_stepping
+        self._tol = tol
+        self._max_iter = max_iter
+        self._dt_min = dt_min
 
     def __call__(self, t, fields, dt, pars,
                  hook=lambda t, fields, pars: (fields, pars)):
@@ -60,21 +63,20 @@ class ROW_general:
             container
             dt (float): temporal step-size
             pars (dict): physical parameters of the model
-            hook (callable, optional): any callable taking the actual time,
-                fields and parameters and return modified fields and
-                parameters. Will be called every internal time step and can
-                be used to include time dependent or conditionnal parameters,
-                boundary conditions...
+            hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
 
         Returns:
             tuple (t, fields): updated time and fields container
 
         Raises:
-            NotImplementedError: raised if a time stepping is requested but
-            the scheme do not provide the b predictor coefficients.
-        """
+            NotImplementedError: raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.
+            ValueError: raised if time_stepping is True and tol is not provided.
+        """ # noqa
         if self._time_control:
             try:
+                if self._time_control and not self._tol:
+                    raise ValueError('You have to provide a tol argument if'
+                                     ' you want to use the time controler.')
                 if self._b_pred is None:
                     raise NotImplementedError(
                         'No b predictor provided for '
@@ -133,14 +135,14 @@ class ROW_general:
                                   else self._internal_dt)
         while True:
             self._err = None
-            while (self._err is None or self._err > pars['tol']):
-                newfields, _, self._err = self.fixed_step(fields,
-                                                          t,
-                                                          dt,
-                                                          pars,
-                                                          hook)
+            while (self._err is None or self._err > self._tol):
+                _, newfields, self._err = self._fixed_step(t,
+                                                           fields,
+                                                           dt,
+                                                           pars,
+                                                           hook)
                 logging.debug(f"error: {self._err}")
-                dt = (0.9 * dt * np.sqrt(pars['tol'] / self._err))
+                dt = (0.9 * dt * np.sqrt(self._tol / self._err))
             fields = newfields.copy()
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
@@ -155,11 +157,14 @@ class ROW_general:
                 self._internal_dt = dt
                 fields, pars = hook(t, fields, pars)
                 return self._next_time_step, fields
-            if self._internal_iter > pars.get('max_iter',
-                                              self._internal_iter + 1):
+            if self._internal_iter > (self._max_iter
+                                      if self._max_iter
+                                      else self._internal_iter + 1):
                 raise RuntimeError("Rosebrock internal iteration "
                                    "above max iterations authorized")
-            if self._internal_dt < pars.get('dt_min', self._internal_dt * .5):
+            if self._internal_dt < (self._dt_min
+                                    if self._dt_min
+                                    else self._internal_dt * .5):
                 raise RuntimeError("Rosebrock internal time step "
                                    "less than authorized")
 
@@ -185,11 +190,14 @@ class ROS3PRw(ROW_general):
 
     Args:
         model (triflow.Model): triflow Model
-        time_stepping (bool, optional, default True): allow a variable
-            internal time-step to ensure good agreement between computing
-            performance and accuracy."""
+        tol (float, optional, default 1E-2): tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+        time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+        max_iter (float or None, optional, default None): maximum internal iteration allowed
+        dt_min (float or None, optional, default None): minimum internal time step allowed
+    """ # noqa
 
-    def __init__(self, model, time_stepping=True):
+    def __init__(self, model, tol=1E-2, time_stepping=True,
+                 max_iter=None, dt_min=None):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
@@ -208,7 +216,8 @@ class ROS3PRw(ROW_general):
         gamma[2, 0] = -8.6791218280355165e-01
         gamma[2, 1] = -8.7306695894642317e-01
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
-                         time_stepping=time_stepping)
+                         time_stepping=time_stepping, tol=tol,
+                         max_iter=max_iter, dt_min=dt_min)
 
 
 class ROS3PRL(ROW_general):
@@ -216,12 +225,14 @@ class ROS3PRL(ROW_general):
 
     Args:
         model (triflow.Model): triflow Model
-        time_stepping (bool, optional, default True): allow a variable
-            internal time-step to ensure good agreement between computing
-            performance and accuracy.
-    """
+        tol (float, optional, default 1E-2): tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+        time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+        max_iter (float or None, optional, default None): maximum internal iteration allowed
+        dt_min (float or None, optional, default None): minimum internal time step allowed
+    """ # noqa
 
-    def __init__(self, model, time_stepping=True):
+    def __init__(self, model, tol=1E-2, time_stepping=True,
+                 max_iter=None, dt_min=None):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
         gamma_i = 4.3586652150845900e-01
@@ -249,7 +260,8 @@ class ROS3PRL(ROW_general):
         gamma[3, 1] = 3.8607515441580453e-01
         gamma[3, 2] = -3.2405197677907682e-01
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
-                         time_stepping=time_stepping)
+                         time_stepping=time_stepping, tol=tol,
+                         max_iter=max_iter, dt_min=dt_min)
 
 
 class RODASPR(ROW_general):
@@ -257,12 +269,14 @@ class RODASPR(ROW_general):
 
     Args:
         model (triflow.Model): triflow Model
-        time_stepping (bool, optional, default True): allow a variable
-            internal time-step to ensure good agreement between computing
-            performance and accuracy.
-    """
+        tol (float, optional, default 1E-2): tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+        time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+        max_iter (float or None, optional, default None): maximum internal iteration allowed
+        dt_min (float or None, optional, default None): minimum internal time step allowed
+    """ # noqa
 
-    def __init__(self, model, time_stepping=True):
+    def __init__(self, model, tol=1E-2, time_stepping=True,
+                 max_iter=None, dt_min=None):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [-7.9683251690137014E-1,
@@ -311,7 +325,8 @@ class RODASPR(ROW_general):
         gamma[5, 3] = -1.061963e-1
         gamma[5, 4] = -3.57142857e-1
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
-                         time_stepping=time_stepping)
+                         time_stepping=time_stepping, tol=tol,
+                         max_iter=max_iter, dt_min=dt_min)
 
 
 class scipy_ode:
@@ -320,11 +335,9 @@ class scipy_ode:
 
     Args:
         model (triflow.Model): triflow Model
-        integrator (str, optional, default 'vode'): name of the chosen scipy
-            integration scheme.
-        **integrator_kwargs: extra arguments provided to the scipy integration
-            scheme.
-    """
+        integrator (str, optional, default 'vode'): name of the chosen scipy integration scheme.
+        **integrator_kwargs: extra arguments provided to the scipy integration scheme.
+    """ # noqa
 
     def __init__(self, model, integrator='vode', **integrator_kwargs):
         def func_scipy_proxy(t, U, fields, pars, hook):
@@ -344,7 +357,7 @@ class scipy_ode:
     def __call__(self, t, fields, dt, pars,
                  hook=lambda t, fields, pars: (fields, pars)):
         """Perform a step of the solver: took a time and a system state as a
-        trflow Fields container and return the next time step with updated
+        triflow Fields container and return the next time step with updated
         container.
 
         Args:
@@ -353,15 +366,11 @@ class scipy_ode:
             container
             dt (float): temporal step-size
             pars (dict): physical parameters of the model
-            hook (callable, optional): any callable taking the actual time,
-                fields and parameters and return modified fields and
-                parameters. Will be called every internal time step and can
-                be used to include time dependent or conditionnal parameters,
-                boundary conditions...
+            hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
 
         Returns:
             tuple (t, fields): updated time and fields container
-        """
+        """  # noqa
 
         solv = self._solv
         fields, pars = hook(t, fields, pars)
@@ -386,10 +395,8 @@ class Theta:
     Args:
         model (triflow.Model): triflow Model
         theta (int, optional, default 1): weight of the theta-scheme
-        solver (callable, optional, default scipy.sparse.linalg.spsolve):
-            method able to solve a Ax = b linear equation with A a sparse
-            matrix. Take A and b as argument and return x.
-    """
+        solver (callable, optional, default scipy.sparse.linalg.spsolve): method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.
+    """ # noqa
 
     def __init__(self, model, theta=1, solver=sps.linalg.spsolve):
         self._model = model
@@ -399,24 +406,19 @@ class Theta:
     def __call__(self, t, fields, dt, pars,
                  hook=lambda t, fields, pars: (fields, pars)):
         """Perform a step of the solver: took a time and a system state as a
-        trflow Fields container and return the next time step with updated
+        triflow Fields container and return the next time step with updated
         container.
 
         Args:
             t (float): actual time step
-            fields (triflow.Fields): actual system state in a triflow Fields
-            container
+            fields (triflow.Fields): actual system state in a triflow Fields container
             dt (float): temporal step-size
             pars (dict): physical parameters of the model
-            hook (callable, optional): any callable taking the actual time,
-                fields and parameters and return modified fields and
-                parameters. Will be called every internal time step and can
-                be used to include time dependent or conditionnal parameters,
-                boundary conditions...
+            hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
 
         Returns:
             tuple (t, fields): updated time and fields container
-        """
+        """ # noqa
 
         fields = fields.copy()
         fields, pars = hook(t, fields, pars)

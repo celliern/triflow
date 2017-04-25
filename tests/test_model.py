@@ -3,19 +3,24 @@
 
 
 import pytest
-from triflow.core.model import Model
+
+import numpy as np
+from triflow import Model
 
 
-@pytest.mark.parametrize("func", ["-k * dx(U, 2) + dx(U, 1)",
-                                  ("-k * dx(U, 2) + dx(U, 1)", ),
-                                  ["-k * dx(U, 2) + dx(U, 1)"],
-                                  {"U": "-k * dx(U, 2) + dx(U, 1)"}])
+@pytest.mark.parametrize("func", np.array([[expr, (expr, ), [expr]]
+                                           for expr
+                                           in ["-k * dxxU + dxU",
+                                               "-k * dx(U, 2) + dx(U, 1)",
+                                               "-k * dxx(U) + dx(U)"]],
+                                          dtype=object)
+                         .flatten().tolist())
 @pytest.mark.parametrize("var", [func("U") for func in (str, tuple, list)])
 @pytest.mark.parametrize("par", [func("k") for func in (str, tuple, list)])
 def test_model_monovariate(func, var, par):
-    model = Model(funcs=func,
-                  vars=var,
-                  pars=par)
+    model = Model(func,
+                  var,
+                  par)
     return model
 
 
@@ -27,7 +32,7 @@ def test_model_monovariate(func, var, par):
                                  for func in (tuple, list)])
 @pytest.mark.parametrize("par", [func(["k1", "k2"]) for func in (tuple, list)])
 def test_model_bivariate(func, var, par):
-    model = Model(funcs=func,
-                  vars=var,
-                  pars=par)
+    model = Model(func,
+                  var,
+                  par)
     return model
