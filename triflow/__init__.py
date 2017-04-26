@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from triflow.core.model import Model, load_model
-from triflow.core.simulation import Simulation
-from triflow.plugins import schemes, signals, displays
+from triflow.core.model import Model, load_model  # noqa
+from triflow.core.simulation import Simulation  # noqa
+from triflow.plugins import schemes, signals, displays  # noqa
 
 import logging
 from logging import NullHandler

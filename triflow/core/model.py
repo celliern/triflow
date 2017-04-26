@@ -12,9 +12,11 @@ import theano as th
 import theano.sparse as ths
 from sympy import Derivative, Function, Symbol, symbols, sympify
 from sympy.printing.theanocode import theano_code
-from theano.ifelse import ifelse
 from theano import tensor as T
+from theano.ifelse import ifelse
+
 from triflow.core.routines import F_Routine, J_Routine
+from triflow.core.fields import BaseFields
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -35,14 +37,14 @@ def _generate_sympify_namespace(independent_variable,
 
     Returns:
         dict: dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.
-    """ # noqa
+    """  # noqa
 
     symbolic_independent_variable = Symbol(independent_variable)
 
     def partial_derivative(symbolic_independent_variable,
-                           i, expr, *args, **kwargs):
+                           i, expr):
         return Derivative(expr, symbolic_independent_variable,
-                          i, *args, **kwargs)
+                          i)
 
     namespace = {independent_variable: symbolic_independent_variable}
     namespace.update({'d%s' % (independent_variable * i):
@@ -59,117 +61,6 @@ def _generate_sympify_namespace(independent_variable,
     return namespace
 
 
-def _generate_fields_container(dependent_variables, helper_functions):
-    """Factory building a smart container for
-
-    Args:
-        dependent_variables (iterable of str): name of the dependent variables
-        helper_functions (iterable of str): name of the helper functions
-
-    Returns:
-        Fields: container which expose the data as a structured numpy array, give access to the dependants variables and the herlpers function as attributes (as a numpy rec array) and is able to give access to a flat view of the dependent variables only (which is needed by the ode solvers for all the linear algebra manipulation).
-    """ # noqa
-
-    class Fields:
-        """Specialized container which expose the data as a structured numpy array,
-        give access to the dependants variables and the herlpers function as
-        attributes (as a numpy rec array) and is able to give access to a flat
-        view of the dependent variables only (which is needed by the ode
-        solvers for all the linear algebra manipulation).
-
-        Args:
-            **inputs (numpy.array): named argument providing x, the dependent variables and the helper functions. All of these are mendatory and a KeyError will be raised if a data is missing.
-
-        Attributes:
-            array (numpy.array): vanilla numpy array containing the data
-            dependent_variables (iterable of str): name of the dependent variables
-            helper_functions (iterable of str): name of the helper functions
-            size (int): Number of discretisation nodes
-        """ # noqa
-
-        def __init__(self, **inputs):
-            self._keys = (['x'] +
-                          list(dependent_variables) +
-                          list(helper_functions))
-            [self.__setattr__(key, inputs[key]) for key in set(self._keys)]
-            self.dependent_variables = dependent_variables
-            self.helper_functions = helper_functions
-            self.size = len(self.x)
-
-            data = list(zip(*[getattr(self, var)
-                              for var in self._keys]))
-            self.array = np.array(data)
-            self._dtype = [(var, float) for var in self._keys]
-            for var in self._keys:
-                self.__setattr__(var, self.structured[var].squeeze())
-
-        @property
-        def flat(self):
-            """return a flat view of the fields
-
-            Returns: numpy.ndarray.view: flat view of the main numpy array
-            """ # noqa
-            return self.array.ravel()
-
-        @property
-        def structured(self):
-            """return a structured array of the main numpy array as a view
-
-            Returns: numpy.ndarray.view: structured view of the main numpy array
-            """ # noqa
-            return self.array.view(dtype=self._dtype)
-
-        @property
-        def uarray(self):
-            """return a view array of the main numpy array with only the
-            dependant variables.
-
-            Returns: numpy.ndarray.view: view of the dependent variables of the main numpy array
-            """ # noqa
-            return self.array[:, 1: (1 + len(self.dependent_variables))]
-
-        @property
-        def uflat(self):
-            """return a flatten **copy** of the main numpy array with only the
-            dependant variables.
-
-            Be carefull, modification of these data will not be reflected on
-            the main array!
-
-            Returns: numpy.ndarray: **copy** of the dependent variables of the main numpy array
-            """ # noqa
-            uflat = self.array[:, 1: (1 +
-                                      len(self.dependent_variables))].ravel()
-            uflat.flags.writeable = False
-            return uflat
-
-        def fill(self, Uflat):
-            """take a flat numpy array and update inplace the dependent
-            variables of the container
-
-            Returns:
-                None
-            """
-            self.uarray[:] = Uflat.reshape(self.uarray.shape)
-
-        def __getitem__(self, index):
-            return self.structured[index].squeeze()
-
-        def __iter__(self):
-            return (self.array[i] for i in range(self.size))
-
-        def copy(self):
-            old_values = {var: getattr(self, var).squeeze()
-                          for var in self._keys}
-
-            return self.__class__(**old_values)
-
-        def __repr__(self):
-            return self.structured.__repr__()
-
-    return Fields
-
-
 def load_model(filename):
     """load a pre-compiled triflow model. The internal of theano allow a
     caching of the model. Will be slow if it is the first time the model is
@@ -180,7 +71,7 @@ def load_model(filename):
 
     Returns:
         triflow.Model: triflow pre-compiled model
-    """ # noqa
+    """
     with open(filename, 'rb') as f:
         return load(f)
 
@@ -230,7 +121,7 @@ class Model:
 
     TODOs:
         Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
-    """ # noqa
+    """  # noqa
 
     def __init__(self,
                  differential_equations,
@@ -238,7 +129,6 @@ class Model:
                  parameters=None,
                  help_functions=None):
         logging.debug('enter __init__ Model')
-        x, dx = self.x, self.dx = symbols('x dx')
 
         # coerce the inputs the way to have coherent types
         # TODO: be more pythonic, it should not be necessary with coherent
@@ -362,7 +252,7 @@ class Model:
         middle_point = int((self._window_range - 1) / 2)
         N = x_th.size
         L = x_th[-1]
-        computed_dx = L / N
+        computed_dx = L / (N - 1)
         subs = {mapargs['dx']: computed_dx}
         map_extended = {}
         for (varname, discretisation_tree) in \
@@ -392,7 +282,7 @@ class Model:
         F = list(map(partial(theano_code,
                              broadcastables={arg: (False,)
                                              for arg
-                                             in [self.x,
+                                             in [Symbol('x'),
                                                  *self._discrete_variables,
                                                  *self._symb_pars]}),
                      F_array.flatten().tolist()))
@@ -400,7 +290,7 @@ class Model:
         J = list(map(partial(theano_code,
                              broadcastables={arg: (False,)
                                              for arg
-                                             in [self.x,
+                                             in [Symbol('x'),
                                                  *self._discrete_variables,
                                                  *self._symb_pars]}),
                      J_array.flatten().tolist()))
@@ -470,8 +360,8 @@ class Model:
 
     @property
     def fields_template(self):
-        return _generate_fields_container(self._dep_vars,
-                                          self._help_funcs)
+        return BaseFields.factory(self._dep_vars,
+                                  self._help_funcs)
 
     @property
     def _args(self):
@@ -585,7 +475,7 @@ class Model:
             self._symb_vars_with_spatial_diff_order[var_label].add((Um2, -2))
             self._symb_vars_with_spatial_diff_order[var_label].add((Up2, 2))
             return (Um2 - 4 * Um1 + 6 * U - 4 * Up1 + Up2) / dx ** 4
-        raise NotImplementedError('Finite difference up'
+        raise NotImplementedError('Finite difference up '
                                   'to 5th order not implemented yet')
 
     def _sympify_model(self,
@@ -601,12 +491,15 @@ class Model:
         symbolic_help_functions = tuple([Function(help_function)(self.x)
                                          for help_function in help_functions])
         symbolic_pars = symbols(pars)
-        symbolic_diff_eqs = tuple([sympify(func, locals=sympify_namespace)
-                                   .subs(zip(map(Symbol, dep_vars),
-                                             (symbolic_dep_vars +
-                                              symbolic_help_functions)))
-                                   for func
-                                   in diff_eqs])
+        try:
+            symbolic_diff_eqs = tuple([sympify(func, locals=sympify_namespace)
+                                       .subs(zip(map(Symbol, dep_vars),
+                                                 (symbolic_dep_vars +
+                                                  symbolic_help_functions)))
+                                       for func
+                                       in diff_eqs])
+        except TypeError:
+            raise ValueError("badly formated differential equations")
         return (symbolic_diff_eqs, symbolic_dep_vars,
                 symbolic_pars, symbolic_help_functions)
 

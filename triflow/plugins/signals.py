@@ -8,14 +8,15 @@ Available signals:
     * ForcedSignal: a sinusoidal wave
     * WhiteNoise: a noisy signal
     * BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction of the available modes.
-""" # noqa
+"""  # noqa
 
 import logging
-from scipy.fftpack import rfft, irfft
+from typing import Callable
+
+import numpy as np
+from scipy.fftpack import irfft, rfft
 from scipy.interpolate import interp1d
 from scipy.signal import periodogram
-from typing import Callable
-import numpy as np
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)

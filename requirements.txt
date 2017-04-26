@@ -14,3 +14,4 @@ bokeh==0.12.4
 visdom==0.1.1
 sphinxcontrib.napoleon==0.6.1
 sphinx_rtd_theme==0.2.4
+recommonmark==0.4.0

@@ -1,13 +1,13 @@
 #!/usr/bin/env python
+# coding=utf8
 """This module regroups different displays: function and coroutine written
 in order to give extra informationto the user during the simulation
 (plot, post-processing...)
 """
-# coding=utf8
 
-from itertools import count
-from functools import wraps
 from collections import deque
+from functools import wraps
+from itertools import count
 
 import numpy as np
 
@@ -33,7 +33,7 @@ def amnesic_mean():
         >>> mean_coroutine = displays.amnesic_mean()
         >>> for value in np.random.randn(5000):
         ...     x_mean = mean_coroutine.send(value)
-    """ # noqa
+    """  # noqa
     increment = yield
     total = increment
     for i in count():
@@ -109,7 +109,7 @@ def visdom_update(addr='http://127.0.0.1',
 
         >>> for t, fields in simul:
         ...     visdom_upt.send((t, fields))
-    """ # noqa
+    """  # noqa
     import visdom
     vis = visdom.Visdom(addr)
     t, fields = yield
@@ -156,7 +156,7 @@ def bokeh_fields_update(keys=None, line_kwargs={}, fig_kwargs={}):
 
         >> for t, fields in simul:
         ..     bokeh_upt.send((t, fields))
-    """ # noqa
+    """  # noqa
     from bokeh.io import push_notebook
     from bokeh.plotting import figure, show, ColumnDataSource
     from bokeh.layouts import Column
@@ -210,7 +210,7 @@ def bokeh_probes_update(probes, line_kwargs={}, fig_kwargs={}):
         >> for t, fields in simul:
         ..     bokeh_upt.send((t, fields))
 
-    """ # noqa
+    """  # noqa
     from bokeh.io import push_notebook
     from bokeh.plotting import figure, show, ColumnDataSource
     from bokeh.layouts import Column

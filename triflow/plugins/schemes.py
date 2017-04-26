@@ -14,12 +14,11 @@ The following solvers are implemented:
 
 import logging
 
-import scipy.sparse as sps
-from scipy.linalg import norm
-from scipy.integrate import ode
-from toolz import memoize
 import numpy as np
-
+import scipy.sparse as sps
+from scipy.integrate import ode
+from scipy.linalg import norm
+from toolz import memoize
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -71,7 +70,7 @@ class ROW_general:
         Raises:
             NotImplementedError: raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.
             ValueError: raised if time_stepping is True and tol is not provided.
-        """ # noqa
+        """  # noqa
         if self._time_control:
             try:
                 if self._time_control and not self._tol:
@@ -194,7 +193,7 @@ class ROS3PRw(ROW_general):
         time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
         max_iter (float or None, optional, default None): maximum internal iteration allowed
         dt_min (float or None, optional, default None): minimum internal time step allowed
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
                  max_iter=None, dt_min=None):
@@ -229,7 +228,7 @@ class ROS3PRL(ROW_general):
         time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
         max_iter (float or None, optional, default None): maximum internal iteration allowed
         dt_min (float or None, optional, default None): minimum internal time step allowed
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
                  max_iter=None, dt_min=None):
@@ -273,7 +272,7 @@ class RODASPR(ROW_general):
         time_stepping (bool, optional, default True): allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
         max_iter (float or None, optional, default None): maximum internal iteration allowed
         dt_min (float or None, optional, default None): minimum internal time step allowed
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
                  max_iter=None, dt_min=None):
@@ -337,7 +336,7 @@ class scipy_ode:
         model (triflow.Model): triflow Model
         integrator (str, optional, default 'vode'): name of the chosen scipy integration scheme.
         **integrator_kwargs: extra arguments provided to the scipy integration scheme.
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, integrator='vode', **integrator_kwargs):
         def func_scipy_proxy(t, U, fields, pars, hook):
@@ -396,7 +395,7 @@ class Theta:
         model (triflow.Model): triflow Model
         theta (int, optional, default 1): weight of the theta-scheme
         solver (callable, optional, default scipy.sparse.linalg.spsolve): method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, theta=1, solver=sps.linalg.spsolve):
         self._model = model
@@ -418,7 +417,7 @@ class Theta:
 
         Returns:
             tuple (t, fields): updated time and fields container
-        """ # noqa
+        """  # noqa
 
         fields = fields.copy()
         fields, pars = hook(t, fields, pars)

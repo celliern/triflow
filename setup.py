@@ -26,7 +26,8 @@ setup(
 
     # Une url qui pointe vers la page officielle de votre lib
     url='http://github.com/celliern/triflow',
-
+    setup_requires=['pytest-runner', 'sympy'],
+    tests_require=['pytest', 'pytest-cov'],
     install_requires=[
             'mpmath',
             'numpy',

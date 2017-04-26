@@ -5,6 +5,7 @@ import itertools as it
 import logging
 
 from coolname import generate_slug
+
 from triflow.plugins import schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -57,7 +58,7 @@ class Simulation(object):
         ...    pass
         >>> print(t)
         50
-    """ # noqa
+    """  # noqa
 
     def __init__(self, model, t, fields, physical_parameters, dt,
                  id=None, hook=lambda t, fields, pars: (fields, pars),
@@ -97,19 +98,6 @@ class Simulation(object):
         except RuntimeError:
             self.status = 'failed'
             raise
-
-    def set_scheme(self, scheme, *args, **kwargs):
-        """provide a different scheme
-
-        Args:
-            scheme (callable): an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
-            *args: extra positional arguments provided to the scheme
-            **kwargs: extra named arguments provided to the scheme
-
-        Returns:
-            None
-        """ # noqa
-        self._scheme = scheme(self.model, *args, **kwargs)
 
     def _takewhile(self, outputs):
 
