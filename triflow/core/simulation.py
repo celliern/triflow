@@ -13,21 +13,19 @@ logging = logging.getLogger(__name__)
 
 
 class Simulation(object):
-    """High level container used to run simulation build on triflow Model
-
-    This object is an iterable which will yield every time step until
-    the parameters 'tmax' is reached if provided. By default, the solver use
-    a 6th order ROW solver, an implicit method with integrated time-stepping.
+    """High level container used to run simulation build on triflow Model.
+    This object is an iterable which will yield every time step until the parameters 'tmax' is reached if provided.
+    By default, the solver use a 6th order ROW solver, an implicit method with integrated time-stepping.
 
     Args:
-        model (triflow.Model): Contain finite difference approximation and routine of the dynamical system
-        t (float): initial time
-        fields (triflow.Fields): triflow container filled with initial conditions
-        physical_parameters (dict): physical parameters of the simulation
-        id (None, optional): name of the simulation. A 2 word slug will be generated if not provided.
-        hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
-        scheme (callable, optional, default triflow.schemes.RODASPR): an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
-        *args, **kwargs: extra arguments passed to the scheme.
+        ``model (triflow.Model): Contain finite difference approximation and routine of the dynamical system``
+        ``t (float): initial time``
+        ``fields (triflow.Fields): triflow container filled with initial conditions``
+        ``physical_parameters (dict): physical parameters of the simulation``
+        ``id (None, optional): name of the simulation. A 2 word slug will be generated if not provided.``
+        ``hook (callable, optional): any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...``
+        ``scheme (callable, optional, default triflow.schemes.RODASPR): an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.``
+        ``*args, **kwargs: extra arguments passed to the scheme.``
 
     Attributes:
         dt (float): output time step

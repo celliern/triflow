@@ -31,8 +31,8 @@ isort:
 test:
 	tox
 
-docs:
-	$(MAKE) -C doc html
+doc:
+	$(MAKE) -C docs html
 
 info:
 	@python --version
