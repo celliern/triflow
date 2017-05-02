@@ -7,6 +7,7 @@ env:
 init: env
 	pip install coveralls
 	pip install pytest-cov
+	pip install pytest-pep8
 	pip install pytest-xdist
 	pip install pylama
 	pip install recommonmark

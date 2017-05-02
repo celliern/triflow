@@ -4,6 +4,8 @@ python:
 install:
     - make init
 script:
+    - make isort
+    - make linter
     - make test
 
 after_success:
