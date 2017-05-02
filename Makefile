@@ -1,19 +1,8 @@
 .PHONY: clean-pyc clean-build
 TEST_PATHS=triflow docs tests README.rst
 
-env:
-	pip install -Ur requirements.txt
-
-init: env
-	pip install coveralls
-	pip install pytest-cov
-	pip install pytest-pep8
-	pip install pytest-xdist
-	pip install pylama
-	pip install recommonmark
-	pip install .
-
 clean:
+	pyenv uninstall -f triflow-test-3.6.1
 	rm --force --recursive build/
 	rm --force --recursive dist/
 	rm --force --recursive .eggs/
@@ -24,23 +13,33 @@ clean:
 	find . -name '*.pyo' -exec rm -f {} \;
 	find . -name '*~' ! -name '*.un~' -exec rm -f {} \;
 
+pyenv:
+	pyenv install -k 3.6.1
+	pyenv virtualenv 3.6.1 triflow-test-3.6.1
+	pyenv local triflow-test-3.6.1
+
+env:
+	pip install -Ur requirements.txt
+
+init:
+	pip install coveralls
+	pip install pytest-cov
+	pip install pytest-pep8
+	pip install pytest-xdist
+	pip install pylama
+	pip install recommonmark
+	pip install .
+
 lint:
 	pylama
 
 isort:
 	sh -c "isort --recursive . "
 
-test:
-	pytest
-
-doc:
-	$(MAKE) -C docs html
-
-info:
-	@python --version
-	@pip --version
-
 build: clean
 	python setup.py check
 	python setup.py sdist
 	python setup.py bdist_wheel
+
+doc:
+	$(MAKE) -C docs html

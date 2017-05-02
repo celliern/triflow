@@ -15,7 +15,7 @@ from functools import partial
 
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.signal import periodogram, convolve, firwin
+from scipy.signal import convolve, firwin, periodogram
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)

@@ -2,11 +2,12 @@ language: python
 python:
     - "3.6"
 install:
+    - make env
     - make init
 script:
     - make isort
-    - make linter
-    - make test
+    - make lint
+    - pytest
 
 after_success:
     - coveralls
