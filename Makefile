@@ -42,11 +42,3 @@ build: clean
 	python setup.py check
 	python setup.py sdist
 	python setup.py bdist_wheel
-
-upload: clean
-	pyenv 3.5
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-	pyenv 3.6
-	python setup.py bdist_wheel upload
-	pyenv local 3.5 3.6
