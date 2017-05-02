@@ -29,14 +29,13 @@ isort:
 	sh -c "isort --recursive . "
 
 test:
-	tox
+	pytest
 
 doc:
 	$(MAKE) -C docs html
 
 info:
 	@python --version
-	@pyenv --version
 	@pip --version
 
 build: clean

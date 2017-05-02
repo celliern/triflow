@@ -2,9 +2,9 @@ language: python
 python:
     - "3.6"
 install:
-    - pip install tox-travis coveralls
+    - pip install coveralls
 script:
-    - tox --verbose --color=yes --cov=triflow
+    - make test
 
 after_success:
     - coveralls

@@ -15,8 +15,8 @@ from sympy.printing.theanocode import theano_code
 from theano import tensor as T
 from theano.ifelse import ifelse
 
-from triflow.core.routines import F_Routine, J_Routine
 from triflow.core.fields import BaseFields
+from triflow.core.routines import F_Routine, J_Routine
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
