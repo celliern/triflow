@@ -140,13 +140,15 @@ They can accept somme extra arguments during their instantiation (for exemple th
 
 The following code compute juste one time-step with a Crank-Nicolson scheme.
 
-.. plot:: pyplots/overview_model_one_step.py
-    :include-source:
+.. literalinclude:: pyplots/overview_model_one_step.py
+
+.. image:: _static/overview_model_one_step.png
 
 We obtain with the following code a full resolution up to the target time.
 
-.. plot:: pyplots/overview_model_multi_step.py
-    :include-source:
+.. literalinclude:: pyplots/overview_model_multi_step.py
+
+.. image:: _static/overview_model_multi_step.png
 
 hook and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -155,8 +157,9 @@ The hook function is used in order to deal with variable and conditional paramet
 
 Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the mode "wrap" leading to periodic fields. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
 
-.. plot:: pyplots/overview_model_hook.py
-    :include-source:
+.. literalinclude:: pyplots/overview_model_hook.py
+
+.. image:: _static/overview_model_hook.png
 
 Simulation class: higher level control
 --------------------------------------
@@ -185,8 +188,9 @@ To avoid it, we provide a higher level control class, the Simulation. It is an i
 
 and we write the previous advection-diffusion example as:
 
-.. plot:: pyplots/overview_simulation_hook.py
-    :include-source:
+.. literalinclude:: pyplots/overview_simulation_hook.py
+
+.. image:: _static/overview_simulation_hook.png
 
 Displays
 ^^^^^^^^
