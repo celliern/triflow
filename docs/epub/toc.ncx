@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head>
+    <meta name="dtb:uid" content="unknown"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>triflow</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="navPoint31" playOrder="1">
+      <navLabel>
+        <text>Welcome to triflow&#39;s documentation!</text>
+      </navLabel>
+      <content src="index.xhtml" />
+    </navPoint>
+    <navPoint id="navPoint32" playOrder="2">
+      <navLabel>
+        <text>Installation</text>
+      </navLabel>
+      <content src="installation.xhtml" />
+      <navPoint id="navPoint33" playOrder="2">
+        <navLabel>
+          <text>Installation</text>
+        </navLabel>
+        <content src="installation.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint34" playOrder="3">
+        <navLabel>
+          <text>External requirements</text>
+        </navLabel>
+        <content src="installation.xhtml#external-requirements" />
+      </navPoint>
+      <navPoint id="navPoint35" playOrder="4">
+        <navLabel>
+          <text>via PyPI</text>
+        </navLabel>
+        <content src="installation.xhtml#via-pypi" />
+      </navPoint>
+      <navPoint id="navPoint36" playOrder="5">
+        <navLabel>
+          <text>via github</text>
+        </navLabel>
+        <content src="installation.xhtml#via-github" />
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint37" playOrder="6">
+      <navLabel>
+        <text>Overview</text>
+      </navLabel>
+      <content src="overview.xhtml" />
+      <navPoint id="navPoint38" playOrder="6">
+        <navLabel>
+          <text>Overview</text>
+        </navLabel>
+        <content src="overview.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint39" playOrder="7">
+        <navLabel>
+          <text>Motivation</text>
+        </navLabel>
+        <content src="overview.xhtml#motivation" />
+      </navPoint>
+      <navPoint id="navPoint40" playOrder="8">
+        <navLabel>
+          <text>Model writing</text>
+        </navLabel>
+        <content src="overview.xhtml#model-writing" />
+        <navPoint id="navPoint41" playOrder="8">
+          <navLabel>
+            <text>Model writing</text>
+          </navLabel>
+          <content src="overview.xhtml#model-writing" />
+        </navPoint>
+        <navPoint id="navPoint42" playOrder="9">
+          <navLabel>
+            <text>optional arguments : fields and parameters</text>
+          </navLabel>
+          <content src="overview.xhtml#optional-arguments-fields-and-parameters" />
+        </navPoint>
+      </navPoint>
+      <navPoint id="navPoint43" playOrder="10">
+        <navLabel>
+          <text>Model compilation</text>
+        </navLabel>
+        <content src="overview.xhtml#model-compilation" />
+      </navPoint>
+      <navPoint id="navPoint44" playOrder="11">
+        <navLabel>
+          <text>Fields containers</text>
+        </navLabel>
+        <content src="overview.xhtml#fields-containers" />
+      </navPoint>
+      <navPoint id="navPoint45" playOrder="12">
+        <navLabel>
+          <text>Numerical scheme, temporal solver</text>
+        </navLabel>
+        <content src="overview.xhtml#numerical-scheme-temporal-solver" />
+        <navPoint id="navPoint46" playOrder="12">
+          <navLabel>
+            <text>Numerical scheme, temporal solver</text>
+          </navLabel>
+          <content src="overview.xhtml#numerical-scheme-temporal-solver" />
+        </navPoint>
+        <navPoint id="navPoint47" playOrder="13">
+          <navLabel>
+            <text>hook and boundary conditions</text>
+          </navLabel>
+          <content src="overview.xhtml#hook-and-boundary-conditions" />
+        </navPoint>
+      </navPoint>
+      <navPoint id="navPoint48" playOrder="14">
+        <navLabel>
+          <text>Simulation class: higher level control</text>
+        </navLabel>
+        <content src="overview.xhtml#simulation-class-higher-level-control" />
+        <navPoint id="navPoint49" playOrder="14">
+          <navLabel>
+            <text>Simulation class: higher level control</text>
+          </navLabel>
+          <content src="overview.xhtml#simulation-class-higher-level-control" />
+        </navPoint>
+        <navPoint id="navPoint50" playOrder="15">
+          <navLabel>
+            <text>Displays</text>
+          </navLabel>
+          <content src="overview.xhtml#displays" />
+        </navPoint>
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint51" playOrder="16">
+      <navLabel>
+        <text>Temporal schemes</text>
+      </navLabel>
+      <content src="schemes.xhtml" />
+      <navPoint id="navPoint52" playOrder="16">
+        <navLabel>
+          <text>Temporal schemes</text>
+        </navLabel>
+        <content src="schemes.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint53" playOrder="17">
+        <navLabel>
+          <text>List of available schemes</text>
+        </navLabel>
+        <content src="schemes.xhtml#list-of-available-schemes" />
+        <navPoint id="navPoint54" playOrder="17">
+          <navLabel>
+            <text>List of available schemes</text>
+          </navLabel>
+          <content src="schemes.xhtml#list-of-available-schemes" />
+        </navPoint>
+        <navPoint id="navPoint55" playOrder="18">
+          <navLabel>
+            <text>schemes.Theta</text>
+          </navLabel>
+          <content src="schemes.xhtml#schemes-theta" />
+        </navPoint>
+        <navPoint id="navPoint56" playOrder="19">
+          <navLabel>
+            <text>schemes.scipy_ode</text>
+          </navLabel>
+          <content src="schemes.xhtml#schemes-scipy-ode" />
+        </navPoint>
+        <navPoint id="navPoint57" playOrder="20">
+          <navLabel>
+            <text>schemes.ROW_general</text>
+          </navLabel>
+          <content src="schemes.xhtml#schemes-row-general" />
+        </navPoint>
+      </navPoint>
+      <navPoint id="navPoint58" playOrder="21">
+        <navLabel>
+          <text>Internal structure of a scheme</text>
+        </navLabel>
+        <content src="schemes.xhtml#internal-structure-of-a-scheme" />
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint59" playOrder="22">
+      <navLabel>
+        <text>Cookbook</text>
+      </navLabel>
+      <content src="cookbook.xhtml" />
+      <navPoint id="navPoint60" playOrder="22">
+        <navLabel>
+          <text>Cookbook</text>
+        </navLabel>
+        <content src="cookbook.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint61" playOrder="23">
+        <navLabel>
+          <text>The convection diffusion equation</text>
+        </navLabel>
+        <content src="cookbook/advection_diffusion.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint62" playOrder="24">
+        <navLabel>
+          <text>The burger equation</text>
+        </navLabel>
+        <content src="cookbook/burger_equation.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint63" playOrder="25">
+        <navLabel>
+          <text>Wave equation</text>
+        </navLabel>
+        <content src="cookbook/wave_equation.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint64" playOrder="26">
+        <navLabel>
+          <text>Coupled burger&#39;s-like equations</text>
+        </navLabel>
+        <content src="cookbook/so_wavy.xhtml" />
+      </navPoint>
+    </navPoint>
+    <navPoint id="navPoint65" playOrder="27">
+      <navLabel>
+        <text>triflow</text>
+      </navLabel>
+      <content src="modules.xhtml" />
+      <navPoint id="navPoint66" playOrder="27">
+        <navLabel>
+          <text>triflow</text>
+        </navLabel>
+        <content src="modules.xhtml" />
+      </navPoint>
+      <navPoint id="navPoint67" playOrder="28">
+        <navLabel>
+          <text>triflow package</text>
+        </navLabel>
+        <content src="triflow.xhtml" />
+        <navPoint id="navPoint68" playOrder="28">
+          <navLabel>
+            <text>triflow package</text>
+          </navLabel>
+          <content src="triflow.xhtml" />
+        </navPoint>
+        <navPoint id="navPoint69" playOrder="29">
+          <navLabel>
+            <text>Subpackages</text>
+          </navLabel>
+          <content src="triflow.xhtml#subpackages" />
+        </navPoint>
+        <navPoint id="navPoint70" playOrder="30">
+          <navLabel>
+            <text>Module contents</text>
+          </navLabel>
+          <content src="triflow.xhtml#module-triflow" />
+        </navPoint>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

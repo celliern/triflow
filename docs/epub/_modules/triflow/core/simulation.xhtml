@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>triflow.core.simulation</title>
+    
+    <link rel="stylesheet" href="../../../_static/epub.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> 
+  </head>
+  <body role="document">
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for triflow.core.simulation</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># coding=utf8</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="kn">from</span> <span class="nn">coolname</span> <span class="k">import</span> <span class="n">generate_slug</span>
+<span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">schemes</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+<span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Simulation"><a class="viewcode-back" href="../../../triflow.core.xhtml#triflow.core.simulation.Simulation">[docs]</a><span class="k">class</span> <span class="nc">Simulation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;High level container used to run simulation build on triflow Model.</span>
+<span class="sd">      This object is an iterable which will yield every time step until the parameters &#39;tmax&#39; is reached if provided.</span>
+<span class="sd">      By default, the solver use a 6th order ROW solver, an implicit method with integrated time-stepping.</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      model : triflow.Model</span>
+<span class="sd">          Contain finite difference approximation and routine of the dynamical system</span>
+<span class="sd">      t : float</span>
+<span class="sd">          initial time</span>
+<span class="sd">      fields : triflow.Fields</span>
+<span class="sd">          triflow container filled with initial conditions</span>
+<span class="sd">      physical_parameters : dict</span>
+<span class="sd">          physical parameters of the simulation</span>
+<span class="sd">      id : None, optional</span>
+<span class="sd">          name of the simulation. A 2 word slug will be generated if not provided.</span>
+<span class="sd">      hook : callable, optional</span>
+<span class="sd">          any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</span>
+<span class="sd">      scheme : callable, optional, default triflow.schemes.RODASPR</span>
+<span class="sd">          an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.</span>
+<span class="sd">      *args, **kwargs</span>
+<span class="sd">          extra arguments passed to the scheme.</span>
+<span class="sd">      *args, **kwargs</span>
+<span class="sd">          extra arguments passed to the scheme.</span>
+
+<span class="sd">      Attributes</span>
+<span class="sd">      ----------</span>
+<span class="sd">      dt : float</span>
+<span class="sd">        output time step</span>
+<span class="sd">      fields : triflow.Fields</span>
+<span class="sd">        triflow container filled with actual data</span>
+<span class="sd">      i : int</span>
+<span class="sd">        actual iteration</span>
+<span class="sd">      id : str</span>
+<span class="sd">        name of the simulation</span>
+<span class="sd">      model : triflow.Model</span>
+<span class="sd">        triflow Model used in the simulation</span>
+<span class="sd">      physical_parameters : dict</span>
+<span class="sd">        physical parameters of the simulation</span>
+<span class="sd">      status : str</span>
+<span class="sd">        status of the simulation, one of the following one: (&#39;created&#39;, &#39;running&#39;, &#39;finished&#39;, &#39;failed&#39;)</span>
+<span class="sd">      t : float</span>
+<span class="sd">        actual time</span>
+<span class="sd">      tmax : float or None, default None</span>
+<span class="sd">        stopping time of the simulation. Not stopping if set to None.</span>
+
+<span class="sd">      Examples</span>
+<span class="sd">      --------</span>
+<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">      &gt;&gt;&gt; import triflow</span>
+<span class="sd">      &gt;&gt;&gt; model = triflow.Model([&quot;k1 * dxxU&quot;,</span>
+<span class="sd">      ...                        &quot;k2 * dxxV&quot;],</span>
+<span class="sd">      ...                       [&quot;U&quot;, &quot;V&quot;],</span>
+<span class="sd">      ...                       [&quot;k1&quot;, &quot;k2&quot;])</span>
+<span class="sd">      &gt;&gt;&gt; x = np.linspace(0, 100, 1000, endpoint=False)</span>
+<span class="sd">      &gt;&gt;&gt; U = np.cos(x * 2 * np.pi / 100)</span>
+<span class="sd">      &gt;&gt;&gt; V = np.sin(x * 2 * np.pi / 100)</span>
+<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U, V=V)</span>
+<span class="sd">      &gt;&gt;&gt; pars = {&#39;k1&#39;: 1, &#39;k2&#39;: 1, &#39;periodic&#39;: True}</span>
+<span class="sd">      &gt;&gt;&gt; simulation = triflow.Simulation(model, 0, fields,</span>
+<span class="sd">      ...                                 pars, dt=5, tmax=50)</span>
+<span class="sd">      &gt;&gt;&gt; for t, fields in simulation:</span>
+<span class="sd">      ...    pass</span>
+<span class="sd">      &gt;&gt;&gt; print(t)</span>
+<span class="sd">      50</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">physical_parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span>
+                 <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">),</span>
+                 <span class="n">scheme</span><span class="o">=</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">,</span>
+                 <span class="n">tmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">intersection_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+            <span class="n">func_signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+            <span class="n">func_parameters</span> <span class="o">=</span> <span class="n">func_signature</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+                      <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
+                      <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">func_parameters</span><span class="p">}</span>
+            <span class="k">return</span> <span class="n">kwargs</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">generate_slug</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">id</span> <span class="k">else</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">physical_parameters</span> <span class="o">=</span> <span class="n">physical_parameters</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="n">tmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">intersection_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span>
+                                                           <span class="n">scheme</span><span class="o">.</span><span class="fm">__init__</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;created&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hook</span> <span class="o">=</span> <span class="n">hook</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Simulation.compute"><a class="viewcode-back" href="../../../triflow.core.xhtml#triflow.core.simulation.Simulation.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator which yield the actual state of the system every dt.</span>
+
+<span class="sd">        Yields</span>
+<span class="sd">        ------</span>
+<span class="sd">        tuple : t, fields</span>
+<span class="sd">            Actual time and updated fields container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span>
+        <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_parameters</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+                <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                         <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">physical_parameters</span> <span class="o">=</span> <span class="n">pars</span>
+                <span class="k">yield</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;failed&#39;</span>
+            <span class="k">raise</span></div>
+
+    <span class="k">def</span> <span class="nf">_takewhile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;finished&#39;</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">it</span><span class="o">.</span><span class="n">takewhile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_takewhile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iterator</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  </body>
+</html>

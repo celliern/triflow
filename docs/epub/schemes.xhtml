@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Temporal schemes</title>
+    
+    <link rel="stylesheet" href="_static/epub.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> 
+  </head>
+  <body role="document">
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="temporal-schemes">
+<h1>Temporal schemes</h1>
+<p>This section will present the structure of a typical temporal scheme and how to write your own schemes.</p>
+<div class="section" id="list-of-available-schemes">
+<h2>List of available schemes</h2>
+<div class="section" id="schemes-theta">
+<h3>schemes.Theta</h3>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">Theta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">theta</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This scheme represent a combinaison of the forward and the backward Euler. With theta = 0, it will be a full forward Euler, with theta = 1, a full backward Euler and with theta = 0.5, we will have a Crank-Nicolson method.</p>
+</div>
+<div class="section" id="schemes-scipy-ode">
+<h3>schemes.scipy_ode</h3>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">scipy_ode</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">integrator</span><span class="p">,</span> <span class="o">**</span><span class="n">kwd_integrator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This scheme is a wrapper around the scipy.integrate.ode.</p>
+<p>The integrator is one of these provided by scipy and kwd_integrator allow us to pass extra parameters to the solver.</p>
+<p>Beware that this scheme do not use the sparse jacobian, leading to higher memory usage and possibly bad performance for large systems. However, the time-stepping provided is good and is a good choice for validate a new scheme.</p>
+</div>
+<div class="section" id="schemes-row-general">
+<h3>schemes.ROW_general</h3>
+<p><a class="reference external" href="http://www.digibib.tu-bs.de/?docid=00055262">http://www.digibib.tu-bs.de/?docid=00055262</a>
+Rang, Joachim: Improved traditional Rosenbrock-Wanner methods for stiff odes and daes / Joachim Rang.</p>
+<p>This is the parent of all the Rosenbrock-Wanner scheme provided: they follow the same algorithm with different number of internal steps and different coefficients. A time-stepping is available and these schemes are suitable for stiff equations.</p>
+<ul class="simple">
+<li>ROS2 (2 steps, only fixed time-step)</li>
+<li>ROS3PRw (3 steps)</li>
+<li>ROS3PRL (4 steps)</li>
+<li>RODASPR (6 steps)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="internal-structure-of-a-scheme">
+<h2>Internal structure of a scheme</h2>
+<p>A temporal scheme can be written as any callable object initiated with a model attribute (which will give access to the system of differential equation to solve and its jacobian with model.F and model.J).</p>
+<p>The <cite>__call__</cite> method have the following signature:</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="n">fields</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
+                   <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>It will take as input the actual fields container, the time and the time-step wanted for this step. As keyword argument it will take a hook, a callable with the fields, time and parameters as input and fields and parameters as output. This function give us the ability to make on-the-fly modification of the fields (for boundary condition), or parameters (allowing time and space conditional parameters).</p>
+<p>This hook has to be called before calling the model routines.</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BackwardEuler</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
+                 <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">J</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="c1"># access the flatten copy of the dependant variables</span>
+        <span class="n">U</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">uflat</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">F</span> <span class="o">-</span>  <span class="n">J</span> <span class="o">@</span> <span class="n">U</span><span class="p">)</span> <span class="o">+</span> <span class="n">U</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="p">(</span><span class="n">sps</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+                          <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;csc&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">J</span><span class="p">)</span>
+        <span class="c1"># used in order to update the value of the dependant variables</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">solver</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span>
+        <span class="c1"># We return the hooked fields, be sure that the bdc are taken into account.</span>
+        <span class="n">fields</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  </body>
+</html>

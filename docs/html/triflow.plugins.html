@@ -1,0 +1,973 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>triflow.plugins package &mdash; triflow 0.4.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="triflow 0.4.0 documentation" href="index.html"/>
+        <link rel="up" title="triflow package" href="triflow.html"/>
+        <link rel="prev" title="triflow.core package" href="triflow.core.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> triflow
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">triflow</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="triflow.html">triflow package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="triflow.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="triflow.core.html">triflow.core package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">triflow.plugins package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="triflow.html#module-triflow">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">triflow</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">triflow</a> &raquo;</li>
+        
+          <li><a href="triflow.html">triflow package</a> &raquo;</li>
+        
+      <li>triflow.plugins package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/triflow.plugins.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="triflow-plugins-package">
+<h1>triflow.plugins package<a class="headerlink" href="#triflow-plugins-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-triflow.plugins.displays">
+<span id="triflow-plugins-displays-module"></span><h2>triflow.plugins.displays module<a class="headerlink" href="#module-triflow.plugins.displays" title="Permalink to this headline">¶</a></h2>
+<p>This module regroups different displays: function and coroutine written
+in order to give extra informationto the user during the simulation
+(plot, post-processing...)</p>
+<dl class="function">
+<dt id="triflow.plugins.displays.amnesic_mean">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">amnesic_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#amnesic_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.amnesic_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine able to compute mean of a sample without keeping data in memory.</p>
+<p class="rubric">Examples</p>
+<p>In that example we check if the mean value returned by the coroutine feeded by normal pseudo random values goes close to 0</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">displays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mean_coroutine</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">amnesic_mean</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5000</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">x_mean</span> <span class="o">=</span> <span class="n">mean_coroutine</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.displays.bokeh_fields_update">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_fields_update</code><span class="sig-paren">(</span><em>keys=None</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_fields_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_fields_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine sending fields data in a interactive Bokeh plot displayed in
+a jupyter notebook.
+bokeh.io.output_notebook() have to be called before using this coroutine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; Description</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bokeh_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">bokeh_fields_update</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">bokeh_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>vars <span class="classifier-delimiter">:</span> <span class="classifier">list or None (default None)</span></dt>
+<dd>list of the plotted variables. Default all the dependant variables of the model.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.displays.bokeh_probes_update">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_probes_update</code><span class="sig-paren">(</span><em>probes</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_probes_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_probes_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine sending custom probes in a interactive Bokeh plot displayed in a jupyter notebook.
+bokeh.io.output_notebook() have to be called before using this coroutine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>probes</strong> (<em>dictionnary of callable</em>) &#8211; Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">01</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">mean_probe</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bokeh_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">bokeh_probes_update</span><span class="p">({</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">mean_probe</span><span class="p">})</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">bokeh_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.displays.coroutine">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">coroutine</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#coroutine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.coroutine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.displays.visdom_update">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">visdom_update</code><span class="sig-paren">(</span><em>addr='http://127.0.0.1'</em>, <em>env='main'</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#visdom_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.visdom_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine sending fields data in a interactive plot leaving on a visdom
+server (which has to be launched).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>addr</strong> (str (default &#8220;<a class="reference external" href="http://127.0.0.1">http://127.0.0.1</a>&#8221;)) &#8211; adress of the visdom server.</li>
+<li><strong>env</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em> (</em><em>default &quot;main&quot;</em><em>)</em><em></em>) &#8211; Visdom environnement where the plot will be send.</li>
+<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; Description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">visdom_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">visdom_update</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">visdom_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>vars <span class="classifier-delimiter">:</span> <span class="classifier">list or None (default None)</span></dt>
+<dd>list of the plotted variables. Default all the dependant variables of the model.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.displays.window_data">
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">window_data</code><span class="sig-paren">(</span><em>window_len=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#window_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.window_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine able to return a dictionnary filled with concatenated values
+of the time and the fields, with optionnal window lenght. Useful to save
+only a part of the solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>window_len</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em> (</em><em>default</em><em>)</em><em></em>) &#8211; number of last iterations kept. All data kept if None</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">window_save_gen</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">window_data</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">saved_data</span> <span class="o">=</span> <span class="n">window_save_gen</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triflow.plugins.schemes">
+<span id="triflow-plugins-schemes-module"></span><h2>triflow.plugins.schemes module<a class="headerlink" href="#module-triflow.plugins.schemes" title="Permalink to this headline">¶</a></h2>
+<p>This module regroups all the implemented temporal schemes.
+They are written as callable class which take the model and some control
+arguments at the init, and perform a computation step every time they are
+called.</p>
+<dl class="docutils">
+<dt>The following solvers are implemented:</dt>
+<dd><ul class="first last simple">
+<li>Backward and Forward Euler, Crank-Nicolson method (with the Theta class)</li>
+<li>Some Rosenbrock Wanner schemes (up to the 6th order) with time controler</li>
+<li>All the scipy.integrate.ode integrators with the scipy_ode class.</li>
+</ul>
+</dd>
+</dl>
+<dl class="class">
+<dt id="triflow.plugins.schemes.RODASPR">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">RODASPR</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#RODASPR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.RODASPR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
+<p>6th order Rosenbrock scheme, with time stepping</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.ROS2">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS2</code><span class="sig-paren">(</span><em>model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
+<p>Second order Rosenbrock scheme, without time stepping</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.ROS3PRL">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRL</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
+<p>4th order Rosenbrock scheme, with time stepping</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.ROS3PRw">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRw</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
+<p>Third order Rosenbrock scheme, with time stepping</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.ROW_general">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROW_general</code><span class="sig-paren">(</span><em>model</em>, <em>alpha</em>, <em>gamma</em>, <em>b</em>, <em>b_pred=None</em>, <em>time_stepping=False</em>, <em>tol=None</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Rosenbrock Wanner class of temporal solvers</p>
+<p>The implementation and the different parameters can be found in
+<a class="reference external" href="http://www.digibib.tu-bs.de/?docid=00055262">http://www.digibib.tu-bs.de/?docid=00055262</a></p>
+<dl class="method">
+<dt id="triflow.plugins.schemes.ROW_general.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function ROW_general.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a step of the solver: took a time and a system state as a
+triflow Fields container and return the next time step with updated
+container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>container</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code></li>
+<li>raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></li>
+<li>raised if time_stepping is True and tol is not provided.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.Theta">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">Theta</code><span class="sig-paren">(</span><em>model</em>, <em>theta=1</em>, <em>solver=&lt;function spsolve&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#Theta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.Theta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="docutils">
+<dt>Simple theta-based scheme where theta is a weight</dt>
+<dd>if theta = 0, the scheme is a forward-euler scheme
+if theta = 1, the scheme is a backward-euler scheme
+if theta = 0.5, the scheme is called a Crank-Nicolson scheme</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
+<li><strong>theta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1</em>) &#8211; weight of the theta-scheme</li>
+<li><strong>solver</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em><em>, </em><em>default scipy.sparse.linalg.spsolve</em>) &#8211; method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="triflow.plugins.schemes.Theta.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function Theta.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#Theta.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.Theta.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a step of the solver: took a time and a system state as a
+triflow Fields container and return the next time step with updated
+container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields container</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.schemes.scipy_ode">
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">scipy_ode</code><span class="sig-paren">(</span><em>model</em>, <em>integrator='vode'</em>, <em>**integrator_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Proxy written around the scipy.integrate.ode class. Give access to all
+the scpy integrators.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
+<li><strong>integrator</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><em>optional</em><em>, </em><em>default 'vode'</em>) &#8211; name of the chosen scipy integration scheme.</li>
+<li><strong>**integrator_kwargs</strong> &#8211; extra arguments provided to the scipy integration scheme.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="triflow.plugins.schemes.scipy_ode.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function scipy_ode.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a step of the solver: took a time and a system state as a
+triflow Fields container and return the next time step with updated
+container.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>container</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code> &#8211; Description</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-triflow.plugins.signals">
+<span id="triflow-plugins-signals-module"></span><h2>triflow.plugins.signals module<a class="headerlink" href="#module-triflow.plugins.signals" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a Signal class usefull for time variable boundary
+conditions.</p>
+<dl class="docutils">
+<dt>Available signals:</dt>
+<dd><ul class="first last simple">
+<li>ConstantSignal: just an offset signal</li>
+<li>ForcedSignal: a sinusoidal wave</li>
+<li>WhiteNoise: a noisy signal</li>
+<li>BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction of the available modes.</li>
+</ul>
+</dd>
+</dl>
+<dl class="class">
+<dt id="triflow.plugins.signals.AdditiveSignal">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">AdditiveSignal</code><span class="sig-paren">(</span><em>signal_a</em>, <em>signal_b</em>, <em>op</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#AdditiveSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.AdditiveSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.signals.Signal" title="triflow.plugins.signals.Signal"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.signals.Signal</span></code></a></p>
+<p>Additive signal. Proxy the different signals and sum their interpolation functions.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.signals.ConstantSignal">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">ConstantSignal</code><span class="sig-paren">(</span><em>offset: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#ConstantSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.ConstantSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.signals.Signal" title="triflow.plugins.signals.Signal"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.signals.Signal</span></code></a></p>
+<p>Offset signal</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Value of the offset</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Set an offset to a white noise:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">noisy</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianWhiteNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">offset</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">ConstantSignal</span><span class="p">(</span><span class="n">offset</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">noise_with_offset</span> <span class="o">=</span> <span class="n">noisy</span> <span class="o">+</span> <span class="n">offset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">noise_without_offset</span> <span class="o">=</span> <span class="n">noise_with_offset</span> <span class="o">-</span> <span class="n">offset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">noisy</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">noise_without_offset</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.signals.GaussianBrownNoise">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">GaussianBrownNoise</code><span class="sig-paren">(</span><em>frequency_sampling: float</em>, <em>frequency_cut: float</em>, <em>mean=0</em>, <em>std=0.2</em>, <em>n=1000</em>, <em>filter_std=25</em>, <em>filter_window_size=500</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#GaussianBrownNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.GaussianBrownNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.signals.GaussianWhiteNoise" title="triflow.plugins.signals.GaussianWhiteNoise"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.signals.GaussianWhiteNoise</span></code></a></p>
+<p>Gaussian Brown noise signal, seeded with numpy.random.randn and with frequency cut at specific value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>frequency_cut</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Filter frequency cut.</li>
+<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>White signal with frequencies cut after 50 Hz:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">brown_signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianBrownNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+<span class="gp">... </span>                                          <span class="n">frequency_cut</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span>  <span class="o">=</span> <span class="n">brown_signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">spectrum_density</span><span class="p">[</span><span class="n">spectrum_frequencies</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.signals.GaussianWhiteNoise">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">GaussianWhiteNoise</code><span class="sig-paren">(</span><em>frequency_sampling</em>, <em>mean=0</em>, <em>std=0.2</em>, <em>n=1000</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#GaussianWhiteNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.GaussianWhiteNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.signals.Signal" title="triflow.plugins.signals.Signal"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.signals.Signal</span></code></a></p>
+<p>Gaussian White noise signal, seeded with numpy.random.randn</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Simple white signal with a 200 Hz frequency sampling:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianWhiteNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Forcing the pseudo-random-number generator seed for reproductible signal:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signal1</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianWhiteNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signal2</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianWhiteNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">signal1</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">signal2</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signal3</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianWhiteNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">signal1</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">signal3</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.signals.Signal">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">Signal</code><span class="sig-paren">(</span><em>signal_period: float</em>, <em>n: int = 1000</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#Signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.Signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class for signal object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>signal_period</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; period of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) &#8211; sampling number of the signal.</li>
+<li><strong>**kwargs</strong> &#8211; extra arguments provided to the custom signal template.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code></li>
+<li>this class is not supposed to be used by the user. If initialized directly, it will raise a NotImplementedError.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="triflow.plugins.signals.Signal.__add__">
+<code class="descname">__add__</code><span class="sig-paren">(</span><em>other_signal</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#Signal.__add__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.Signal.__add__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">triflow.plugins.signal.AdditiveSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="triflow.plugins.signals.Signal.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#Signal.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.Signal.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the signal value for the time t.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; time where the signal is evaluated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">amplitude of the signal a the time t.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="triflow.plugins.signals.Signal.__sub__">
+<code class="descname">__sub__</code><span class="sig-paren">(</span><em>other_signal</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#Signal.__sub__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.Signal.__sub__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">triflow.plugins.signal.AdditiveSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.plugins.signals.Signal.fourrier_spectrum">
+<code class="descname">fourrier_spectrum</code><a class="headerlink" href="#triflow.plugins.signals.Signal.fourrier_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>param *args, <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs: extra arguments provided to the periodogram function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>tuple of numpy.ndarray</strong></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">fourrier modes and power density obtained with the scipy.signal.periodogram function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="triflow.plugins.signals.SinusoidalSignal">
+<em class="property">class </em><code class="descclassname">triflow.plugins.signals.</code><code class="descname">SinusoidalSignal</code><span class="sig-paren">(</span><em>frequency: float</em>, <em>amplitude: float</em>, <em>phase: float = 0</em>, <em>n: int = 1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/signals.html#SinusoidalSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.signals.SinusoidalSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#triflow.plugins.signals.Signal" title="triflow.plugins.signals.Signal"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.signals.Signal</span></code></a></p>
+<p>Simple sinusoidal signal</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; frequency of the signal</li>
+<li><strong>amplitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; amplitude of the signal</li>
+<li><strong>phase</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em>) &#8211; phase of the signam</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) &#8211; number of sample for 2 period of the signal</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>We generate a 5 Hz signal with an amplitude of 0.5, and we check the signal.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">SinusoidalSignal</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=.</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span>  <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Amplitude: {signal(t).max():g}&quot;</span><span class="p">)</span>
+<span class="go">Amplitude: 0.499999</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;main mode: </span><span class="si">{spectrum_frequencies[spectrum_density.argmax()]:g}</span><span class="s2"> Hz&quot;</span><span class="p">)</span>
+<span class="go">main mode: 4.995 Hz</span>
+</pre></div>
+</div>
+<p>The class give a warning if the number of sample is too low and lead to aliasing. You can try it with</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;triflow.plugins.signals&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aliased_signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">SinusoidalSignal</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-triflow.plugins">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-triflow.plugins" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="triflow.core.html" class="btn btn-neutral" title="triflow.core package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.4.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
