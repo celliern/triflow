@@ -3,6 +3,7 @@ TEST_PATHS=triflow docs tests README.rst
 
 clean:
 	pyenv uninstall -f triflow-test-3.6.1
+	pyenv local --unset
 	rm --force --recursive build/
 	rm --force --recursive dist/
 	rm --force --recursive .eggs/
@@ -23,6 +24,7 @@ env:
 
 init:
 	pip install coveralls
+	pip install isort
 	pip install pytest-cov
 	pip install pytest-pep8
 	pip install pytest-xdist

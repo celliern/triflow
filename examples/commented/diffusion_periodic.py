@@ -2,10 +2,9 @@
 # coding=utf8
 
 import numpy as np
-
 from triflow import Model, Simulation
 
-# We initialize the model dtU = k * dxxU - c * dxU and we precise
+# We initialize the model dtU = k * dxxU and we precise
 # the variable and the parameters
 model = Model("k * dxxU",
               "U", "k")

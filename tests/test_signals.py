@@ -12,7 +12,7 @@ def test_sin_signal():
 
 
 def test_white_signal():
-    signals.GaussianWhiteNoiseWhiteNoise(200)
+    signals.GaussianWhiteNoise(200, )
 
 
 def test_brown_signals():

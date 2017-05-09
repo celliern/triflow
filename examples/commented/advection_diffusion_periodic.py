@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import pylab as pl
 import numpy as np
-
 from triflow import Model, Simulation
 
 # We initialize the model dtU = k * dxxU - c * dxU and we precise

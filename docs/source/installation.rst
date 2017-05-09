@@ -1,5 +1,5 @@
 Installation
-===============
+============
 
 
 External requirements
@@ -33,15 +33,6 @@ use sudo if needed, and the user flag if you want to install it without the root
 
     pip install --user triflow
 
-.. via Conda
-.. ----------
-
-.. The library is also available on a conda channel (not always up to date) :
-
-.. .. code:: bash
-
-..     conda install -c celliern triflow
-
 
 via github
 -----------
@@ -50,4 +41,4 @@ You can install the last version of the library using pip and the github reposit
 
 .. code:: bash
 
-    pip install git+git://github.com/celliern/triflow.git
+    pip install git+git://github.com/locie/triflow.git

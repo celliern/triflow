@@ -11,7 +11,7 @@ schemes.Theta
 
 .. code-block:: python3
 
-    scheme = schemes.Theta(model, theta)
+    >>> scheme = schemes.Theta(model, theta)
 
 This scheme represent a combinaison of the forward and the backward Euler. With theta = 0, it will be a full forward Euler, with theta = 1, a full backward Euler and with theta = 0.5, we will have a Crank-Nicolson method.
 
@@ -20,7 +20,7 @@ schemes.scipy_ode
 
 .. code-block:: python3
 
-    scheme = schemes.scipy_ode(model, integrator, kwd_integrator)
+    >>> scheme = schemes.scipy_ode(model, integrator, **kwd_integrator)
 
 This scheme is a wrapper around the scipy.integrate.ode.
 
@@ -46,7 +46,7 @@ Internal structure of a scheme
 
 A temporal scheme can be written as any callable object initiated with a model attribute (which will give access to the system of differential equation to solve and its jacobian with model.F and model.J).
 
-The __call__ method have the following signature:
+The `__call__` method have the following signature:
 
 .. code-block:: python3
 

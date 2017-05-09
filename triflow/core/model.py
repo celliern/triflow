@@ -14,7 +14,6 @@ from sympy import Derivative, Function, Symbol, symbols, sympify
 from sympy.printing.theanocode import theano_code
 from theano import tensor as T
 from theano.ifelse import ifelse
-
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 
@@ -28,16 +27,22 @@ def _generate_sympify_namespace(independent_variable,
                                 dependent_variables,
                                 helper_functions):
     """Generate the link between the symbols of the derivatives and the
-    sympy Derivative operation.
+      sympy Derivative operation.
 
-    Args:
-        independent_variable (str): name of the independant variable ("x")
-        dependent_variables (iterable of str): names of the dependent variables
-        helper_functions (iterable of str): names of the helper functions
+      Parameters
+      ----------
+      independent_variable : str
+          name of the independant variable ("x")
+      dependent_variables : iterable of str
+          names of the dependent variables
+      helper_functions : iterable of str
+          names of the helper functions
 
-    Returns:
-        dict: dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.
-    """  # noqa
+      Returns
+      -------
+      dict
+          dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.
+      """  # noqa
 
     symbolic_independent_variable = Symbol(independent_variable)
 
@@ -66,11 +71,15 @@ def load_model(filename):
     caching of the model. Will be slow if it is the first time the model is
     loaded on the system.
 
-    Args:
-        filename (str): path of the pre-compiled model
+    Parameters
+    ----------
+    filename : str
+        path of the pre-compiled model
 
-    Returns:
-        triflow.Model: triflow pre-compiled model
+    Returns
+    -------
+    triflow.core.Model
+        triflow pre-compiled model
     """
     with open(filename, 'rb') as f:
         return load(f)
@@ -87,41 +96,59 @@ def _reduce_model(eq_diffs, dep_vars, pars,
 class Model:
     """Contain finite difference approximation and routine of the dynamical system
 
-    Take a mathematical form as input, use Sympy to transform it as a symbolic
-    expression, perform the finite difference approximation and expose theano
-    optimized routine for both the right hand side of the dynamical system and
-    Jacobian matrix approximation.
+      Take a mathematical form as input, use Sympy to transform it as a symbolic
+      expression, perform the finite difference approximation and expose theano
+      optimized routine for both the right hand side of the dynamical system and
+      Jacobian matrix approximation.
 
-    Args:
-        differential_equations (iterable of str or str): the right hand sides of the partial differential equations written as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`
-        dependent_variables (iterable of str or str): the dependent variables with the same order as the temporal derivative of the previous arg.
-        parameters (iterable of str or str, optional, default None): list of the parameters. Can be feed with a scalar of an array with the same size
-        help_functions (None, optional): All fields which have not to be solved with the time derivative but will be derived in space.
-    Attributes:
-        F (triflow.F_Routine): Callable used to compute the right hand side of the dynamical system
-        F_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the right hand side of the dynamical system
-        J (triflow.J_Routine): Callable used to compute the Jacobian of the dynamical system
-        J_array (numpy.ndarray of sympy.Expr): Symbolic expressions of the Jacobian side of the dynamical system
-    Properties:
-        fields_template: Model specific Fields container used to store and access to the model variables in an efficient way.
+      Parameters
+      ----------
+      differential_equations : iterable of str or str
+          the right hand sides of the partial differential equations written as :math:`\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`
+      dependent_variables : iterable of str or str
+          the dependent variables with the same order as the temporal derivative of the previous arg.
+      parameters : iterable of str or str, optional, default None
+          list of the parameters. Can be feed with a scalar of an array with the same size
+      help_functions : None, optional
+          All fields which have not to be solved with the time derivative but will be derived in space.
 
-    Methods:
-        save: Save a binary of the Model with pre-optimized F and J routines
+      Attributes
+      ----------
+      F : triflow.F_Routine
+      Callable used to compute the right hand side of the dynamical system
+      F_array : numpy.ndarray of sympy.Expr
+      Symbolic expressions of the right hand side of the dynamical system
+      J : triflow.J_Routine
+      Callable used to compute the Jacobian of the dynamical system
+      J_array : numpy.ndarray of sympy.Expr
+      Symbolic expressions of the Jacobian side of the dynamical system
 
-    Examples:
-        A simple diffusion equation:
-        >>> from triflow import Model
-        >>> model = Model("k * dxxU", "U", "k")
+      Properties
+      ----------
+      fields_template: Model specific Fields container used to store and access to the model variables in an efficient way.
 
-        A coupled system of convection-diffusion equation:
-        >>> from triflow import Model
-        >>> model = Model(["k1 * dxxU - c1 * dxV",
-        ...                "k2 * dxxV - c2 * dxU",],
-        ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
+      Methods
+      -------
+      save: Save a binary of the Model with pre-optimized F and J routines
 
-    TODOs:
-        Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
-    """  # noqa
+      Examples
+      --------
+      A simple diffusion equation:
+
+      >>> from triflow import Model
+      >>> model = Model("k * dxxU", "U", "k")
+
+      A coupled system of convection-diffusion equation:
+
+      >>> from triflow import Model
+      >>> model = Model(["k1 * dxxU - c1 * dxV",
+      ...                "k2 * dxxV - c2 * dxU",],
+      ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
+
+      TODOs
+      -----
+      Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
+      """  # noqa
 
     def __init__(self,
                  differential_equations,
@@ -294,6 +321,8 @@ class Model:
                                                  *self._discrete_variables,
                                                  *self._symb_pars]}),
                      J_array.flatten().tolist()))
+        J = [Ji if not isinstance(Ji, (float, int)) else th.shared(Ji)
+             for Ji in J]
         F = (T.concatenate(th.clone(F, replace=subs))
              .reshape((self._nvar, N)).T.flatten())
         J = th.clone(J, replace=subs)
@@ -383,11 +412,14 @@ class Model:
     def save(self, filename):
         """Save the model as a binary pickle file.
 
-        Args:
-            filename (str): name of the file where the model is saved.
+        Parameters
+        ----------
+        filename : str
+            name of the file where the model is saved.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
         """
         with open(filename, 'wb') as f:
             dump(self, f)
