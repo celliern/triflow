@@ -1,5 +1,4 @@
 .PHONY: clean-pyc clean-build
-TEST_PATHS=triflow docs tests README.rst
 
 clean:
 	pyenv uninstall -f triflow-test-3.6.1
