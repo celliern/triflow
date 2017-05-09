@@ -85,8 +85,7 @@ We initialize the simulation.
     simulation = Simulation(model, t, fields, parameters,
                             dt=.1, tmax=30)
 
-We iterate on the simulation until the end. We update the bokeh display
-each step.
+We iterate on the simulation until the end.
 
 .. code:: ipython3
 

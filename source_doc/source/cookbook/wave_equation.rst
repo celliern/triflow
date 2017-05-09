@@ -97,8 +97,7 @@ have real-time plotting.
                             dt=.1, tmax=15,
                             hook=dirichlet)
 
-We iterate on the simulation until the end. We update the bokeh display
-each step.
+We iterate on the simulation until the end.
 
 .. code:: ipython3
 
