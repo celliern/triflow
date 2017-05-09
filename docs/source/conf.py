@@ -34,7 +34,11 @@
 
 from recommonmark.parser import CommonMarkParser
 
-extensions = ['sphinx.ext.doctest',
+extensions = ['matplotlib.sphinxext.mathmpl',
+              'matplotlib.sphinxext.only_directives',
+              'matplotlib.sphinxext.plot_directive',
+              'matplotlib.sphinxext.ipython_directive',
+              'sphinx.ext.doctest',
               'sphinx.ext.intersphinx',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
@@ -42,9 +46,7 @@ extensions = ['sphinx.ext.doctest',
               'sphinx.ext.ifconfig',
               'sphinx.ext.viewcode',
               'sphinx.ext.autodoc',
-              'sphinxcontrib.napoleon',
-              'matplotlib.sphinxext.only_directives',
-              'matplotlib.sphinxext.plot_directive']
+              'sphinxcontrib.napoleon']
 
 napoleon_include_special_with_doc = True
 
