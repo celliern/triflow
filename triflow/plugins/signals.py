@@ -37,13 +37,6 @@ class Signal(object):
       ------
       NotImplementedError
       this class is not supposed to be used by the user. If initialized directly, it will raise a NotImplementedError.
-
-      >>> from triflow.plugins import signals
-      >>> signals.Signal(100)
-      Traceback : most recent call last
-      ...
-      NotImplementedError
-
       """  # noqa
 
     def __init__(self, signal_period: float, n: int=1000, **kwargs):
