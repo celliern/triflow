@@ -19,9 +19,9 @@ class BaseFields:
           Attributes
           ----------
           array : numpy.array
-          vanilla numpy array containing the data
+            vanilla numpy array containing the data
           size : int
-          Number of discretisation nodes
+            Number of discretisation nodes
           """  # noqa
         @staticmethod
         def factory(dependent_variables, helper_functions):
@@ -100,7 +100,7 @@ class BaseFields:
             uflat.flags.writeable = False
             return uflat
 
-        def fill(self, Uflat):
+        def fill(self, flat_array):
             """take a flat numpy array and update inplace the dependent
             variables of the container
 
@@ -110,10 +110,10 @@ class BaseFields:
 
             Parameters
             ----------
-            Uflat : TYPE
-                Description
-            """
-            self.uarray[:] = Uflat.reshape(self.uarray.shape)
+            flat_array : numpy.ndarray
+                flat array which will be put in the dependant variable flat array.
+            """  # noqa
+            self.uarray[:] = flat_array.reshape(self.uarray.shape)
 
         def __getitem__(self, index):
             return self.structured[index].squeeze()

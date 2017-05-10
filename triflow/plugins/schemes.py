@@ -78,9 +78,9 @@ class ROW_general:
           Raises
           ------
           NotImplementedError
-          raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.
+              raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.
           ValueError
-          raised if time_stepping is True and tol is not provided.
+              raised if time_stepping is True and tol is not provided.
           """  # noqa
         if self._time_control:
             try:

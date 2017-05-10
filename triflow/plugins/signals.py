@@ -63,7 +63,7 @@ class Signal(object):
           Raises
           ------
           NotImplementedError
-          is raised if the child class do not override this method.
+              is raised if the child class do not override this method.
 
           Parameters
           ----------

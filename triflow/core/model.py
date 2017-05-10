@@ -115,13 +115,13 @@ class Model:
       Attributes
       ----------
       F : triflow.F_Routine
-      Callable used to compute the right hand side of the dynamical system
+          Callable used to compute the right hand side of the dynamical system
       F_array : numpy.ndarray of sympy.Expr
-      Symbolic expressions of the right hand side of the dynamical system
+          Symbolic expressions of the right hand side of the dynamical system
       J : triflow.J_Routine
-      Callable used to compute the Jacobian of the dynamical system
+          Callable used to compute the Jacobian of the dynamical system
       J_array : numpy.ndarray of sympy.Expr
-      Symbolic expressions of the Jacobian side of the dynamical system
+          Symbolic expressions of the Jacobian side of the dynamical system
 
       Properties
       ----------
