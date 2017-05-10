@@ -64,10 +64,10 @@ This hook has to be called before calling the model routines.
         def __init__(self, model):
             self.model = model
 
-        def __call__(self, fields, t, dt, pars,
-                     hook=lambda fields, t, pars: (fields, pars)):
+        def __call__(self, t, fields, dt, pars,
+                     hook=lambda t, fields, pars: (fields, pars)):
             fields = fields.copy()
-            fields, pars = hook(fields, t, pars)
+            fields, pars = hook(t, fields, pars)
             F = self.model.F(fields, pars)
             J = self.model.J(fields, pars)
             # access the flatten copy of the dependant variables
@@ -78,5 +78,5 @@ This hook has to be called before calling the model routines.
             # used in order to update the value of the dependant variables
             fields = fields.fill(solver(J, B))
             # We return the hooked fields, be sure that the bdc are taken into account.
-            fields, _ = hook(fields, t + dt, pars)
-            return fields, t + dt
+            fields, _ = hook(t + dt, fields, pars)
+            return t + dt, fields
