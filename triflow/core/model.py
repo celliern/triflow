@@ -104,7 +104,7 @@ class Model:
       Parameters
       ----------
       differential_equations : iterable of str or str
-          the right hand sides of the partial differential equations written as :math:`\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`
+          the right hand sides of the partial differential equations written as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`
       dependent_variables : iterable of str or str
           the dependent variables with the same order as the temporal derivative of the previous arg.
       parameters : iterable of str or str, optional, default None
@@ -405,7 +405,7 @@ class Model:
 
     @property
     def sargs(self):
-        return ([self.x] +
+        return ([Symbol('x')] +
                 list(self.dfields) +
                 list(self.symbolic_pars) + [self.dx])
 
@@ -520,7 +520,7 @@ class Model:
 
         symbolic_dep_vars = tuple([Function(dep_var)(Symbol('x'))
                                    for dep_var in dep_vars])
-        symbolic_help_functions = tuple([Function(help_function)(self.x)
+        symbolic_help_functions = tuple([Function(help_function)(Symbol('x'))
                                          for help_function in help_functions])
         symbolic_pars = symbols(pars)
         try:

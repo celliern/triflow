@@ -19,7 +19,7 @@ class ModelRoutine:
 
 class F_Routine(ModelRoutine):
     """Compute the right hand side of the dynamical system
-      :math:`\frac{\partial U}{\partial t} = F(U)`
+      :math:`\\frac{\\partial U}{\\partial t} = F(U)`
 
       Parameters
       ----------
@@ -63,7 +63,7 @@ class F_Routine(ModelRoutine):
 
 class J_Routine(ModelRoutine):
     """Compute the right hand side of the dynamical system
-      :math:`\frac{\partial U}{\partial t} = F(U)`
+      :math:`\\frac{\\partial U}{\\partial t} = F(U)`
 
       Parameters
       ----------

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.core package &mdash; triflow 0.4.0 documentation</title>
+  <title>triflow.core package &mdash; triflow 0.4.2 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="triflow 0.4.0 documentation" href="index.html"/>
+    <link rel="top" title="triflow 0.4.2 documentation" href="index.html"/>
         <link rel="up" title="triflow package" href="triflow.html"/>
         <link rel="next" title="triflow.plugins package" href="triflow.plugins.html"/>
         <link rel="prev" title="triflow package" href="triflow.html"/> 
@@ -60,6 +60,9 @@
             <a href="index.html" class="icon icon-home"> triflow
           
 
+          
+            
+            <img src="_static/logo_locie.svg" class="logo" />
           
           </a>
 
@@ -313,36 +316,90 @@ the main array!</p>
 <em class="property">class </em><code class="descclassname">triflow.core.model.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>differential_equations</em>, <em>dependent_variables</em>, <em>parameters=None</em>, <em>help_functions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.Model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Contain finite difference approximation and routine of the dynamical system</p>
-<blockquote>
-<div><p>Take a mathematical form as input, use Sympy to transform it as a symbolic
+<p>Take a mathematical form as input, use Sympy to transform it as a symbolic
 expression, perform the finite difference approximation and expose theano
 optimized routine for both the right hand side of the dynamical system and
 Jacobian matrix approximation.</p>
-<dl class="docutils">
-<dt>differential_equations <span class="classifier-delimiter">:</span> <span class="classifier">iterable of str or str</span></dt>
-<dd>the right hand sides of the partial differential equations written as :math:<a href="#id1"><span class="problematic" id="id2">`</span></a></dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>rac{partial U}{partial t} = F(U)`, where the spatial derivative can be written as <cite>dxxU</cite> or <cite>dx(U, 2)</cite> or with the sympy notation <cite>Derivative(U, x, x)</cite></dt>
-<dd><dl class="first docutils">
-<dt>dependent_variables <span class="classifier-delimiter">:</span> <span class="classifier">iterable of str or str</span></dt>
-<dd>the dependent variables with the same order as the temporal derivative of the previous arg.</dd>
-<dt>parameters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of str or str, optional, default None</span></dt>
-<dd>list of the parameters. Can be feed with a scalar of an array with the same size</dd>
-<dt>help_functions <span class="classifier-delimiter">:</span> <span class="classifier">None, optional</span></dt>
-<dd>All fields which have not to be solved with the time derivative but will be derived in space.</dd>
-</dl>
-<p>F : triflow.F_Routine
-Callable used to compute the right hand side of the dynamical system
-F_array : numpy.ndarray of sympy.Expr
-Symbolic expressions of the right hand side of the dynamical system
-J : triflow.J_Routine
-Callable used to compute the Jacobian of the dynamical system
-J_array : numpy.ndarray of sympy.Expr
-Symbolic expressions of the Jacobian side of the dynamical system</p>
-<p>fields_template: Model specific Fields container used to store and access to the model variables in an efficient way.</p>
-<p>save: Save a binary of the Model with pre-optimized F and J routines</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>differential_equations</strong> (<em>iterable of str</em><em> or </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; the right hand sides of the partial differential equations written as <span class="math">\(\frac{\partial U}{\partial t} = F(U)\)</span>, where the spatial derivative can be written as <cite>dxxU</cite> or <cite>dx(U, 2)</cite> or with the sympy notation <cite>Derivative(U, x, x)</cite></li>
+<li><strong>dependent_variables</strong> (<em>iterable of str</em><em> or </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; the dependent variables with the same order as the temporal derivative of the previous arg.</li>
+<li><strong>parameters</strong> (<em>iterable of str</em><em> or </em><a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; list of the parameters. Can be feed with a scalar of an array with the same size</li>
+<li><strong>help_functions</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; All fields which have not to be solved with the time derivative but will be derived in space.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="triflow.core.model.Model.F">
+<code class="descname">F</code><a class="headerlink" href="#triflow.core.model.Model.F" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>triflow.F_Routine</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Callable used to compute the right hand side of the dynamical system</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.model.Model.F_array">
+<code class="descname">F_array</code><a class="headerlink" href="#triflow.core.model.Model.F_array" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.ndarray of sympy.Expr</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Symbolic expressions of the right hand side of the dynamical system</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.model.Model.J">
+<code class="descname">J</code><a class="headerlink" href="#triflow.core.model.Model.J" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>triflow.J_Routine</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Callable used to compute the Jacobian of the dynamical system</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.model.Model.J_array">
+<code class="descname">J_array</code><a class="headerlink" href="#triflow.core.model.Model.J_array" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.ndarray of sympy.Expr</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">Symbolic expressions of the Jacobian side of the dynamical system</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.model.Model.Properties">
+<code class="descname">Properties</code><a class="headerlink" href="#triflow.core.model.Model.Properties" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">----------</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.model.Model.fields_template">
+<code class="descname">fields_template</code><a class="headerlink" href="#triflow.core.model.Model.fields_template" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Model specific Fields container used to store and access to the model variables in an efficient way.</em></p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">save: Save a binary of the Model with pre-optimized F and J routines</code></dt>
+<dd></dd></dl>
+
+<p class="rubric">Examples</p>
 <p>A simple diffusion equation:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">)</span>
@@ -355,12 +412,10 @@ Symbolic expressions of the Jacobian side of the dynamical system</p>
 <span class="gp">... </span>               <span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;k1&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">,</span> <span class="s2">&quot;c1&quot;</span><span class="p">,</span> <span class="s2">&quot;c2&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p class="last">Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)</p>
-</dd>
-</dl>
+<p>Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)</p>
 <dl class="attribute">
-<dt id="triflow.core.model.Model.fields_template">
-<code class="descname">fields_template</code><a class="headerlink" href="#triflow.core.model.Model.fields_template" title="Permalink to this definition">¶</a></dt>
+<dt>
+<code class="descname">fields_template</code></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -415,23 +470,26 @@ loaded on the system.</p>
 <dt id="triflow.core.routines.F_Routine">
 <em class="property">class </em><code class="descclassname">triflow.core.routines.</code><code class="descname">F_Routine</code><span class="sig-paren">(</span><em>matrix</em>, <em>args</em>, <em>pars</em>, <em>ufunc</em>, <em>reduced=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/routines.html#F_Routine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.routines.F_Routine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#triflow.core.routines.ModelRoutine" title="triflow.core.routines.ModelRoutine"><code class="xref py py-class docutils literal"><span class="pre">triflow.core.routines.ModelRoutine</span></code></a></p>
-<dl class="docutils">
-<dt>Compute the right hand side of the dynamical system</dt>
-<dd>:math:<a href="#id3"><span class="problematic" id="id4">`</span></a></dd>
-</dl>
-<p>rac{partial U}{partial t} = F(U)`</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>fields <span class="classifier-delimiter">:</span> <span class="classifier">triflow.Fields</span></dt>
-<dd>triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</dd>
-<dt>pars <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</dd>
-</dl>
-<dl class="docutils">
-<dt>numpy.ndarray</dt>
-<dd>flat array containing the right hand side of the dynamical system.</dd>
-</dl>
-</div></blockquote>
+<p>Compute the right hand side of the dynamical system
+<span class="math">\(\frac{\partial U}{\partial t} = F(U)\)</span></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">flat array containing the right hand side of the dynamical system.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="triflow.core.routines.F_Routine.diff_approx">
 <code class="descname">diff_approx</code><span class="sig-paren">(</span><em>fields</em>, <em>pars</em>, <em>eps=1e-08</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/routines.html#F_Routine.diff_approx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.routines.F_Routine.diff_approx" title="Permalink to this definition">¶</a></dt>
@@ -443,22 +501,27 @@ loaded on the system.</p>
 <dt id="triflow.core.routines.J_Routine">
 <em class="property">class </em><code class="descclassname">triflow.core.routines.</code><code class="descname">J_Routine</code><span class="sig-paren">(</span><em>matrix</em>, <em>args</em>, <em>pars</em>, <em>ufunc</em>, <em>reduced=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/routines.html#J_Routine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.routines.J_Routine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#triflow.core.routines.ModelRoutine" title="triflow.core.routines.ModelRoutine"><code class="xref py py-class docutils literal"><span class="pre">triflow.core.routines.ModelRoutine</span></code></a></p>
-<dl class="docutils">
-<dt>Compute the right hand side of the dynamical system</dt>
-<dd>:math:<a href="#id5"><span class="problematic" id="id6">`</span></a></dd>
-</dl>
-<p>rac{partial U}{partial t} = F(U)`</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>fields <span class="classifier-delimiter">:</span> <span class="classifier">triflow.Fields</span></dt>
-<dd>triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</dd>
-<dt>pars <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
-<dd>dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</dd>
-<dt>sparse <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional, default True</span></dt>
-<dd>whether should the matrix returned as dense or sparse form.</dd>
-</dl>
-<p>scipy.sparse.CSC or numpy.ndarray: sparse or dense form (depending of the <cite>sparse</cite> argument) of the Jacobian approximation of the dynamical system right hand side.</p>
-</div></blockquote>
+<p>Compute the right hand side of the dynamical system
+<span class="math">\(\frac{\partial U}{\partial t} = F(U)\)</span></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</li>
+<li><strong>sparse</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; whether should the matrix returned as dense or sparse form.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>scipy.sparse.CSC or numpy.ndarray</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sparse or dense form (depending of the <cite>sparse</cite> argument) of the Jacobian approximation of the dynamical system right hand side.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="class">
@@ -638,7 +701,7 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.4.0',
+            VERSION:'0.4.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

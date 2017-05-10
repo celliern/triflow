@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.core.model &mdash; triflow 0.4.0 documentation</title>
+  <title>triflow.core.model &mdash; triflow 0.4.2 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="triflow 0.4.0 documentation" href="../../../index.html"/>
+    <link rel="top" title="triflow 0.4.2 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -58,6 +58,9 @@
             <a href="../../../index.html" class="icon icon-home"> triflow
           
 
+          
+            
+            <img src="../../../_static/logo_locie.svg" class="logo" />
           
           </a>
 
@@ -266,7 +269,7 @@
 <span class="sd">      Parameters</span>
 <span class="sd">      ----------</span>
 <span class="sd">      differential_equations : iterable of str or str</span>
-<span class="sd">          the right hand sides of the partial differential equations written as :math:`\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`</span>
+<span class="sd">          the right hand sides of the partial differential equations written as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy notation `Derivative(U, x, x)`</span>
 <span class="sd">      dependent_variables : iterable of str or str</span>
 <span class="sd">          the dependent variables with the same order as the temporal derivative of the previous arg.</span>
 <span class="sd">      parameters : iterable of str or str, optional, default None</span>
@@ -567,7 +570,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">sargs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span>
+        <span class="k">return</span> <span class="p">([</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)]</span> <span class="o">+</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dfields</span><span class="p">)</span> <span class="o">+</span>
                 <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbolic_pars</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dx</span><span class="p">])</span>
 
@@ -682,7 +685,7 @@
 
         <span class="n">symbolic_dep_vars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">dep_var</span><span class="p">)(</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">))</span>
                                    <span class="k">for</span> <span class="n">dep_var</span> <span class="ow">in</span> <span class="n">dep_vars</span><span class="p">])</span>
-        <span class="n">symbolic_help_functions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">help_function</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">symbolic_help_functions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">help_function</span><span class="p">)(</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">))</span>
                                          <span class="k">for</span> <span class="n">help_function</span> <span class="ow">in</span> <span class="n">help_functions</span><span class="p">])</span>
         <span class="n">symbolic_pars</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="n">pars</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -758,7 +761,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.4.0',
+            VERSION:'0.4.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
