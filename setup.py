@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name='triflow',
     # la version du code
-    version="0.4.1",
+    version="0.4.2",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -46,7 +46,7 @@ setup(
         'bokeh': ["bokeh"],
         'datreant': ["datreant.core"],
     },
-    download_url='https://github.com/celliern/triflow/archive/v0.4.1.tar.gz',
+    download_url='https://github.com/celliern/triflow/archive/v0.4.2.tar.gz',
     # Il est d'usage de mettre quelques metadata à propos de sa lib
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
 
