@@ -67,7 +67,7 @@ All the models are written as function generating the F vector and the Jacobian 
 
 .. math::
 
-    \\frac{\\partial U}{\\partial t} = F(U)
+    \frac{\partial U}{\partial t} = F(U)
 
 The symbolic model is written as a simple mathematic equation. For exemple, a diffusion advection model can be written as:
 
