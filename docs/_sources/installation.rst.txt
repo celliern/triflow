@@ -1,9 +1,11 @@
 Installation
-============
+===============
 
 
 External requirements
 ---------------------
+
+This library is written for python >= 3.6, and I recommend to install it via Anaconda_ : this is a full python distribution including a scientific-oriented IDE, the main scientific python libraries and the Jupyter project.
 
 The library is based on Theano, thus extra dependecies like fortran and C compiler are needed, see Theano install page for extra informations:
 
@@ -12,8 +14,6 @@ http://deeplearning.net/software/theano/install.html
 
 via PyPI
 ---------
-
-Beware, the PyPI version is not always up-to-date.
 
 .. code:: bash
 
@@ -32,7 +32,6 @@ use sudo if needed, and the user flag if you want to install it without the root
 .. code:: bash
 
     pip install --user triflow
-
 
 via github
 -----------

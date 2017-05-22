@@ -9,7 +9,7 @@ The aim of this library is to have an easy way to write transient dynamic system
 The main two parts of the library are:
 
 * symbolic tools defining the spatial discretisation.
-* a fast temporal solver written to use the sparsity of the finite difference method to reduce the memory and CPU usage during the computation. _Theano make this part easy.
+* a fast temporal solver written to use the sparsity of the finite difference method to reduce the memory and CPU usage during the computation. Theano_ make this part easy.
 
 Moreover, we provide extra tools and we write the library in a modular way, allowing an easy extension of these different parts (see the plug-in module of the library.)
 
@@ -90,7 +90,7 @@ The model has to be compiled before being employed. The sympy library provides a
 
 In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).
 
-The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (> 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the Theano_ documentation for more details).
+The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be sae on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (> 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the Theano_ documentation for more details).
 
 Fields containers
 ------------------
@@ -140,15 +140,13 @@ They can accept somme extra arguments during their instantiation (for exemple th
 
 The following code compute juste one time-step with a Crank-Nicolson scheme.
 
-.. literalinclude:: pyplots/overview_model_one_step.py
-
-.. image:: _static/overview_model_one_step.png
+.. plot:: pyplots/overview_model_one_step.py
+   :include-source:
 
 We obtain with the following code a full resolution up to the target time.
 
-.. literalinclude:: pyplots/overview_model_multi_step.py
-
-.. image:: _static/overview_model_multi_step.png
+.. plot:: pyplots/overview_model_multi_step.py
+   :include-source:
 
 hook and boundary conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -157,9 +155,8 @@ The hook function is used in order to deal with variable and conditional paramet
 
 Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the mode "wrap" leading to periodic fields. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
 
-.. literalinclude:: pyplots/overview_model_hook.py
-
-.. image:: _static/overview_model_hook.png
+.. plot:: pyplots/overview_model_hook.py
+   :include-source:
 
 Simulation class: higher level control
 --------------------------------------
@@ -188,9 +185,8 @@ To avoid it, we provide a higher level control class, the Simulation. It is an i
 
 and we write the previous advection-diffusion example as:
 
-.. literalinclude:: pyplots/overview_simulation_hook.py
-
-.. image:: _static/overview_simulation_hook.png
+.. plot:: pyplots/overview_simulation_hook.py
+   :include-source:
 
 Displays
 ^^^^^^^^

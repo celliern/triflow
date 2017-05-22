@@ -7,16 +7,16 @@ The convection diffusion equation
     import functools as ft
     import multiprocessing as mp
     import logging
-    
+
     import numpy as np
     from scipy.signal import gaussian
-    
+
     import pylab as pl
-    
+
     from triflow import Model, Simulation, schemes, displays
-    
+
     pl.style.use('seaborn-white')
-    
+
     %matplotlib inline
 
 The convection–diffusion equation is a combination of the diffusion and
@@ -57,9 +57,9 @@ We initialize with three gaussian pulses for the initial condition
     U = (np.roll(gaussian(x.size, 10), x.size // 5) +
          np.roll(gaussian(x.size, 10), -x.size // 5) -
          gaussian(x.size, 20))
-    
+
     fields = model.fields_template(x=x, U=U)
-    
+
     pl.figure(figsize=(15, 4))
     pl.plot(fields.x, fields.U)
     pl.xlim(0, fields.x.max())
@@ -95,7 +95,7 @@ We iterate on the simulation until the end.
             pl.fill_between(fields.x, fields.U + .1 * (i + 1),
                             fields.U.min() - 1,
                             color='darkred', zorder=-2 * i, alpha=.7)
-            pl.plot(fields.x, fields.U + .1 * (i + 1), 
+            pl.plot(fields.x, fields.U + .1 * (i + 1),
                     color='white',
                     zorder=-(2 * i - 1))
         print(f"t: {t:g}".ljust(80), end='\r')
@@ -105,7 +105,7 @@ We iterate on the simulation until the end.
 
 .. parsed-literal::
 
-    t: 29.9                                                                         
+    t: 29.9
 
 
 .. image:: advection_diffusion_files/advection_diffusion_13_1.png

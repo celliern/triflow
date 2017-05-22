@@ -187,7 +187,7 @@
 <span id="triflow-plugins-displays-module"></span><h2>triflow.plugins.displays module<a class="headerlink" href="#module-triflow.plugins.displays" title="Permalink to this headline">¶</a></h2>
 <p>This module regroups different displays: function and coroutine written
 in order to give extra informationto the user during the simulation
-(plot, post-processing...)</p>
+(plot, post-processing…)</p>
 <dl class="function">
 <dt id="triflow.plugins.displays.amnesic_mean">
 <code class="descclassname">triflow.plugins.displays.</code><code class="descname">amnesic_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#amnesic_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.amnesic_mean" title="Permalink to this definition">¶</a></dt>
@@ -214,9 +214,9 @@ bokeh.io.output_notebook() have to be called before using this coroutine.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; Description</li>
-<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
-<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – Description</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
 </ul>
 </td>
 </tr>
@@ -262,9 +262,9 @@ bokeh.io.output_notebook() have to be called before using this coroutine.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>probes</strong> (<em>dictionnary of callable</em>) &#8211; Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
-<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
-<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>probes</strong> (<em>dictionnary of callable</em>) – Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
 </ul>
 </td>
 </tr>
@@ -303,7 +303,7 @@ bokeh.io.output_notebook() have to be called before using this coroutine.</p>
 
 <dl class="function">
 <dt id="triflow.plugins.displays.visdom_update">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">visdom_update</code><span class="sig-paren">(</span><em>addr='http://127.0.0.1'</em>, <em>env='main'</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#visdom_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.visdom_update" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">triflow.plugins.displays.</code><code class="descname">visdom_update</code><span class="sig-paren">(</span><em>addr=’http://127.0.0.1’</em>, <em>env=’main’</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#visdom_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.visdom_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coroutine sending fields data in a interactive plot leaving on a visdom
 server (which has to be launched).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -311,9 +311,9 @@ server (which has to be launched).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>addr</strong> (str (default &#8220;<a class="reference external" href="http://127.0.0.1">http://127.0.0.1</a>&#8221;)) &#8211; adress of the visdom server.</li>
-<li><strong>env</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em> (</em><em>default &quot;main&quot;</em><em>)</em><em></em>) &#8211; Visdom environnement where the plot will be send.</li>
-<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; Description</li>
+<li><strong>addr</strong> (str (default “<a class="reference external" href="http://127.0.0.1">http://127.0.0.1</a>”)) – adress of the visdom server.</li>
+<li><strong>env</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em> (</em><em>default “main”</em><em>)</em>) – Visdom environnement where the plot will be send.</li>
+<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – Description</li>
 </ul>
 </td>
 </tr>
@@ -355,7 +355,7 @@ only a part of the solution.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>window_len</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em> (</em><em>default</em><em>)</em><em></em>) &#8211; number of last iterations kept. All data kept if None</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>window_len</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em> (</em><em>default</em><em>)</em>) – number of last iterations kept. All data kept if None</td>
 </tr>
 </tbody>
 </table>
@@ -411,11 +411,11 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) – tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) – allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – minimum internal time step allowed</li>
 </ul>
 </td>
 </tr>
@@ -432,7 +432,7 @@ called.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</td>
 </tr>
 </tbody>
 </table>
@@ -448,11 +448,11 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) – tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) – allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – minimum internal time step allowed</li>
 </ul>
 </td>
 </tr>
@@ -470,11 +470,11 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) – tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) – allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em><em>, </em><em>default None</em>) – minimum internal time step allowed</li>
 </ul>
 </td>
 </tr>
@@ -500,26 +500,24 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
-<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
-<li><strong>container</strong> &#8211; </li>
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) – actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) – any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions…</li>
+<li><strong>container</strong> – </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> – updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code></li>
-<li>raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></li>
-<li>raised if time_stepping is True and tol is not provided.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> – raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> – raised if time_stepping is True and tol is not provided.</li>
 </ul>
 </td>
 </tr>
@@ -544,9 +542,9 @@ if theta = 0.5, the scheme is called a Crank-Nicolson scheme</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>theta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1</em>) &#8211; weight of the theta-scheme</li>
-<li><strong>solver</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em><em>, </em><em>default scipy.sparse.linalg.spsolve</em>) &#8211; method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</li>
+<li><strong>theta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1</em>) – weight of the theta-scheme</li>
+<li><strong>solver</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em><em>, </em><em>default scipy.sparse.linalg.spsolve</em>) – method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.</li>
 </ul>
 </td>
 </tr>
@@ -563,15 +561,15 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields container</li>
-<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) – actual system state in a triflow Fields container</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) – any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions…</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> – updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
@@ -585,7 +583,7 @@ container.</p>
 
 <dl class="class">
 <dt id="triflow.plugins.schemes.scipy_ode">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">scipy_ode</code><span class="sig-paren">(</span><em>model</em>, <em>integrator='vode'</em>, <em>**integrator_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">scipy_ode</code><span class="sig-paren">(</span><em>model</em>, <em>integrator=’vode’</em>, <em>**integrator_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Proxy written around the scipy.integrate.ode class. Give access to all
 the scpy integrators.</p>
@@ -594,9 +592,9 @@ the scpy integrators.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>integrator</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><em>optional</em><em>, </em><em>default 'vode'</em>) &#8211; name of the chosen scipy integration scheme.</li>
-<li><strong>**integrator_kwargs</strong> &#8211; extra arguments provided to the scipy integration scheme.</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) – triflow Model</li>
+<li><strong>integrator</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em>, </em><em>optional</em><em>, </em><em>default ‘vode’</em>) – name of the chosen scipy integration scheme.</li>
+<li><strong>**integrator_kwargs</strong> – extra arguments provided to the scipy integration scheme.</li>
 </ul>
 </td>
 </tr>
@@ -613,22 +611,22 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
-<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
-<li><strong>container</strong> &#8211; </li>
+<li><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) – actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – temporal step-size</li>
+<li><strong>pars</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – physical parameters of the model</li>
+<li><strong>hook</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a><em>, </em><em>optional</em>) – any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions…</li>
+<li><strong>container</strong> – </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> – updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code> &#8211; Description</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code> – Description</p>
 </td>
 </tr>
 </tbody>
@@ -668,7 +666,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Value of the offset</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Value of the offset</td>
 </tr>
 </tbody>
 </table>
@@ -697,11 +695,11 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
-<li><strong>frequency_cut</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Filter frequency cut.</li>
-<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>frequency_cut</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Filter frequency cut.</li>
+<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) – sampling number of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) – sampling number of the signal.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
 </ul>
 </td>
 </tr>
@@ -729,10 +727,10 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
-<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+<li><strong>frequency_sampling</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>mean</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) – sampling number of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) – sampling number of the signal.</li>
+<li><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
 </ul>
 </td>
 </tr>
@@ -770,9 +768,9 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>signal_period</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; period of the signal.</li>
-<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) &#8211; sampling number of the signal.</li>
-<li><strong>**kwargs</strong> &#8211; extra arguments provided to the custom signal template.</li>
+<li><strong>signal_period</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – period of the signal.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) – sampling number of the signal.</li>
+<li><strong>**kwargs</strong> – extra arguments provided to the custom signal template.</li>
 </ul>
 </td>
 </tr>
@@ -791,7 +789,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) – second signal to which this one will be added.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
 </tr>
@@ -809,7 +807,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; time where the signal is evaluated.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>t</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – time where the signal is evaluated.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">amplitude of the signal a the time t.</td>
 </tr>
@@ -826,7 +824,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) – second signal to which this one will be added.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
 </tr>
@@ -864,10 +862,10 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; frequency of the signal</li>
-<li><strong>amplitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; amplitude of the signal</li>
-<li><strong>phase</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em>) &#8211; phase of the signam</li>
-<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) &#8211; number of sample for 2 period of the signal</li>
+<li><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – frequency of the signal</li>
+<li><strong>amplitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – amplitude of the signal</li>
+<li><strong>phase</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a><em>, </em><em>optional</em>) – phase of the signam</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em>, </em><em>optional</em>) – number of sample for 2 period of the signal</li>
 </ul>
 </td>
 </tr>

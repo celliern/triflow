@@ -50,7 +50,7 @@ The `__call__` method have the following signature:
 
 .. code-block:: python3
 
-    fields, t = scheme(fields, t, dt, pars,
+    t, fields = scheme(t, fields, dt, pars,
                        hook=lambda fields, t, pars: (fields, pars))
 
 It will take as input the actual fields container, the time and the time-step wanted for this step. As keyword argument it will take a hook, a callable with the fields, time and parameters as input and fields and parameters as output. This function give us the ability to make on-the-fly modification of the fields (for boundary condition), or parameters (allowing time and space conditional parameters).

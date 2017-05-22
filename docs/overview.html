@@ -188,7 +188,7 @@
 <p>The main two parts of the library are:</p>
 <ul class="simple">
 <li>symbolic tools defining the spatial discretisation.</li>
-<li>a fast temporal solver written to use the sparsity of the finite difference method to reduce the memory and CPU usage during the computation. _Theano make this part easy.</li>
+<li>a fast temporal solver written to use the sparsity of the finite difference method to reduce the memory and CPU usage during the computation. <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> make this part easy.</li>
 </ul>
 <p>Moreover, we provide extra tools and we write the library in a modular way, allowing an easy extension of these different parts (see the plug-in module of the library.)</p>
 <p>The library fits well with an interactive usage (in a jupyter notebook).</p>
@@ -248,8 +248,8 @@
 <div class="section" id="model-compilation">
 <h2>Model compilation<a class="headerlink" href="#model-compilation" title="Permalink to this headline">¶</a></h2>
 <p>The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, a tool has been written in order to convert sympy complex expressions to <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> graph which can be easily compiled.</p>
-<p>In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).</p>
-<p>The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (&gt; 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> documentation for more details).</p>
+<p>In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation…).</p>
+<p>The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be sae on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (&gt; 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> documentation for more details).</p>
 </div>
 <div class="section" id="fields-containers">
 <h2>Fields containers<a class="headerlink" href="#fields-containers" title="Permalink to this headline">¶</a></h2>
@@ -288,22 +288,22 @@
 <p>Each of them have advantages and disadvantages.</p>
 <p>They can accept somme extra arguments during their instantiation (for exemple the <span class="math">\(\theta\)</span> parameter for the <span class="math">\(\theta\)</span> mixed scheme), and are called with the actual fields, time, time-step, parameters, and accept an optionnal hook modifying fields and parameters each time the solver compute the function or its jacobian.</p>
 <p>The following code compute juste one time-step with a Crank-Nicolson scheme.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
 
-<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 <span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mi">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mo">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mo">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="mf">1E-1</span>
@@ -317,37 +317,40 @@
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>(<a class="reference external" href="./pyplots/overview_model_one_step.py">Source code</a>, <a class="reference external" href="./pyplots/overview_model_one_step.png">png</a>, <a class="reference external" href="./pyplots/overview_model_one_step.hires.png">hires.png</a>, <a class="reference external" href="./pyplots/overview_model_one_step.pdf">pdf</a>)</p>
+<div class="figure">
 <img alt="_images/overview_model_one_step.png" src="_images/overview_model_one_step.png" />
+</div>
 <p>We obtain with the following code a full resolution up to the target time.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
 
-<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 <span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mi">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mo">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mo">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="mf">1E-2</span>
 <span class="n">tmax</span> <span class="o">=</span> <span class="mi">5</span>
 
-<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
 
 <span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">Theta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">theta</span><span class="o">=.</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># Crank-Nicolson scheme</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">tmax</span><span class="p">:</span>
         <span class="k">break</span>
 
@@ -357,33 +360,36 @@
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>(<a class="reference external" href="./pyplots/overview_model_multi_step.py">Source code</a>, <a class="reference external" href="./pyplots/overview_model_multi_step.png">png</a>, <a class="reference external" href="./pyplots/overview_model_multi_step.hires.png">hires.png</a>, <a class="reference external" href="./pyplots/overview_model_multi_step.pdf">pdf</a>)</p>
+<div class="figure">
 <img alt="_images/overview_model_multi_step.png" src="_images/overview_model_multi_step.png" />
+</div>
 <div class="section" id="hook-and-boundary-conditions">
 <h3>hook and boundary conditions<a class="headerlink" href="#hook-and-boundary-conditions" title="Permalink to this headline">¶</a></h3>
 <p>The hook function is used in order to deal with variable and conditional parameters and boundary condition.</p>
-<p>Inside the model, the fields are padded in order to solve the equation. If the parameter &#8220;periodic&#8221; is used, the pad function is used with the mode &#8220;wrap&#8221; leading to periodic fields. If not, the mode &#8220;edge&#8221; is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
+<p>Inside the model, the fields are padded in order to solve the equation. If the parameter “periodic” is used, the pad function is used with the mode “wrap” leading to periodic fields. If not, the mode “edge” is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
 
-<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 <span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mi">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mo">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mo">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="mf">5E-1</span>
 <span class="n">tmax</span> <span class="o">=</span> <span class="mf">2.5</span>
 
-<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
 
 <span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
@@ -396,9 +402,9 @@
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="n">dirichlet_condition</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
-          <span class="n">f</span><span class="s2">&quot;t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: {i}</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="n">f</span><span class="s2">&quot;t: {t:g}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">tmax</span><span class="p">:</span>
         <span class="k">break</span>
 
@@ -408,7 +414,10 @@
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>(<a class="reference external" href="./pyplots/overview_model_hook.py">Source code</a>, <a class="reference external" href="./pyplots/overview_model_hook.png">png</a>, <a class="reference external" href="./pyplots/overview_model_hook.hires.png">hires.png</a>, <a class="reference external" href="./pyplots/overview_model_hook.pdf">pdf</a>)</p>
+<div class="figure">
 <img alt="_images/overview_model_hook.png" src="_images/overview_model_hook.png" />
+</div>
 </div>
 </div>
 <div class="section" id="simulation-class-higher-level-control">
@@ -431,26 +440,26 @@
 </pre></div>
 </div>
 <p>and we write the previous advection-diffusion example as:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
 
-<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 <span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mi">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mi">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mo">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mo">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
 <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="mf">5E-1</span>
 <span class="n">tmax</span> <span class="o">=</span> <span class="mf">2.5</span>
 
-<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">dirichlet_condition</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">):</span>
@@ -463,9 +472,9 @@
                    <span class="n">hook</span><span class="o">=</span><span class="n">dirichlet_condition</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="n">tmax</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
-          <span class="n">f</span><span class="s2">&quot;t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: </span><span class="si">{t:g}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: {i}</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="n">f</span><span class="s2">&quot;t: {t:g}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">legend</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
@@ -473,7 +482,10 @@
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>(<a class="reference external" href="./pyplots/overview_simulation_hook.py">Source code</a>, <a class="reference external" href="./pyplots/overview_simulation_hook.png">png</a>, <a class="reference external" href="./pyplots/overview_simulation_hook.hires.png">hires.png</a>, <a class="reference external" href="./pyplots/overview_simulation_hook.pdf">pdf</a>)</p>
+<div class="figure">
 <img alt="_images/overview_simulation_hook.png" src="_images/overview_simulation_hook.png" />
+</div>
 <div class="section" id="displays">
 <h3>Displays<a class="headerlink" href="#displays" title="Permalink to this headline">¶</a></h3>
 <p>Hooks are called every internal time step and allow granular modification of the parameters or fields.</p>
