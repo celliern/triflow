@@ -21,7 +21,7 @@ install:
 
 # command to run tests
 script:
-  coverage run --source=sym_dict setup.py test
+  coverage run --source=triflow setup.py test
 
 after_success:
   coveralls
