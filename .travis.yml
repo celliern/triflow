@@ -9,4 +9,3 @@ python:
 install: "make env init"
 # command to run tests
 script: pytest
-

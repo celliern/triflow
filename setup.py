@@ -41,9 +41,7 @@ setup(
             'theano',
             'nose_parameterized'],
     extras_require={
-        'visdom': ["visdom"],
         'bokeh': ["bokeh"],
-        'datreant': ["datreant.core"],
     },
     download_url='https://github.com/celliern/triflow/archive/v0.4.2.tar.gz',
     # Il est d'usage de mettre quelques metadata à propos de sa lib
