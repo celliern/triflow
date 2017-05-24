@@ -26,6 +26,7 @@ init:
 	pip install pytest-pep8
 	pip install nbsphinx
 	pip install pylama
+	pip install twine
 	pip install recommonmark
 
 test:
@@ -40,7 +41,7 @@ isort:
 build: clean
 	python setup.py check
 	python setup.py sdist
-	python setup.py bdist_wheel
+	twine dist/*
 
 doc:
 	$(MAKE) -C source_doc notebooks
