@@ -1,1 +1,1 @@
-recursive-include examples docs source_doc
+recursive-include examples docs source_doc tests
