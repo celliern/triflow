@@ -83,21 +83,8 @@ class ROW_general:
               raised if time_stepping is True and tol is not provided.
           """  # noqa
         if self._time_control:
-            try:
-                if self._time_control and not self._tol:
-                    raise ValueError('You have to provide a tol argument if'
-                                     ' you want to use the time controler.')
-                if self._b_pred is None:
-                    raise NotImplementedError(
-                        'No b predictor provided for '
-                        'this scheme, unable to use '
-                        'variable time stepping, falling '
-                        'to constant time step = %f' % dt
-                    )
-                return self._variable_step(t, fields, dt, pars,
-                                           hook=hook)
-            except NotImplementedError as e:
-                logging.warning(e)
+            return self._variable_step(t, fields, dt, pars,
+                                       hook=hook)
 
         t, fields, _ = self._fixed_step(t, fields, dt, pars,
                                         hook=hook)
@@ -426,11 +413,8 @@ class scipy_ode:
         solv.set_jac_params(fields, pars, hook)
         U = solv.integrate(t + dt)
         fields.fill(U)
-        if solv.successful:
-            fields, _ = hook(t + dt, fields, pars)
-            return t + dt, fields
-        else:
-            raise RuntimeError
+        fields, _ = hook(t + dt, fields, pars)
+        return t + dt, fields
 
 
 class Theta:

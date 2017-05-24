@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
 </ul>
@@ -227,39 +228,30 @@
 
         <span class="nd">@property</span>
         <span class="k">def</span> <span class="nf">flat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;return a flat view of the fields</span>
-
-<span class="sd">              Returns: numpy.ndarray.view: flat view of the main numpy array</span>
-<span class="sd">              &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+            <span class="sd">&quot;&quot;&quot;numpy.ndarray.view: flat view of the main numpy array</span>
+<span class="sd">            &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span> <span class="nf">structured</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;return a structured array of the main numpy array as a view</span>
-
-<span class="sd">              Returns: numpy.ndarray.view: structured view of the main numpy array</span>
-<span class="sd">              &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+            <span class="sd">&quot;&quot;&quot;numpy.ndarray.view: structured view of the main numpy array</span>
+<span class="sd">            &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span> <span class="nf">uarray</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;return a view array of the main numpy array with only the</span>
-<span class="sd">              dependant variables.</span>
-
-<span class="sd">              Returns: numpy.ndarray.view: view of the dependent variables of the main numpy array</span>
-<span class="sd">              &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+            <span class="sd">&quot;&quot;&quot;numpy.ndarray.view: view of the dependent variables of the main numpy array</span>
+<span class="sd">            &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependent_variables</span><span class="p">))]</span>
 
         <span class="nd">@property</span>
         <span class="k">def</span> <span class="nf">uflat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;return a flatten **copy** of the main numpy array with only the</span>
-<span class="sd">              dependant variables.</span>
+<span class="sd">            dependant variables.</span>
 
-<span class="sd">              Be carefull, modification of these data will not be reflected on</span>
-<span class="sd">              the main array!</span>
-
-<span class="sd">              Returns: numpy.ndarray: **copy** of the dependent variables of the main numpy array</span>
-<span class="sd">              &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+<span class="sd">            Be carefull, modification of these data will not be reflected on</span>
+<span class="sd">            the main array!</span>
+<span class="sd">            &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
             <span class="n">uflat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span>
                                       <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependent_variables</span><span class="p">))]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
             <span class="n">uflat</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">writeable</span> <span class="o">=</span> <span class="kc">False</span>
@@ -268,10 +260,6 @@
 <div class="viewcode-block" id="BaseFields.fill"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.fields.BaseFields.fill">[docs]</a>        <span class="k">def</span> <span class="nf">fill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_array</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;take a flat numpy array and update inplace the dependent</span>
 <span class="sd">            variables of the container</span>
-
-<span class="sd">            Returns</span>
-<span class="sd">            -------</span>
-<span class="sd">            None</span>
 
 <span class="sd">            Parameters</span>
 <span class="sd">            ----------</span>

@@ -46,7 +46,8 @@ extensions = ['matplotlib.sphinxext.mathmpl',
               'sphinx.ext.viewcode',
               'sphinx.ext.autodoc',
               'sphinx.ext.githubpages',
-              'sphinxcontrib.napoleon']
+              'sphinxcontrib.napoleon',
+              'nbsphinx']
 
 napoleon_include_special_with_doc = True
 

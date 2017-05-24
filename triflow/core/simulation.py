@@ -107,6 +107,7 @@ class Simulation(object):
                                                            scheme.__init__))
         self.status = 'created'
         self._hook = hook
+        self._displays = []
         self._iterator = self.compute()
 
     def compute(self):
@@ -120,30 +121,49 @@ class Simulation(object):
         fields = self.fields
         t = self.t
         pars = self.physical_parameters
+        for display in self._displays:
+            display(t, fields)
         try:
             while True:
+                if not self._takewhile():
+                    raise StopIteration
                 fields, pars = self._hook(t, fields, pars)
                 t, fields = self._scheme(t, fields, self.dt,
                                          pars, hook=self._hook)
                 self.fields = fields
                 self.t = t
                 self.physical_parameters = pars
-                yield t, fields
+                for display in self._displays:
+                    display(self.t, self.fields)
+                yield self.t, self.fields
         except RuntimeError:
             self.status = 'failed'
             raise
 
-    def _takewhile(self, outputs):
+    def add_display(self, display, *display_args, **display_kwargs):
+        """add a display for the simulation.
 
+        Parameters
+        ----------
+        display : callable
+            a display as the one available in triflow.displays
+        *display_args
+            positional arguments for the display function (other than the simulation itself)
+        **display_kwargs
+            named arguments for the display function
+        """  # noqa
+        self._displays.append(display(self, *display_args, **display_kwargs))
+
+    def _takewhile(self):
         if self.tmax is None:
             return True
-        if self.t > self.tmax:
-            self.status = 'finished'
-            return False
-        return True
+        if self.t < self.tmax:
+            return True
+        self.status = 'finished'
+        return False
 
     def __iter__(self):
-        return it.takewhile(self._takewhile, self.compute())
+        return self.compute()
 
     def __next__(self):
-        return next(self.iterator)
+        return next(self._iterator)

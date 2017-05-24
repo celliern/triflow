@@ -37,7 +37,7 @@
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="triflow 0.4.2 documentation" href="index.html"/>
         <link rel="next" title="The convection diffusion equation" href="cookbook/advection_diffusion.html"/>
-        <link rel="prev" title="Temporal schemes" href="schemes.html"/> 
+        <link rel="prev" title="Displays" href="cookbook/displays.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Cookbook</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="cookbook/advection_diffusion.html">The convection diffusion equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cookbook/burger_equation.html">The burger equation</a></li>
@@ -170,7 +171,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="cookbook">
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="cookbook">
 <h1>Cookbook<a class="headerlink" href="#cookbook" title="Permalink to this headline">¶</a></h1>
 <p>All the notebooks are available via <a class="reference external" href="http://nbviewer.jupyter.org/github/locie/triflow/tree/master/examples/notebooks/">nbviewer</a></p>
 <div class="toctree-wrapper compound">
@@ -197,7 +232,7 @@
         <a href="cookbook/advection_diffusion.html" class="btn btn-neutral float-right" title="The convection diffusion equation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="schemes.html" class="btn btn-neutral" title="Temporal schemes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="cookbook/displays.html" class="btn btn-neutral" title="Displays" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

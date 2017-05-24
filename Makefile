@@ -7,16 +7,13 @@ clean:
 	rm --force --recursive dist/
 	rm --force --recursive .eggs/
 	rm --force --recursive .cache/
+	rm --force --recursive .tox/
 	rm --force --recursive *.egg-info
 	find . -name '*.pyc' -exec rm -f {} \;
+	find . -name '*.coverage' -exec rm -f {} \;
 	find . -type d -name "__pycache__" -delete
 	find . -name '*.pyo' -exec rm -f {} \;
 	find . -name '*~' ! -name '*.un~' -exec rm -f {} \;
-
-pyenv:
-	pyenv install -k 3.6.1
-	pyenv virtualenv 3.6.1 triflow-test-3.6.1
-	pyenv local triflow-test-3.6.1
 
 env:
 	pip install -Ur requirements.txt
@@ -26,10 +23,14 @@ init:
 	pip install isort
 	pip install pytest-cov
 	pip install pytest-pep8
-	pip install pytest-xdist
+	pip install nbsphinx
 	pip install pylama
 	pip install recommonmark
 	pip install .
+
+test:
+	pytest
+	pytest --doctest-module -k triflow/
 
 lint:
 	pylama
@@ -43,4 +44,7 @@ build: clean
 	python setup.py bdist_wheel
 
 doc:
-	$(MAKE) -C docs html
+	$(MAKE) -C source_doc notebooks
+	$(MAKE) -C source_doc epub
+	$(MAKE) -C source_doc latexpdf
+	sphinx-build -b html source_doc/source docs

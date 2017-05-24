@@ -10,7 +10,7 @@ from pickle import dump, load
 import numpy as np
 import theano as th
 import theano.sparse as ths
-from sympy import Derivative, Function, Symbol, symbols, sympify
+from sympy import Derivative, Function, Symbol, symbols, sympify, SympifyError
 from sympy.printing.theanocode import theano_code
 from theano import tensor as T
 from theano.ifelse import ifelse
@@ -55,34 +55,15 @@ def _generate_sympify_namespace(independent_variable,
     namespace.update({'d%s' % (independent_variable * i):
                       partial(partial_derivative,
                               symbolic_independent_variable, i)
-                      for i in range(1, 5)})
+                      for i in range(1, 10)})
     namespace.update({'d%s%s' % (independent_variable * order, var):
                       Derivative(Function(var)(independent_variable),
                                  independent_variable, order)
-                      for order, var in product(range(1, 5),
+                      for order, var in product(range(1, 10),
                                                 dependent_variables +
                                                 helper_functions)})
     logging.debug(f"sympy namespace: {namespace}")
     return namespace
-
-
-def load_model(filename):
-    """load a pre-compiled triflow model. The internal of theano allow a
-    caching of the model. Will be slow if it is the first time the model is
-    loaded on the system.
-
-    Parameters
-    ----------
-    filename : str
-        path of the pre-compiled model
-
-    Returns
-    -------
-    triflow.core.Model
-        triflow pre-compiled model
-    """
-    with open(filename, 'rb') as f:
-        return load(f)
 
 
 def _reduce_model(eq_diffs, dep_vars, pars,
@@ -403,12 +384,6 @@ class Model:
                  *list(self._symb_pars),
                  Symbol('dx')])
 
-    @property
-    def sargs(self):
-        return ([Symbol('x')] +
-                list(self.dfields) +
-                list(self.symbolic_pars) + [self.dx])
-
     def save(self, filename):
         """Save the model as a binary pickle file.
 
@@ -423,6 +398,25 @@ class Model:
         """
         with open(filename, 'wb') as f:
             dump(self, f)
+
+    @staticmethod
+    def load(filename):
+        """load a pre-compiled triflow model. The internal of theano allow a
+        caching of the model. Will be slow if it is the first time the model is
+        loaded on the system.
+
+        Parameters
+        ----------
+        filename : str
+            path of the pre-compiled model
+
+        Returns
+        -------
+        triflow.core.Model
+            triflow pre-compiled model
+        """
+        with open(filename, 'rb') as f:
+            return load(f)
 
     def _extract_bounds(self, variables, dict_symbol):
         bounds = (0, 0)
@@ -459,13 +453,6 @@ class Model:
             diff_eqs = [diff_eqs]
         if isinstance(dep_vars, (str, )):
             dep_vars = [dep_vars]
-        if isinstance(helper_functions, (str, )):
-            helper_functions = [helper_functions]
-        if isinstance(pars, (str, )):
-            pars = [pars]
-        if isinstance(diff_eqs, (dict, )):
-            diff_eqs = [diff_eqs[key]
-                        for key in dep_vars if key in diff_eqs.keys()]
 
         diff_eqs = tuple(diff_eqs)
         dep_vars = tuple(dep_vars)
@@ -473,6 +460,7 @@ class Model:
         return diff_eqs, dep_vars, pars, helper_functions
 
     def _finite_diff_scheme(self, U, order):
+        logging.debug("finite diff approximation %i, %s" % (order, U))
         dx = Symbol('dx')
         var_label = str(U)
         if order == 1:
@@ -530,7 +518,7 @@ class Model:
                                                   symbolic_help_functions)))
                                        for func
                                        in diff_eqs])
-        except TypeError:
+        except (TypeError, SympifyError):
             raise ValueError("badly formated differential equations")
         return (symbolic_diff_eqs, symbolic_dep_vars,
                 symbolic_pars, symbolic_help_functions)

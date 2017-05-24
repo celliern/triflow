@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
 </ul>
@@ -176,6 +177,7 @@
 <span class="sd">&quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -183,6 +185,7 @@
 <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="k">import</span> <span class="n">convolve</span><span class="p">,</span> <span class="n">firwin</span><span class="p">,</span> <span class="n">periodogram</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">captureWarnings</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
@@ -481,7 +484,7 @@
 <span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
 <span class="sd">      &gt;&gt;&gt; brown_signal = signals.GaussianBrownNoise(frequency_sampling=200,</span>
 <span class="sd">      ...                                           frequency_cut=50)</span>
-<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density  = brown_signal.fourrier_spectrum</span>
+<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density = brown_signal.fourrier_spectrum</span>
 <span class="sd">      &gt;&gt;&gt; np.isclose(spectrum_density[spectrum_frequencies &gt; 50], 0, atol=1E-3).all()</span>
 <span class="sd">      True</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
@@ -553,7 +556,7 @@
 <span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
 <span class="sd">      &gt;&gt;&gt; t = np.linspace(0, 100, 10000)</span>
 <span class="sd">      &gt;&gt;&gt; signal = signals.SinusoidalSignal(frequency=5, amplitude=.5)</span>
-<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density  = signal.fourrier_spectrum</span>
+<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density = signal.fourrier_spectrum</span>
 <span class="sd">      &gt;&gt;&gt; print(f&quot;Amplitude: {signal(t).max():g}&quot;)</span>
 <span class="sd">      Amplitude: 0.499999</span>
 <span class="sd">      &gt;&gt;&gt; print(f&quot;main mode: {spectrum_frequencies[spectrum_density.argmax()]:g} Hz&quot;)</span>
@@ -580,14 +583,14 @@
         <span class="n">freq</span><span class="p">,</span> <span class="n">ampl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ampl</span><span class="p">)],</span>
                           <span class="n">rtol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1E-5</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;There is difference between &#39;</span>
-                            <span class="s1">&#39;chosen frequency (</span><span class="si">%.5e</span><span class="s1">) and &#39;</span>
-                            <span class="s1">&#39;main frequency of the fourrier &#39;</span>
-                            <span class="s1">&#39;spectrum (</span><span class="si">%.5e</span><span class="s1">)</span><span class="se">\n</span><span class="s1">&#39;</span>
-                            <span class="s1">&#39;They may have some aliasing, &#39;</span>
-                            <span class="s1">&#39;you should increase the number of samples &#39;</span>
-                            <span class="s1">&#39;(n parameter, see signal doc)&#39;</span> <span class="o">%</span>
-                            <span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ampl</span><span class="p">)]))</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;There is difference between &#39;</span>
+                          <span class="s1">&#39;chosen frequency (</span><span class="si">%.5e</span><span class="s1">) and &#39;</span>
+                          <span class="s1">&#39;main frequency of the fourrier &#39;</span>
+                          <span class="s1">&#39;spectrum (</span><span class="si">%.5e</span><span class="s1">)</span><span class="se">\n</span><span class="s1">&#39;</span>
+                          <span class="s1">&#39;They may have some aliasing, &#39;</span>
+                          <span class="s1">&#39;you should increase the number of samples &#39;</span>
+                          <span class="s1">&#39;(n parameter, see signal doc)&#39;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ampl</span><span class="p">)]))</span>
 
     <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_period</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>
                          <span class="n">n</span><span class="p">):</span>

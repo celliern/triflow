@@ -62,39 +62,30 @@ class BaseFields:
 
         @property
         def flat(self):
-            """return a flat view of the fields
-
-              Returns: numpy.ndarray.view: flat view of the main numpy array
-              """  # noqa
+            """numpy.ndarray.view: flat view of the main numpy array
+            """  # noqa
             return self.array.ravel()
 
         @property
         def structured(self):
-            """return a structured array of the main numpy array as a view
-
-              Returns: numpy.ndarray.view: structured view of the main numpy array
-              """  # noqa
+            """numpy.ndarray.view: structured view of the main numpy array
+            """  # noqa
             return self.array.view(dtype=self._dtype)
 
         @property
         def uarray(self):
-            """return a view array of the main numpy array with only the
-              dependant variables.
-
-              Returns: numpy.ndarray.view: view of the dependent variables of the main numpy array
-              """  # noqa
+            """numpy.ndarray.view: view of the dependent variables of the main numpy array
+            """  # noqa
             return self.array[:, 1: (1 + len(self.dependent_variables))]
 
         @property
         def uflat(self):
             """return a flatten **copy** of the main numpy array with only the
-              dependant variables.
+            dependant variables.
 
-              Be carefull, modification of these data will not be reflected on
-              the main array!
-
-              Returns: numpy.ndarray: **copy** of the dependent variables of the main numpy array
-              """  # noqa
+            Be carefull, modification of these data will not be reflected on
+            the main array!
+            """  # noqa
             uflat = self.array[:, 1: (1 +
                                       len(self.dependent_variables))].ravel()
             uflat.flags.writeable = False
@@ -103,10 +94,6 @@ class BaseFields:
         def fill(self, flat_array):
             """take a flat numpy array and update inplace the dependent
             variables of the container
-
-            Returns
-            -------
-            None
 
             Parameters
             ----------

@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
 </ul>
@@ -170,258 +171,102 @@
 <span class="sd">(plot, post-processing...)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">count</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="viewcode-block" id="bokeh_fields_update"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.bokeh_fields_update">[docs]</a><span class="k">class</span> <span class="nc">bokeh_fields_update</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Display fields data in a interactive Bokeh plot displayed in</span>
+<span class="sd">    a jupyter notebook.</span>
 
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    keys : None, optional</span>
+<span class="sd">        list of the dependant variables to be displayed</span>
+<span class="sd">    line_kwargs : dict of dict</span>
+<span class="sd">        dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</span>
+<span class="sd">    fig_kwargs : dict of dict</span>
+<span class="sd">        dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</span>
+<span class="sd">    init_notebook: True, optional</span>
+<span class="sd">        if True, initialize the javascript component needed for bokeh.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
-<div class="viewcode-block" id="coroutine"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.coroutine">[docs]</a><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">generator</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="nb">next</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">generator</span>
-    <span class="k">return</span> <span class="n">wrapper</span></div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simul</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">fig_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">notebook</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">push_notebook</span><span class="p">,</span> <span class="n">output_notebook</span>
+        <span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">ColumnDataSource</span>
+        <span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">Column</span>
 
+        <span class="k">if</span> <span class="n">notebook</span><span class="p">:</span>
+            <span class="n">output_notebook</span><span class="p">()</span>
 
-<div class="viewcode-block" id="amnesic_mean"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.amnesic_mean">[docs]</a><span class="nd">@coroutine</span>
-<span class="k">def</span> <span class="nf">amnesic_mean</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Coroutine able to compute mean of a sample without keeping data in memory.</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_push&#39;</span><span class="p">,</span> <span class="n">push_notebook</span><span class="p">)</span>
 
-<span class="sd">      Examples</span>
-<span class="sd">      --------</span>
-<span class="sd">      In that example we check if the mean value returned by the coroutine feeded by normal pseudo random values goes close to 0</span>
-
-<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">      &gt;&gt;&gt; from triflow.plugins import displays</span>
-<span class="sd">      &gt;&gt;&gt; mean_coroutine = displays.amnesic_mean()</span>
-<span class="sd">      &gt;&gt;&gt; for value in np.random.randn(5000):</span>
-<span class="sd">      ...     x_mean = mean_coroutine.send(value)</span>
-<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
-    <span class="n">increment</span> <span class="o">=</span> <span class="k">yield</span>
-    <span class="n">total</span> <span class="o">=</span> <span class="n">increment</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">count</span><span class="p">():</span>
-        <span class="n">increment</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">total</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">total</span> <span class="o">+=</span> <span class="n">increment</span></div>
-
-
-<div class="viewcode-block" id="window_data"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.window_data">[docs]</a><span class="nd">@coroutine</span>
-<span class="k">def</span> <span class="nf">window_data</span><span class="p">(</span><span class="n">window_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Coroutine able to return a dictionnary filled with concatenated values</span>
-<span class="sd">      of the time and the fields, with optionnal window lenght. Useful to save</span>
-<span class="sd">      only a part of the solution.</span>
-
-<span class="sd">      Parameters</span>
-<span class="sd">      ----------</span>
-<span class="sd">      window_len : int or None (default)</span>
-<span class="sd">          number of last iterations kept. All data kept if None</span>
-
-<span class="sd">      Examples</span>
-<span class="sd">      --------</span>
-<span class="sd">      &gt;&gt;&gt; from triflow import Model, Simulation, displays</span>
-<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
-
-<span class="sd">      &gt;&gt;&gt; model = Model(&quot;dxxU&quot;, &quot;U&quot;)</span>
-<span class="sd">      &gt;&gt;&gt; parameters = dict(periodic=True)</span>
-
-<span class="sd">      &gt;&gt;&gt; x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)</span>
-<span class="sd">      &gt;&gt;&gt; U = np.cos(x)</span>
-
-<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U)</span>
-<span class="sd">      &gt;&gt;&gt; simul = Simulation(model, 0, fields, parameters, dt=.5, tmax=10)</span>
-
-<span class="sd">      &gt;&gt;&gt; window_save_gen = displays.window_data()</span>
-
-<span class="sd">      &gt;&gt;&gt; for t, fields in simul:</span>
-<span class="sd">      ...     saved_data = window_save_gen.send((t, fields))</span>
-
-<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
-    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span>
-    <span class="n">time_list</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([</span><span class="n">t</span><span class="p">],</span> <span class="n">window_len</span><span class="p">)</span>
-    <span class="n">fields_list</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([</span><span class="n">fields</span><span class="o">.</span><span class="n">structured</span><span class="o">.</span><span class="n">T</span><span class="p">],</span> <span class="n">window_len</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span> <span class="p">{</span><span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">time_list</span><span class="p">),</span>
-                           <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">fields_list</span><span class="p">)}</span>
-        <span class="n">time_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">fields_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">structured</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="visdom_update"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.visdom_update">[docs]</a><span class="nd">@coroutine</span>
-<span class="k">def</span> <span class="nf">visdom_update</span><span class="p">(</span><span class="n">addr</span><span class="o">=</span><span class="s1">&#39;http://127.0.0.1&#39;</span><span class="p">,</span>
-                  <span class="n">env</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span>
-                  <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Coroutine sending fields data in a interactive plot leaving on a visdom</span>
-<span class="sd">      server (which has to be launched).</span>
-
-<span class="sd">      Parameters</span>
-<span class="sd">      ----------</span>
-<span class="sd">      addr : str (default &quot;http://127.0.0.1&quot;)</span>
-<span class="sd">          adress of the visdom server.</span>
-<span class="sd">      env : str (default &quot;main&quot;)</span>
-<span class="sd">          Visdom environnement where the plot will be send.</span>
-<span class="sd">      keys : None, optional</span>
-<span class="sd">          Description</span>
-
-<span class="sd">      Examples</span>
-<span class="sd">      --------</span>
-<span class="sd">      &gt;&gt;&gt; from triflow import Model, Simulation, displays</span>
-<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
-
-<span class="sd">      &gt;&gt;&gt; model = Model(&quot;dxxU&quot;, &quot;U&quot;)</span>
-<span class="sd">      &gt;&gt;&gt; parameters = dict(periodic=True)</span>
-
-<span class="sd">      &gt;&gt;&gt; x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)</span>
-<span class="sd">      &gt;&gt;&gt; U = np.cos(x)</span>
-
-<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U)</span>
-<span class="sd">      &gt;&gt;&gt; simul = Simulation(model, 0, fields, parameters, dt=.5, tmax=10)</span>
-<span class="sd">      &gt;&gt;&gt; visdom_upt = displays.visdom_update()</span>
-<span class="sd">      &gt;&gt;&gt; for t, fields in simul:</span>
-<span class="sd">      ...     visdom_upt.send((t, fields))</span>
-
-<span class="sd">      Deleted Parameters</span>
-<span class="sd">      ------------------</span>
-<span class="sd">      vars : list or None (default None)</span>
-<span class="sd">          list of the plotted variables. Default all the dependant variables of the model.</span>
-
-<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
-    <span class="kn">import</span> <span class="nn">visdom</span>
-    <span class="n">vis</span> <span class="o">=</span> <span class="n">visdom</span><span class="o">.</span><span class="n">Visdom</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
-    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span>
-    <span class="n">wins</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="n">fields</span><span class="o">.</span><span class="n">_keys</span><span class="p">:</span>
-        <span class="n">wins</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">vis</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-                             <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
-                             <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
-                             <span class="n">opts</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">key</span><span class="p">))</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="n">fields</span><span class="o">.</span><span class="n">_keys</span><span class="p">:</span>
-            <span class="n">vis</span><span class="o">.</span><span class="n">updateTrace</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
-                            <span class="n">wins</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                            <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
-                            <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="bokeh_fields_update"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.bokeh_fields_update">[docs]</a><span class="nd">@coroutine</span>
-<span class="k">def</span> <span class="nf">bokeh_fields_update</span><span class="p">(</span><span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">fig_kwargs</span><span class="o">=</span><span class="p">{}):</span>
-    <span class="sd">&quot;&quot;&quot;Coroutine sending fields data in a interactive Bokeh plot displayed in</span>
-<span class="sd">      a jupyter notebook.</span>
-<span class="sd">      bokeh.io.output_notebook() have to be called before using this coroutine.</span>
-
-<span class="sd">      Parameters</span>
-<span class="sd">      ----------</span>
-<span class="sd">      keys : None, optional</span>
-<span class="sd">          Description</span>
-<span class="sd">      line_kwargs : dict of dict</span>
-<span class="sd">          dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</span>
-<span class="sd">      fig_kwargs : dict of dict</span>
-<span class="sd">          dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</span>
-
-<span class="sd">      Examples</span>
-<span class="sd">      --------</span>
-<span class="sd">      &gt;&gt;&gt; from triflow import Model, Simulation, displays</span>
-<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
-
-<span class="sd">      &gt;&gt;&gt; model = Model(&quot;dxxU&quot;, &quot;U&quot;)</span>
-<span class="sd">      &gt;&gt;&gt; parameters = dict(periodic=True)</span>
-
-<span class="sd">      &gt;&gt;&gt; x = np.linspace(-2 * np.pi, 2 * np.pi, 50, endpoint=False)</span>
-<span class="sd">      &gt;&gt;&gt; U = np.cos(x)</span>
-
-<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U)</span>
-<span class="sd">      &gt;&gt;&gt; simul = Simulation(model, 0, fields, parameters, dt=.5, tmax=10)</span>
-
-<span class="sd">      &gt;&gt;&gt; bokeh_upt = displays.bokeh_fields_update()</span>
-
-<span class="sd">      &gt;&gt;&gt; for t, fields in simul:</span>
-<span class="sd">      ...     bokeh_upt.send((t, fields))</span>
-
-<span class="sd">      Deleted Parameters</span>
-<span class="sd">      ------------------</span>
-<span class="sd">      vars : list or None (default None)</span>
-<span class="sd">          list of the plotted variables. Default all the dependant variables of the model.</span>
-<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
-    <span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">push_notebook</span>
-    <span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">ColumnDataSource</span>
-    <span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">Column</span>
-
-    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="n">fields</span><span class="o">.</span><span class="n">_keys</span>
-    <span class="n">datasource</span> <span class="o">=</span> <span class="n">ColumnDataSource</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                                   <span class="k">for</span> <span class="n">key</span>
-                                   <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]})</span>
-    <span class="n">figs</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-        <span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="o">**</span><span class="n">fig_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}))</span>
-        <span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-                       <span class="o">**</span><span class="n">line_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}))</span>
-    <span class="n">handler</span> <span class="o">=</span> <span class="n">show</span><span class="p">(</span><span class="n">Column</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]),</span> <span class="n">notebook_handle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">yield</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="p">[</span>
+            <span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">simul</span><span class="o">.</span><span class="n">fielPds</span><span class="o">.</span><span class="n">_keys</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;x&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">ColumnDataSource</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">simul</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                                             <span class="k">for</span> <span class="n">key</span>
+                                             <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]})</span>
+        <span class="n">figs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-            <span class="n">datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="n">push_notebook</span><span class="p">(</span><span class="n">handle</span><span class="o">=</span><span class="n">handler</span><span class="p">)</span></div>
+            <span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="o">**</span><span class="n">fig_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">title</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="p">,</span>
+                           <span class="o">**</span><span class="n">line_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handler</span> <span class="o">=</span> <span class="n">show</span><span class="p">(</span><span class="n">Column</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">figs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                                      <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]),</span> <span class="n">notebook_handle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keys</span> <span class="o">=</span> <span class="n">keys</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_push</span><span class="p">(</span><span class="n">handle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_handler</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="bokeh_probes_update"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.bokeh_probes_update">[docs]</a><span class="nd">@coroutine</span>
-<span class="k">def</span> <span class="nf">bokeh_probes_update</span><span class="p">(</span><span class="n">probes</span><span class="p">,</span> <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">fig_kwargs</span><span class="o">=</span><span class="p">{}):</span>
-    <span class="sd">&quot;&quot;&quot;Coroutine sending custom probes in a interactive Bokeh plot displayed in a jupyter notebook.</span>
-<span class="sd">      bokeh.io.output_notebook() have to be called before using this coroutine.</span>
+<div class="viewcode-block" id="bokeh_probes_update"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.displays.bokeh_probes_update">[docs]</a><span class="k">class</span> <span class="nc">bokeh_probes_update</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Display custom probes in a interactive Bokeh plot displayed in a jupyter notebook.</span>
 
-<span class="sd">      Parameters</span>
-<span class="sd">      ----------</span>
-<span class="sd">      probes : dictionnary of callable</span>
-<span class="sd">          Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</span>
-<span class="sd">      line_kwargs : dict of dict</span>
-<span class="sd">          dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</span>
-<span class="sd">      fig_kwargs : dict of dict</span>
-<span class="sd">          dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    probes : dictionnary of callable</span>
+<span class="sd">        Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</span>
+<span class="sd">    line_kwargs : dict of dict</span>
+<span class="sd">        dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</span>
+<span class="sd">    fig_kwargs : dict of dict</span>
+<span class="sd">        dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</span>
+<span class="sd">    init_notebook: True, optional</span>
+<span class="sd">        if True, initialize the javascript component needed for bokeh.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
-<span class="sd">      Examples</span>
-<span class="sd">      --------</span>
-<span class="sd">      &gt;&gt;&gt; from triflow import Model, Simulation, displays</span>
-<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simul</span><span class="p">,</span> <span class="n">probes</span><span class="p">,</span>
+                 <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">fig_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">notebook</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 
-<span class="sd">      &gt;&gt;&gt; model = Model(&quot;dxxU&quot;, &quot;U&quot;)</span>
-<span class="sd">      &gt;&gt;&gt; parameters = dict(periodic=True)</span>
+        <span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">push_notebook</span><span class="p">,</span> <span class="n">output_notebook</span>
+        <span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">ColumnDataSource</span>
+        <span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">Column</span>
 
-<span class="sd">      &gt;&gt;&gt; x = np.linspace(-2 * np.pi, 2 * np.pi, 500, endpoint=False)</span>
-<span class="sd">      &gt;&gt;&gt; U = np.cos(x) * 5</span>
+        <span class="k">if</span> <span class="n">notebook</span><span class="p">:</span>
+            <span class="n">output_notebook</span><span class="p">()</span>
 
-<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U)</span>
-<span class="sd">      &gt;&gt;&gt; simul = Simulation(model, 0, fields, parameters, dt=.01, tmax=1)</span>
-<span class="sd">      &gt;&gt;&gt; def mean_probe(t, fields):</span>
-<span class="sd">      ...     return np.mean(fields.U)</span>
-<span class="sd">      &gt;&gt;&gt; bokeh_upt = displays.bokeh_probes_update({&quot;mean&quot;: mean_probe})</span>
-
-<span class="sd">      &gt;&gt;&gt; for t, fields in simul:</span>
-<span class="sd">      ...     bokeh_upt.send((t, fields))</span>
-
-<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
-    <span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">push_notebook</span>
-    <span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">ColumnDataSource</span>
-    <span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">Column</span>
-    <span class="n">args</span> <span class="o">=</span> <span class="k">yield</span>
-    <span class="n">datasource</span> <span class="o">=</span> <span class="n">ColumnDataSource</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
-                                       <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">[</span><span class="n">probe</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)]</span>
-                                          <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">probe</span>
-                                          <span class="ow">in</span> <span class="n">probes</span><span class="o">.</span><span class="n">items</span><span class="p">()}))</span>
-    <span class="n">figs</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">probe</span> <span class="ow">in</span> <span class="n">probes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="o">**</span><span class="n">fig_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span>
-        <span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">datasource</span><span class="p">,</span>
-                        <span class="o">**</span><span class="n">line_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span>
-    <span class="n">handler</span> <span class="o">=</span> <span class="n">show</span><span class="p">(</span><span class="n">Column</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">probes</span><span class="p">]),</span>
-                   <span class="n">notebook_handle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="k">yield</span>
-        <span class="n">datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_push&#39;</span><span class="p">,</span> <span class="n">push_notebook</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span> <span class="o">=</span> <span class="n">ColumnDataSource</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="n">simul</span><span class="o">.</span><span class="n">t</span><span class="p">],</span>
+                                                 <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="p">[</span><span class="n">probe</span><span class="p">(</span><span class="n">simul</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+                                                                 <span class="n">simul</span><span class="o">.</span><span class="n">fields</span><span class="p">)]</span>
+                                                    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">probe</span>
+                                                    <span class="ow">in</span> <span class="n">probes</span><span class="o">.</span><span class="n">items</span><span class="p">()}))</span>
+        <span class="n">figs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">probe</span> <span class="ow">in</span> <span class="n">probes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">probe</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
-        <span class="n">push_notebook</span><span class="p">(</span><span class="n">handle</span><span class="o">=</span><span class="n">handler</span><span class="p">)</span></div>
+            <span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="o">**</span><span class="n">fig_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">title</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="p">,</span>
+                            <span class="o">**</span><span class="n">line_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handler</span> <span class="o">=</span> <span class="n">show</span><span class="p">(</span><span class="n">Column</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">figs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">probes</span><span class="p">]),</span>
+                             <span class="n">notebook_handle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_probes</span> <span class="o">=</span> <span class="n">probes</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">probe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_datasource</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">probe</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_push</span><span class="p">(</span><span class="n">handle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_handler</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

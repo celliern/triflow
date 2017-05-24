@@ -129,7 +129,7 @@ Example
 License
 -------
 
-This project is licensed under the term of the `BEEWARE license <LICENSE>`_
+This project is licensed under the term of the `BEERWARE license <LICENSE>`_
 
 .. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html

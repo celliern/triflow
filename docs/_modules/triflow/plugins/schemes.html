@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
 </ul>
@@ -248,21 +249,8 @@
 <span class="sd">              raised if time_stepping is True and tol is not provided.</span>
 <span class="sd">          &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_control</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_control</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tol</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;You have to provide a tol argument if&#39;</span>
-                                     <span class="s1">&#39; you want to use the time controler.&#39;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_b_pred</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                        <span class="s1">&#39;No b predictor provided for &#39;</span>
-                        <span class="s1">&#39;this scheme, unable to use &#39;</span>
-                        <span class="s1">&#39;variable time stepping, falling &#39;</span>
-                        <span class="s1">&#39;to constant time step = </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">dt</span>
-                    <span class="p">)</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                                           <span class="n">hook</span><span class="o">=</span><span class="n">hook</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">NotImplementedError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
+                                       <span class="n">hook</span><span class="o">=</span><span class="n">hook</span><span class="p">)</span>
 
         <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
                                         <span class="n">hook</span><span class="o">=</span><span class="n">hook</span><span class="p">)</span>
@@ -591,11 +579,8 @@
         <span class="n">solv</span><span class="o">.</span><span class="n">set_jac_params</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
         <span class="n">U</span> <span class="o">=</span> <span class="n">solv</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">)</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">solv</span><span class="o">.</span><span class="n">successful</span><span class="p">:</span>
-            <span class="n">fields</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">,</span> <span class="n">fields</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span></div></div>
+        <span class="n">fields</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="p">,</span> <span class="n">fields</span></div></div>
 
 
 <div class="viewcode-block" id="Theta"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.Theta">[docs]</a><span class="k">class</span> <span class="nc">Theta</span><span class="p">:</span>

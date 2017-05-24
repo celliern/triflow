@@ -168,7 +168,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="installation">
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="external-requirements">
 <h2>External requirements<a class="headerlink" href="#external-requirements" title="Permalink to this headline">¶</a></h2>
@@ -178,23 +212,23 @@
 </div>
 <div class="section" id="via-pypi">
 <h2>via PyPI<a class="headerlink" href="#via-pypi" title="Permalink to this headline">¶</a></h2>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">triflow</span>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>pip install triflow
 </pre></div>
 </div>
 <p>will install the package and</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">triflow</span> <span class="o">--</span><span class="n">upgrade</span>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>pip install triflow --upgrade
 </pre></div>
 </div>
 <p>will update an old version of the library.</p>
 <p>use sudo if needed, and the user flag if you want to install it without the root privileges:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="n">triflow</span>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>pip install --user triflow
 </pre></div>
 </div>
 </div>
 <div class="section" id="via-github">
 <h2>via github<a class="headerlink" href="#via-github" title="Permalink to this headline">¶</a></h2>
 <p>You can install the last version of the library using pip and the github repository:</p>
-<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">git</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">locie</span><span class="o">/</span><span class="n">triflow</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>pip install git+git://github.com/locie/triflow.git
 </pre></div>
 </div>
 </div>

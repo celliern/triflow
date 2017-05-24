@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">triflow</a></li>
 </ul>
@@ -162,7 +163,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-triflow-s-documentation">
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="welcome-to-triflow-s-documentation">
 <h1>Welcome to triflow’s documentation!<a class="headerlink" href="#welcome-to-triflow-s-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
@@ -199,6 +234,18 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="schemes.html#internal-structure-of-a-scheme">Internal structure of a scheme</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/displays.html#displays-objects">displays objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/displays.html#built-in-displays">built-in displays</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cookbook/displays.html#bokeh-displays">bokeh displays</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="cookbook/displays.html#field-display">field display</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cookbook/displays.html#probe-display">probe display</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a><ul>

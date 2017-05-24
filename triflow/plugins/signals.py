@@ -11,6 +11,7 @@ Available signals:
 """  # noqa
 
 import logging
+import warnings
 from functools import partial
 
 import numpy as np
@@ -18,6 +19,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import convolve, firwin, periodogram
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging.captureWarnings(True)
 logging = logging.getLogger(__name__)
 
 
@@ -316,7 +318,7 @@ class GaussianBrownNoise(GaussianWhiteNoise):
       >>> from triflow.plugins import signals
       >>> brown_signal = signals.GaussianBrownNoise(frequency_sampling=200,
       ...                                           frequency_cut=50)
-      >>> spectrum_frequencies, spectrum_density  = brown_signal.fourrier_spectrum
+      >>> spectrum_frequencies, spectrum_density = brown_signal.fourrier_spectrum
       >>> np.isclose(spectrum_density[spectrum_frequencies > 50], 0, atol=1E-3).all()
       True
       """  # noqa
@@ -388,7 +390,7 @@ class SinusoidalSignal(Signal):
       >>> from triflow.plugins import signals
       >>> t = np.linspace(0, 100, 10000)
       >>> signal = signals.SinusoidalSignal(frequency=5, amplitude=.5)
-      >>> spectrum_frequencies, spectrum_density  = signal.fourrier_spectrum
+      >>> spectrum_frequencies, spectrum_density = signal.fourrier_spectrum
       >>> print(f"Amplitude: {signal(t).max():g}")
       Amplitude: 0.499999
       >>> print(f"main mode: {spectrum_frequencies[spectrum_density.argmax()]:g} Hz")
@@ -415,14 +417,14 @@ class SinusoidalSignal(Signal):
         freq, ampl = self.fourrier_spectrum
         if not np.isclose(frequency, freq[np.argmax(ampl)],
                           rtol=1E-3, atol=1E-5):
-            logging.warning('There is difference between '
-                            'chosen frequency (%.5e) and '
-                            'main frequency of the fourrier '
-                            'spectrum (%.5e)\n'
-                            'They may have some aliasing, '
-                            'you should increase the number of samples '
-                            '(n parameter, see signal doc)' %
-                            (frequency, freq[np.argmax(ampl)]))
+            warnings.warn('There is difference between '
+                          'chosen frequency (%.5e) and '
+                          'main frequency of the fourrier '
+                          'spectrum (%.5e)\n'
+                          'They may have some aliasing, '
+                          'you should increase the number of samples '
+                          '(n parameter, see signal doc)' %
+                          (frequency, freq[np.argmax(ampl)]))
 
     def _signal_template(self, signal_period, frequency, amplitude, phase,
                          n):

@@ -98,6 +98,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="displays.html">displays objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="displays.html#built-in-displays">built-in displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">triflow</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="triflow.html">triflow package</a><ul class="current">
@@ -178,7 +180,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="triflow-plugins-package">
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="triflow-plugins-package">
 <h1>triflow.plugins package<a class="headerlink" href="#triflow-plugins-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
@@ -188,75 +224,33 @@
 <p>This module regroups different displays: function and coroutine written
 in order to give extra informationto the user during the simulation
 (plot, post-processing…)</p>
-<dl class="function">
-<dt id="triflow.plugins.displays.amnesic_mean">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">amnesic_mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#amnesic_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.amnesic_mean" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coroutine able to compute mean of a sample without keeping data in memory.</p>
-<p class="rubric">Examples</p>
-<p>In that example we check if the mean value returned by the coroutine feeded by normal pseudo random values goes close to 0</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">displays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mean_coroutine</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">amnesic_mean</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5000</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">x_mean</span> <span class="o">=</span> <span class="n">mean_coroutine</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
+<dl class="class">
 <dt id="triflow.plugins.displays.bokeh_fields_update">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_fields_update</code><span class="sig-paren">(</span><em>keys=None</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_fields_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_fields_update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coroutine sending fields data in a interactive Bokeh plot displayed in
-a jupyter notebook.
-bokeh.io.output_notebook() have to be called before using this coroutine.</p>
+<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_fields_update</code><span class="sig-paren">(</span><em>simul</em>, <em>keys=None</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>notebook=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_fields_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_fields_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Display fields data in a interactive Bokeh plot displayed in
+a jupyter notebook.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – Description</li>
+<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – list of the dependant variables to be displayed</li>
 <li><strong>line_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
 <li><strong>fig_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>init_notebook</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><em>True</em></a><em>, </em><em>optional</em>) – if True, initialize the javascript component needed for bokeh.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bokeh_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">bokeh_fields_update</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">bokeh_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
-</pre></div>
-</div>
-<dl class="docutils">
-<dt>vars <span class="classifier-delimiter">:</span> <span class="classifier">list or None (default None)</span></dt>
-<dd>list of the plotted variables. Default all the dependant variables of the model.</dd>
-</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="class">
 <dt id="triflow.plugins.displays.bokeh_probes_update">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_probes_update</code><span class="sig-paren">(</span><em>probes</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_probes_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_probes_update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coroutine sending custom probes in a interactive Bokeh plot displayed in a jupyter notebook.
-bokeh.io.output_notebook() have to be called before using this coroutine.</p>
+<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_probes_update</code><span class="sig-paren">(</span><em>simul</em>, <em>probes</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>notebook=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_probes_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_probes_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Display custom probes in a interactive Bokeh plot displayed in a jupyter notebook.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -265,124 +259,12 @@ bokeh.io.output_notebook() have to be called before using this coroutine.</p>
 <li><strong>probes</strong> (<em>dictionnary of callable</em>) – Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
 <li><strong>line_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
 <li><strong>fig_kwargs</strong> (<em>dict of dict</em>) – dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>init_notebook</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><em>True</em></a><em>, </em><em>optional</em>) – if True, initialize the javascript component needed for bokeh.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">01</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">mean_probe</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">bokeh_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">bokeh_probes_update</span><span class="p">({</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">mean_probe</span><span class="p">})</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">bokeh_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="triflow.plugins.displays.coroutine">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">coroutine</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#coroutine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.coroutine" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="triflow.plugins.displays.visdom_update">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">visdom_update</code><span class="sig-paren">(</span><em>addr=’http://127.0.0.1’</em>, <em>env=’main’</em>, <em>keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#visdom_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.visdom_update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coroutine sending fields data in a interactive plot leaving on a visdom
-server (which has to be launched).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>addr</strong> (str (default “<a class="reference external" href="http://127.0.0.1">http://127.0.0.1</a>”)) – adress of the visdom server.</li>
-<li><strong>env</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em> (</em><em>default “main”</em><em>)</em>) – Visdom environnement where the plot will be send.</li>
-<li><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em>, </em><em>optional</em>) – Description</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">visdom_upt</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">visdom_update</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">visdom_upt</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
-</pre></div>
-</div>
-<dl class="docutils">
-<dt>vars <span class="classifier-delimiter">:</span> <span class="classifier">list or None (default None)</span></dt>
-<dd>list of the plotted variables. Default all the dependant variables of the model.</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="triflow.plugins.displays.window_data">
-<code class="descclassname">triflow.plugins.displays.</code><code class="descname">window_data</code><span class="sig-paren">(</span><em>window_len=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#window_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.window_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coroutine able to return a dictionnary filled with concatenated values
-of the time and the fields, with optionnal window lenght. Useful to save
-only a part of the solution.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>window_len</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a><em> (</em><em>default</em><em>)</em>) – number of last iterations kept. All data kept if None</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Examples</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">displays</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;dxxU&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="o">=.</span><span class="mi">5</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">window_save_gen</span> <span class="o">=</span> <span class="n">displays</span><span class="o">.</span><span class="n">window_data</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">simul</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">saved_data</span> <span class="o">=</span> <span class="n">window_save_gen</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
-</pre></div>
-</div>
 </dd></dl>
 
 </div>
@@ -710,7 +592,7 @@ conditions.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">brown_signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">GaussianBrownNoise</span><span class="p">(</span><span class="n">frequency_sampling</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
 <span class="gp">... </span>                                          <span class="n">frequency_cut</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span>  <span class="o">=</span> <span class="n">brown_signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span> <span class="o">=</span> <span class="n">brown_signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">spectrum_density</span><span class="p">[</span><span class="n">spectrum_frequencies</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 <span class="go">True</span>
 </pre></div>
@@ -876,7 +758,7 @@ conditions.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">signals</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">signal</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">SinusoidalSignal</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=.</span><span class="mi">5</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span>  <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spectrum_frequencies</span><span class="p">,</span> <span class="n">spectrum_density</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Amplitude: {signal(t).max():g}&quot;</span><span class="p">)</span>
 <span class="go">Amplitude: 0.499999</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;main mode: </span><span class="si">{spectrum_frequencies[spectrum_density.argmax()]:g}</span><span class="s2"> Hz&quot;</span><span class="p">)</span>

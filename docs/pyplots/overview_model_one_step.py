@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # noqa: needed before import pylab
 import pylab as pl
 from triflow import Model, schemes
 

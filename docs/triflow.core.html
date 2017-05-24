@@ -99,6 +99,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="displays.html">displays objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="displays.html#built-in-displays">built-in displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">triflow</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="triflow.html">triflow package</a><ul class="current">
@@ -179,7 +181,41 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="triflow-core-package">
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+/* nice headers on first paragraph of info/warning boxes */
+.admonition .first {
+    margin: -12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+.admonition.warning .first {
+    background: #f0b37e;
+}
+.admonition.note .first {
+    background: #6ab0de;
+}
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="triflow-core-package">
 <h1>triflow.core package<a class="headerlink" href="#triflow-core-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
@@ -220,11 +256,6 @@ solvers for all the linear algebra manipulation).</p>
 <code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.copy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.dependent_variables">
-<code class="descname">dependent_variables</code><em class="property"> = (‘U’,)</em><a class="headerlink" href="#triflow.core.fields.BaseFields.dependent_variables" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="staticmethod">
 <dt id="triflow.core.fields.BaseFields.factory">
 <em class="property">static </em><code class="descname">factory</code><span class="sig-paren">(</span><em>dependent_variables</em>, <em>helper_functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.factory" title="Permalink to this definition">¶</a></dt>
@@ -259,10 +290,6 @@ variables of the container</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)">None</a></td>
-</tr>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flat_array</strong> (<em>numpy.ndarray</em>) – flat array which will be put in the dependant variable flat array.</td>
 </tr>
 </tbody>
@@ -272,28 +299,19 @@ variables of the container</p>
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.flat">
 <code class="descname">flat</code><a class="headerlink" href="#triflow.core.fields.BaseFields.flat" title="Permalink to this definition">¶</a></dt>
-<dd><p>return a flat view of the fields</p>
-<p>Returns: numpy.ndarray.view: flat view of the main numpy array</p>
+<dd><p><em>numpy.ndarray.view</em> – flat view of the main numpy array</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.helper_functions">
-<code class="descname">helper_functions</code><em class="property"> = ()</em><a class="headerlink" href="#triflow.core.fields.BaseFields.helper_functions" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.structured">
 <code class="descname">structured</code><a class="headerlink" href="#triflow.core.fields.BaseFields.structured" title="Permalink to this definition">¶</a></dt>
-<dd><p>return a structured array of the main numpy array as a view</p>
-<p>Returns: numpy.ndarray.view: structured view of the main numpy array</p>
+<dd><p><em>numpy.ndarray.view</em> – structured view of the main numpy array</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.uarray">
 <code class="descname">uarray</code><a class="headerlink" href="#triflow.core.fields.BaseFields.uarray" title="Permalink to this definition">¶</a></dt>
-<dd><p>return a view array of the main numpy array with only the
-dependant variables.</p>
-<p>Returns: numpy.ndarray.view: view of the dependent variables of the main numpy array</p>
+<dd><p><em>numpy.ndarray.view</em> – view of the dependent variables of the main numpy array</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -303,7 +321,6 @@ dependant variables.</p>
 dependant variables.</p>
 <p>Be carefull, modification of these data will not be reflected on
 the main array!</p>
-<p>Returns: numpy.ndarray: <strong>copy</strong> of the dependent variables of the main numpy array</p>
 </dd></dl>
 
 </dd></dl>
@@ -398,10 +415,25 @@ Jacobian matrix approximation.</p>
 <code class="descname">fields_template</code></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="triflow.core.model.Model.sargs">
-<code class="descname">sargs</code><a class="headerlink" href="#triflow.core.model.Model.sargs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="staticmethod">
+<dt id="triflow.core.model.Model.load">
+<em class="property">static </em><code class="descname">load</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#Model.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.Model.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>load a pre-compiled triflow model. The internal of theano allow a
+caching of the model. Will be slow if it is the first time the model is
+loaded on the system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path of the pre-compiled model</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">triflow pre-compiled model</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">triflow.core.Model</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="triflow.core.model.Model.save">
@@ -421,26 +453,6 @@ Jacobian matrix approximation.</p>
 </table>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="triflow.core.model.load_model">
-<code class="descclassname">triflow.core.model.</code><code class="descname">load_model</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.load_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>load a pre-compiled triflow model. The internal of theano allow a
-caching of the model. Will be slow if it is the first time the model is
-loaded on the system.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path of the pre-compiled model</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">triflow pre-compiled model</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">triflow.core.Model</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 </div>
@@ -615,6 +627,25 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
 <span class="go">50</span>
 </pre></div>
 </div>
+<dl class="method">
+<dt id="triflow.core.simulation.Simulation.add_display">
+<code class="descname">add_display</code><span class="sig-paren">(</span><em>display</em>, <em>*display_args</em>, <em>**display_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation.add_display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation.add_display" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a display for the simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>display</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)"><em>callable</em></a>) – a display as the one available in triflow.displays</li>
+<li><strong>*display_args</strong> – positional arguments for the display function (other than the simulation itself)</li>
+<li><strong>**display_kwargs</strong> – named arguments for the display function</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="triflow.core.simulation.Simulation.compute">
 <code class="descname">compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation.compute" title="Permalink to this definition">¶</a></dt>

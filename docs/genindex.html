@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">triflow</a></li>
 </ul>
@@ -171,7 +172,6 @@
  | <a href="#D"><strong>D</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
- | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
@@ -181,8 +181,6 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
- | <a href="#V"><strong>V</strong></a>
- | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -210,11 +208,11 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.plugins.html#triflow.plugins.signals.AdditiveSignal">AdditiveSignal (class in triflow.plugins.signals)</a>
+      <li><a href="triflow.core.html#triflow.core.simulation.Simulation.add_display">add_display() (triflow.core.simulation.Simulation method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.amnesic_mean">amnesic_mean() (in module triflow.plugins.displays)</a>
+      <li><a href="triflow.plugins.html#triflow.plugins.signals.AdditiveSignal">AdditiveSignal (class in triflow.plugins.signals)</a>
 </li>
       <li><a href="triflow.core.html#triflow.core.fields.BaseFields.array">array (triflow.core.fields.BaseFields attribute)</a>
 </li>
@@ -228,9 +226,9 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.bokeh_fields_update">bokeh_fields_update() (in module triflow.plugins.displays)</a>
+      <li><a href="triflow.plugins.html#triflow.plugins.displays.bokeh_fields_update">bokeh_fields_update (class in triflow.plugins.displays)</a>
 </li>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.bokeh_probes_update">bokeh_probes_update() (in module triflow.plugins.displays)</a>
+      <li><a href="triflow.plugins.html#triflow.plugins.displays.bokeh_probes_update">bokeh_probes_update (class in triflow.plugins.displays)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -240,13 +238,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="triflow.core.html#triflow.core.simulation.Simulation.compute">compute() (triflow.core.simulation.Simulation method)</a>
 </li>
-      <li><a href="triflow.plugins.html#triflow.plugins.signals.ConstantSignal">ConstantSignal (class in triflow.plugins.signals)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.fields.BaseFields.copy">copy() (triflow.core.fields.BaseFields method)</a>
+      <li><a href="triflow.plugins.html#triflow.plugins.signals.ConstantSignal">ConstantSignal (class in triflow.plugins.signals)</a>
 </li>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.coroutine">coroutine() (in module triflow.plugins.displays)</a>
+      <li><a href="triflow.core.html#triflow.core.fields.BaseFields.copy">copy() (triflow.core.fields.BaseFields method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -254,12 +250,10 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.fields.BaseFields.dependent_variables">dependent_variables (triflow.core.fields.BaseFields attribute)</a>
+      <li><a href="triflow.core.html#triflow.core.routines.F_Routine.diff_approx">diff_approx() (triflow.core.routines.F_Routine method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.routines.F_Routine.diff_approx">diff_approx() (triflow.core.routines.F_Routine method)</a>
-</li>
       <li><a href="triflow.core.html#triflow.core.simulation.Simulation.dt">dt (triflow.core.simulation.Simulation attribute)</a>
 </li>
   </ul></td>
@@ -303,14 +297,6 @@
   </ul></td>
 </tr></table>
 
-<h2 id="H">H</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.fields.BaseFields.helper_functions">helper_functions (triflow.core.fields.BaseFields attribute)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -340,7 +326,7 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.model.load_model">load_model() (in module triflow.core.model)</a>
+      <li><a href="triflow.core.html#triflow.core.model.Model.load">load() (triflow.core.model.Model static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -392,18 +378,16 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.core.html#triflow.core.model.Model.sargs">sargs (triflow.core.model.Model attribute)</a>
-</li>
       <li><a href="triflow.core.html#triflow.core.model.Model.save">save() (triflow.core.model.Model method)</a>
 </li>
       <li><a href="triflow.plugins.html#triflow.plugins.schemes.scipy_ode">scipy_ode (class in triflow.plugins.schemes)</a>
 </li>
       <li><a href="triflow.plugins.html#triflow.plugins.signals.Signal">Signal (class in triflow.plugins.signals)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="triflow.core.html#triflow.core.simulation.Simulation">Simulation (class in triflow.core.simulation)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="triflow.plugins.html#triflow.plugins.signals.SinusoidalSignal">SinusoidalSignal (class in triflow.plugins.signals)</a>
 </li>
       <li><a href="triflow.core.html#triflow.core.fields.BaseFields.size">size (triflow.core.fields.BaseFields attribute)</a>
@@ -457,22 +441,6 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="triflow.core.html#triflow.core.fields.BaseFields.uflat">uflat (triflow.core.fields.BaseFields attribute)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="V">V</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.visdom_update">visdom_update() (in module triflow.plugins.displays)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="W">W</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="triflow.plugins.html#triflow.plugins.displays.window_data">window_data() (in module triflow.plugins.displays)</a>
 </li>
   </ul></td>
 </tr></table>
