@@ -177,11 +177,11 @@ texinfo_documents = [
 
 # -- Options for Epub output ----------------------------------------------
 
-# Bibliographic Dublin Core info.
-epub_title = project
-epub_author = author
-epub_publisher = author
-epub_copyright = copyright
+# # Bibliographic Dublin Core info.
+# epub_title = project
+# epub_author = author
+# epub_publisher = author
+# epub_copyright = copyright
 
 # The unique identifier of the text. This can be a ISBN number
 # or the project homepage.
@@ -198,7 +198,3 @@ epub_exclude_files = ['search.html']
 source_parsers = {
     '.md': CommonMarkParser,
 }
-
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}

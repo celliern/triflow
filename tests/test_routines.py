@@ -3,6 +3,7 @@
 
 
 import numpy as np
+
 from triflow import Model
 
 

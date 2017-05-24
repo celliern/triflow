@@ -15,6 +15,7 @@ Welcome to triflow's documentation!
    schemes
    cookbook/displays
    cookbook
+   contribute
    modules
 
 

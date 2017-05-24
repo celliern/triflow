@@ -10,10 +10,11 @@ from pickle import dump, load
 import numpy as np
 import theano as th
 import theano.sparse as ths
-from sympy import Derivative, Function, Symbol, symbols, sympify, SympifyError
+from sympy import Derivative, Function, Symbol, SympifyError, symbols, sympify
 from sympy.printing.theanocode import theano_code
 from theano import tensor as T
 from theano.ifelse import ifelse
+
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 

@@ -17,6 +17,7 @@ clean:
 
 env:
 	pip install -Ur requirements.txt
+	pip install .
 
 init:
 	pip install coveralls
@@ -26,11 +27,9 @@ init:
 	pip install nbsphinx
 	pip install pylama
 	pip install recommonmark
-	pip install .
 
 test:
 	pytest
-	pytest --doctest-module -k triflow/
 
 lint:
 	pylama

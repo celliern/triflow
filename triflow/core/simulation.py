@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import logging
 import inspect
+import logging
 
 from coolname import generate_slug
+
 from triflow.plugins import schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

@@ -2,6 +2,7 @@
 # coding=utf8
 
 import numpy as np
+
 from triflow import Model, Simulation
 
 # We initialize the model dtU = k * dxxU and we precise

@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute.html">Contribution guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
 </ul>
 
@@ -167,11 +168,11 @@
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="c1"># coding=utf8</span>
 
-<span class="kn">import</span> <span class="nn">itertools</span> <span class="k">as</span> <span class="nn">it</span>
-<span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">from</span> <span class="nn">coolname</span> <span class="k">import</span> <span class="n">generate_slug</span>
+
 <span class="kn">from</span> <span class="nn">triflow.plugins</span> <span class="k">import</span> <span class="n">schemes</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
@@ -291,14 +292,14 @@
             <span class="n">display</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_takewhile</span><span class="p">():</span>
-                    <span class="k">raise</span> <span class="ne">StopIteration</span>
                 <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
                 <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
                                          <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">physical_parameters</span> <span class="o">=</span> <span class="n">pars</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_takewhile</span><span class="p">():</span>
+                    <span class="k">return</span>
                 <span class="k">for</span> <span class="n">display</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_displays</span><span class="p">:</span>
                     <span class="n">display</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span>
@@ -323,7 +324,7 @@
     <span class="k">def</span> <span class="nf">_takewhile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;finished&#39;</span>
         <span class="k">return</span> <span class="kc">False</span>

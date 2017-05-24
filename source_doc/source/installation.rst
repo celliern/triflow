@@ -36,8 +36,11 @@ use sudo if needed, and the user flag if you want to install it without the root
 via github
 -----------
 
-You can install the last version of the library using pip and the github repository:
+You can install the last version of the library using pip and the `github repository`_:
 
 .. code:: bash
 
     pip install git+git://github.com/locie/triflow.git
+
+
+.. _github repository: https://github.com/locie/triflow

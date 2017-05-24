@@ -115,7 +115,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribution guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">triflow</a></li>
 </ul>
 
@@ -282,7 +284,7 @@
 <div class="section" id="model-compilation">
 <h2>Model compilation<a class="headerlink" href="#model-compilation" title="Permalink to this headline">¶</a></h2>
 <p>The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, a tool has been written in order to convert sympy complex expressions to <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> graph which can be easily compiled.</p>
-<p>In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation…).</p>
+<p>In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).</p>
 <p>The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be sae on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (&gt; 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> documentation for more details).</p>
 </div>
 <div class="section" id="fields-containers">
@@ -322,11 +324,13 @@
 <p>Each of them have advantages and disadvantages.</p>
 <p>They can accept somme extra arguments during their instantiation (for exemple the <span class="math">\(\theta\)</span> parameter for the <span class="math">\(\theta\)</span> mixed scheme), and are called with the actual fields, time, time-step, parameters, and accept an optionnal hook modifying fields and parameters each time the solver compute the function or its jacobian.</p>
 <p>The following code compute juste one time-step with a Crank-Nicolson scheme.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa: needed before import pylab</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>  <span class="c1"># isort:skip</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
@@ -360,11 +364,13 @@
 <p>We obtain with the following code a full resolution up to the target time.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa: needed before import pylab</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>  <span class="c1"># isort:skip</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
@@ -405,14 +411,16 @@
 <div class="section" id="hook-and-boundary-conditions">
 <h3>hook and boundary conditions<a class="headerlink" href="#hook-and-boundary-conditions" title="Permalink to this headline">¶</a></h3>
 <p>The hook function is used in order to deal with variable and conditional parameters and boundary condition.</p>
-<p>Inside the model, the fields are padded in order to solve the equation. If the parameter “periodic” is used, the pad function is used with the mode “wrap” leading to periodic fields. If not, the mode “edge” is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
+<p>Inside the model, the fields are padded in order to solve the equation. If the parameter &#8220;periodic&#8221; is used, the pad function is used with the mode &#8220;wrap&#8221; leading to periodic fields. If not, the mode &#8220;edge&#8221; is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa: needed before import pylab</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>  <span class="c1"># isort:skip</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 
@@ -480,11 +488,13 @@
 </pre></div>
 </div>
 <p>and we write the previous advection-diffusion example as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa: needed before import pylab</span>
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>  <span class="c1"># isort:skip</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
 

@@ -2,6 +2,7 @@
 # coding=utf8
 
 import numpy as np
+
 from triflow import Model
 
 

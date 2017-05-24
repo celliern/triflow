@@ -1,10 +1,12 @@
 import itertools as it
 
-import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # noqa: needed before import pylab
-import pylab as pl
+import numpy as np
+
 from triflow import Model, schemes
+
+matplotlib.use('Agg')  # noqa
+import pylab as pl  # isort:skip
 
 pl.style.use('seaborn-whitegrid')
 

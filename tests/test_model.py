@@ -5,6 +5,7 @@
 import numpy as np
 import pytest
 from path import tempdir
+
 from triflow import Model
 
 

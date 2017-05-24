@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import pytest
-from triflow import Model, Simulation, displays
 import numpy as np
+import pytest
+
+from triflow import Model, Simulation, displays
 
 
 def test_display_probe():
