@@ -1,1 +1,4 @@
-recursive-include examples docs source_doc tests
+graft examples
+graft docs
+graft source_doc
+graft tests
