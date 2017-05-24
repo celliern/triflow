@@ -41,7 +41,7 @@ isort:
 build: clean
 	python setup.py check
 	python setup.py sdist
-	twine dist/*
+	twine upload dist/*
 
 doc:
 	$(MAKE) -C source_doc notebooks
