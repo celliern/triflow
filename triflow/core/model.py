@@ -126,10 +126,6 @@ class Model:
       >>> model = Model(["k1 * dxxU - c1 * dxV",
       ...                "k2 * dxxV - c2 * dxU",],
       ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
-
-      TODOs
-      -----
-      Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
       """  # noqa
 
     def __init__(self,

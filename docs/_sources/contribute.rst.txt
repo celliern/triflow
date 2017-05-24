@@ -36,6 +36,7 @@ Roadmap
 -------
 
 - go to continous integration via travis (or other?)
+- include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)
 - test different model against analytical solutions or reference library
 - benchmark the solver
 - drop the 1D limitation with

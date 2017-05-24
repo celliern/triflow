@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.core package &mdash; triflow 0.4.2 documentation</title>
+  <title>triflow.core package &mdash; triflow 0.4.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="triflow 0.4.2 documentation" href="index.html"/>
+    <link rel="top" title="triflow 0.4.3 documentation" href="index.html"/>
         <link rel="up" title="triflow package" href="triflow.html"/>
         <link rel="next" title="triflow.plugins package" href="triflow.plugins.html"/>
         <link rel="prev" title="triflow package" href="triflow.html"/> 
@@ -256,11 +256,6 @@ solvers for all the linear algebra manipulation).</p>
 <code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.copy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.dependent_variables">
-<code class="descname">dependent_variables</code><em class="property"> = ('U',)</em><a class="headerlink" href="#triflow.core.fields.BaseFields.dependent_variables" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="staticmethod">
 <dt id="triflow.core.fields.BaseFields.factory">
 <em class="property">static </em><code class="descname">factory</code><span class="sig-paren">(</span><em>dependent_variables</em>, <em>helper_functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.factory" title="Permalink to this definition">¶</a></dt>
@@ -306,11 +301,6 @@ variables of the container</p>
 <code class="descname">flat</code><a class="headerlink" href="#triflow.core.fields.BaseFields.flat" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>numpy.ndarray.view</em> &#8211; flat view of the main numpy array</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.helper_functions">
-<code class="descname">helper_functions</code><em class="property"> = ()</em><a class="headerlink" href="#triflow.core.fields.BaseFields.helper_functions" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.structured">
@@ -419,7 +409,6 @@ Jacobian matrix approximation.</p>
 <span class="gp">... </span>               <span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;k1&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">,</span> <span class="s2">&quot;c1&quot;</span><span class="p">,</span> <span class="s2">&quot;c2&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>Include t as symbolic variable to allow time dependent functions (non-autonomous dynamical systems)</p>
 <dl class="attribute">
 <dt>
 <code class="descname">fields_template</code></dt>
@@ -722,7 +711,7 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.4.2',
+            VERSION:'0.4.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
