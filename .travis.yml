@@ -19,4 +19,5 @@ install:
   - "pip install recommonmark"
   - "pip install ."
 # command to run tests
-script: pytest
+script: coverage run --source=sym_dict setup.py test
+after_success: coveralls
