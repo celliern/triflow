@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import itertools as it
 import logging
 import inspect
 
@@ -125,14 +124,14 @@ class Simulation(object):
             display(t, fields)
         try:
             while True:
-                if not self._takewhile():
-                    raise StopIteration
                 fields, pars = self._hook(t, fields, pars)
                 t, fields = self._scheme(t, fields, self.dt,
                                          pars, hook=self._hook)
                 self.fields = fields
                 self.t = t
                 self.physical_parameters = pars
+                if not self._takewhile():
+                    return
                 for display in self._displays:
                     display(self.t, self.fields)
                 yield self.t, self.fields
@@ -157,7 +156,7 @@ class Simulation(object):
     def _takewhile(self):
         if self.tmax is None:
             return True
-        if self.t < self.tmax:
+        if self.t <= self.tmax:
             return True
         self.status = 'finished'
         return False

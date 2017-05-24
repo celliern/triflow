@@ -53,7 +53,7 @@ def test_simul_heat_eq_dirichlet(heat_model, scheme):
                        dt=.1, tmax=100, tol=1E-1)
 
     for i, (t, fields) in enumerate(simul):
-        continue
+        pass
     assert np.isclose(t, 100)
     assert np.isclose(fields.T, 1, atol=1E-1).all()
 
