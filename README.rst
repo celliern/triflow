@@ -1,3 +1,7 @@
+.. image:: https://zenodo.org/badge/71994260.svg
+   :target: https://zenodo.org/badge/latestdoi/71994260
+
+
 Installation
 ===============
 

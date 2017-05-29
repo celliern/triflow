@@ -6,6 +6,7 @@ import sys
 from functools import partial
 from itertools import product
 from pickle import dump, load
+from pprint import pformat
 
 import numpy as np
 import theano as th
@@ -14,7 +15,6 @@ from sympy import Derivative, Function, Symbol, SympifyError, symbols, sympify
 from sympy.printing.theanocode import theano_code
 from theano import tensor as T
 from theano.ifelse import ifelse
-
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 
@@ -502,6 +502,10 @@ class Model:
                        help_functions: tuple,
                        sympify_namespace: dict) -> tuple:
         logging.debug('enter _sympify_model')
+        logging.debug(pformat(diff_eqs))
+        logging.debug(pformat(dep_vars))
+        logging.debug(pformat(pars))
+        logging.debug(pformat(help_functions))
 
         symbolic_dep_vars = tuple([Function(dep_var)(Symbol('x'))
                                    for dep_var in dep_vars])
