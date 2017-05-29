@@ -1,5 +1,5 @@
-.. image:: https://zenodo.org/badge/71994260.svg
-   :target: https://zenodo.org/badge/latestdoi/71994260
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.584101.svg
+   :target: https://doi.org/10.5281/zenodo.584101
 
 
 Installation
