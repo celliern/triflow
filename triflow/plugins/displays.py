@@ -36,7 +36,7 @@ class bokeh_fields_update():
         setattr(self, '_push', push_notebook)
 
         keys = keys if keys else [
-            key for key in simul.fielPds._keys if key != 'x']
+            key for key in simul.fields._keys if key != 'x']
         self._datasource = ColumnDataSource({key: simul.fields[key]
                                              for key
                                              in list(keys) + ['x']})

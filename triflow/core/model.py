@@ -517,6 +517,7 @@ class Model:
                                        .subs(zip(map(Symbol, dep_vars),
                                                  (symbolic_dep_vars +
                                                   symbolic_help_functions)))
+                                       .doit()
                                        for func
                                        in diff_eqs])
         except (TypeError, SympifyError):

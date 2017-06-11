@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name='triflow',
     # la version du code
-    version="0.4.3",
+    version="0.4.4",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -14,7 +14,7 @@ setup(
     author_email="contact@nicolas-cellier.net",
     description="Python library for falling-films modeling",
 
-    license='MIT',
+    license='BEERWARE',
 
     # long_description=open('README.md').read(),
 
@@ -51,6 +51,6 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: MIT License",
+        "License :: BEERWARE",
     ],
 )
