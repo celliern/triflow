@@ -88,7 +88,6 @@ class BaseFields:
             """  # noqa
             uflat = self.array[:, 1: (1 +
                                       len(self.dependent_variables))].ravel()
-            uflat.flags.writeable = False
             return uflat
 
         def fill(self, flat_array):
