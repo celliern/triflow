@@ -13,7 +13,15 @@ class bokeh_fields_update():
     Parameters
     ----------
     keys : None, optional
-        list of the dependant variables to be displayed
+        list of the dependant variables to be displayed if string provided. If tuple or list,
+        it should contain (key, callable), and the callable will have the following signature.
+
+        >>> def callable(t, fields):
+        >>>     field = fields.U + fields.V
+        >>>     return field
+
+        That way it is possible to display post-processed data.
+
     line_kwargs : dict of dict
         dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots
     fig_kwargs : dict of dict
@@ -37,21 +45,29 @@ class bokeh_fields_update():
 
         keys = keys if keys else [
             key for key in simul.fields._keys if key != 'x']
-        self._datasource = ColumnDataSource({key: simul.fields[key]
-                                             for key
-                                             in list(keys) + ['x']})
-        figs = {}
+
+        self._datafunc = {'x': lambda t, fields: fields.x}
         for key in keys:
+            if isinstance(key, str):
+                self._datafunc[key] = lambda t, fields: fields[key]
+            if isinstance(key, (tuple, list)):
+                self._datafunc[key[0]] = key[1]
+        self._datasource = ColumnDataSource({key: func(simul)
+                                             for (key, func)
+                                             in self._datafunc.items()})
+        figs = {}
+        for key, func in self._datafunc.items():
             figs[key] = figure(**fig_kwargs.get(key, {}), title=key)
             figs[key].line('x', key, source=self._datasource,
                            **line_kwargs.get(key, {}))
+
         self._handler = show(Column(*[figs[key]
                                       for key in keys]), notebook_handle=True)
         self._keys = keys
 
     def __call__(self, t, fields):
-        for key in self._keys:
-            self._datasource.data[key] = fields[key]
+        for key, func in self._datafunc.items():
+            self._datasource.data[key] = func(t, fields)
         self._push(handle=self._handler)
 
 
