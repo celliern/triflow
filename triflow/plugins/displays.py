@@ -52,7 +52,7 @@ class bokeh_fields_update():
                 self._datafunc[key] = lambda t, fields: fields[key]
             if isinstance(key, (tuple, list)):
                 self._datafunc[key[0]] = key[1]
-        self._datasource = ColumnDataSource({key: func(simul)
+        self._datasource = ColumnDataSource({key: func(simul.t, simul.fields)
                                              for (key, func)
                                              in self._datafunc.items()})
         figs = {}
