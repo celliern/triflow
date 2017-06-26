@@ -16,7 +16,7 @@ class bokeh_fields_update():
         list of the dependant variables to be displayed if string provided. If tuple or list,
         it should contain (key, callable), and the callable will have the following signature.
 
-        >>> def callable(t, fields):
+        >>> def callable(t, fields, key):
         >>>     field = fields.U + fields.V
         >>>     return field
 
@@ -46,13 +46,15 @@ class bokeh_fields_update():
         keys = keys if keys else [
             key for key in simul.fields._keys if key != 'x']
 
-        self._datafunc = {'x': lambda t, fields: fields.x}
+        self._datafunc = {'x': lambda t, fields, key: fields.x}
         for key in keys:
             if isinstance(key, str):
-                self._datafunc[key] = lambda t, fields: fields[key]
+                self._datafunc[key] = lambda t, fields, key: fields[key]
             if isinstance(key, (tuple, list)):
                 self._datafunc[key[0]] = key[1]
-        self._datasource = ColumnDataSource({key: func(simul.t, simul.fields)
+        self._datasource = ColumnDataSource({key: func(simul.t,
+                                                       simul.fields,
+                                                       key)
                                              for (key, func)
                                              in self._datafunc.items()})
         figs = {}
@@ -62,12 +64,15 @@ class bokeh_fields_update():
                            **line_kwargs.get(key, {}))
 
         self._handler = show(Column(*[figs[key]
-                                      for key in keys]), notebook_handle=True)
+                                      for key
+                                      in self._datafunc.keys()
+                                      if key != 'x']),
+                             notebook_handle=True)
         self._keys = keys
 
     def __call__(self, t, fields):
         for key, func in self._datafunc.items():
-            self._datasource.data[key] = func(t, fields)
+            self._datasource.data[key] = func(t, fields, key)
         self._push(handle=self._handler)
 
 
