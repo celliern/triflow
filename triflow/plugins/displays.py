@@ -60,7 +60,7 @@ class bokeh_fields_update():
                                                        key)
                                              for (key, func)
                                              in self._datafunc.items()})
-        self._keys = self._datafunc.keys()
+        self._keys = list(self._datafunc.keys())
         self._keys.remove("x")
 
         if stack:
