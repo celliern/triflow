@@ -28,12 +28,15 @@ class bokeh_fields_update():
         dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots
     init_notebook: True, optional
         if True, initialize the javascript component needed for bokeh.
+    stack: False, optional
+        if True, all the plots are displayed in the same figure. fig kwargs is directly passed to this fig.
     """  # noqa
 
     def __init__(self, simul, keys=None,
                  line_kwargs={},
                  fig_kwargs={},
-                 notebook=True):
+                 notebook=True,
+                 stack=False):
         from bokeh.io import push_notebook, output_notebook
         from bokeh.plotting import figure, show, ColumnDataSource
         from bokeh.layouts import Column
@@ -57,18 +60,28 @@ class bokeh_fields_update():
                                                        key)
                                              for (key, func)
                                              in self._datafunc.items()})
-        figs = {}
-        for key, func in self._datafunc.items():
-            figs[key] = figure(**fig_kwargs.get(key, {}), title=key)
-            figs[key].line('x', key, source=self._datasource,
-                           **line_kwargs.get(key, {}))
+        self._keys = self._datafunc.keys()
+        self._keys.remove("x")
 
-        self._handler = show(Column(*[figs[key]
-                                      for key
-                                      in self._datafunc.keys()
-                                      if key != 'x']),
-                             notebook_handle=True)
-        self._keys = keys
+        if stack:
+            fig = figure(**fig_kwargs)
+            for key in self._keys:
+                fig.line('x', key, source=self._datasource,
+                         **line_kwargs.get(key, {}))
+            self._handler = show(fig, notebook_handle=True)
+            return
+        else:
+            figs = {}
+            for key in self._keys:
+                figs[key] = figure(**fig_kwargs.get(key, {}), title=key)
+                figs[key].line('x', key, source=self._datasource,
+                               **line_kwargs.get(key, {}))
+
+            self._handler = show(Column(*[figs[key]
+                                          for key
+                                          in self._datafunc.keys()
+                                          if key != 'x']),
+                                 notebook_handle=True)
 
     def __call__(self, t, fields):
         for key, func in self._datafunc.items():
