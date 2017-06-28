@@ -275,6 +275,7 @@ class GaussianWhiteNoise(Signal):
         return noisy
 
     def _wave(self, t: float or np.array) -> float or np.array:
+        t = np.array(t, dtype=float, ndmin=1)
         ids_iter = np.array(t // self._signal_period, dtype=int)
         signal = np.zeros_like(t)
         if not self._seed:
@@ -289,8 +290,8 @@ class GaussianWhiteNoise(Signal):
                     self._time,
                     self._partial_signal_template(seed=(self._seed + id_iter)))
                 interp_function = self._cache[id_iter]
-            flag = np.where(ids_iter == id_iter)
-            signal[flag] = interp_function(t % self._signal_period)
+            flag = ids_iter == id_iter
+            signal[flag] = interp_function(t[flag] % self._signal_period)
         # logging.debug(signal)
         return signal
 
