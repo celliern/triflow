@@ -292,7 +292,6 @@ class GaussianWhiteNoise(Signal):
                 interp_function = self._cache[id_iter]
             flag = ids_iter == id_iter
             signal[flag] = interp_function(t[flag] % self._signal_period)
-        # logging.debug(signal)
         return signal
 
 
