@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 setup(
     name='triflow',
     # la version du code
-    version="0.4.7a3",
+    version="0.4.7a4",
     # Liste les packages à insérer dans la distribution
     packages=find_packages(),
 
@@ -15,8 +15,6 @@ setup(
     description="Python library for falling-films modeling",
 
     license='BEERWARE',
-
-    long_description=open('README.md').read(),
 
     # ext_modules=ext_modules,
     # Active la prise en compte du fichier MANIFEST.in
