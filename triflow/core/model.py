@@ -11,10 +11,13 @@ from pprint import pformat
 import numpy as np
 import theano as th
 import theano.sparse as ths
-from sympy import Derivative, Function, Symbol, SympifyError, symbols, sympify
+from sympy import (Derivative, Function, Symbol,
+                   SympifyError, symbols, sympify, lambdify)
 from sympy.printing.theanocode import theano_code
+from scipy.sparse import csc_matrix
 from theano import tensor as T
 from theano.ifelse import ifelse
+import tensorflow as tf
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 
@@ -24,7 +27,7 @@ logging = logging.getLogger(__name__)
 sys.setrecursionlimit(40000)
 
 
-def _generate_sympify_namespace(independent_variable,
+def _generate_sympify_namespace(independent_variables,
                                 dependent_variables,
                                 helper_functions):
     """Generate the link between the symbols of the derivatives and the
@@ -44,6 +47,8 @@ def _generate_sympify_namespace(independent_variable,
       dict
           dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.
       """  # noqa
+
+    independent_variable = independent_variables[0]  # TEMP FIX BEFORE REAL ND
 
     symbolic_independent_variable = Symbol(independent_variable)
 
@@ -132,37 +137,59 @@ class Model:
                  differential_equations,
                  dependent_variables,
                  parameters=None,
-                 help_functions=None):
+                 help_functions=None,
+                 bdc_conditions=None,
+                 module="tensorflow"):
         logging.debug('enter __init__ Model')
 
         # coerce the inputs the way to have coherent types
         # TODO: be more pythonic, it should not be necessary with coherent
         # duck typing..
+        self._symb_t = Symbol("t")
+        indep_vars = ["x"]
+
+        def coerce(arg):
+            if arg is None:
+                return tuple()
+            else:
+                if isinstance(arg, (str, )):
+                    return tuple([arg])
+            return tuple(arg)
+
         (self._diff_eqs,
+         self._indep_vars,
          self._dep_vars,
          self._pars,
-         self._help_funcs) = self._coerce_inputs(differential_equations,
-                                                 dependent_variables,
-                                                 parameters,
-                                                 help_functions)
+         self._help_funcs,
+         self._bdcs) = map(coerce, (differential_equations,
+                                    indep_vars,
+                                    dependent_variables,
+                                    parameters,
+                                    help_functions,
+                                    bdc_conditions))
+
         self._nvar = len(self._dep_vars)
         # generate the sympy namespace which will connect the math input into
         # sympy operation.
         sympify_namespace = {}
         sympify_namespace.update(_generate_sympify_namespace(
-            'x',
+            self._indep_vars,
             self._dep_vars,
             self._help_funcs))
 
         # parse the inputs in order to have Sympy symbols and expressions
         (self._symb_diff_eqs,
+         self._symb_indep_vars,
          self._symb_dep_vars,
          self._symb_pars,
-         self._symb_help_funcs) = self._sympify_model(self._diff_eqs,
-                                                      self._dep_vars,
-                                                      self._pars,
-                                                      self._help_funcs,
-                                                      sympify_namespace)
+         self._symb_help_funcs,
+         self._symb_bdcs) = self._sympify_model(self._diff_eqs,
+                                                self._indep_vars,
+                                                self._dep_vars,
+                                                self._pars,
+                                                self._help_funcs,
+                                                self._bdcs,
+                                                sympify_namespace)
 
         # we will need to extract the order of the != spatial derivative
         # in order to know the size of the ghost area at the limit of
@@ -177,6 +204,12 @@ class Model:
         # variables and help functions.
         approximated_diff_eqs = self._approximate_derivative(
             self._symb_diff_eqs,
+            self._symb_indep_vars,
+            self._symb_dep_vars,
+            self._symb_help_funcs)
+        self._dbdcs = self._approximate_derivative(
+            self._symb_bdcs,
+            self._symb_indep_vars,
             self._symb_dep_vars,
             self._symb_help_funcs)
         logging.debug(f"approximated equations: {approximated_diff_eqs}")
@@ -219,40 +252,63 @@ class Model:
         # We drop all the null term of the Jacobian matrix, because we target
         # a sparse matrix storage for memory saving and efficient linalg ops.
         self._J_sparse_array = self.J_array[self._sparse_indices]
-
+        # return
         # We convert the sympy description of the system into a theano
         # graph compilation
-        F, J, args, self._map_extended = self._theano_convert(
-            self.F_array,
-            self._J_sparse_array)
-        # We compile the previous graphs and obtain optimized C based
-        # routines
-        F_theano_function = th.function(inputs=args,
-                                        outputs=F,
-                                        on_unused_input='ignore')
-        J_theano_function = th.function(inputs=args,
-                                        outputs=J,
-                                        on_unused_input='ignore')
-        self._th_args = args
-        self._th_vectors = [F, J]
-        self._theano_routines = [F_theano_function, J_theano_function]
-        self._compile(self.F_array, self._J_sparse_array,
-                      F_theano_function, J_theano_function)
+        if module == "theano":
+            F, J, args, self._map_extended = self._theano_convert(
+                self.F_array,
+                self._J_sparse_array,
+                self._dbdcs)
+            self._th_args = args
+            self._th_vectors = [F, J]
+            # We compile the previous graphs and obtain optimized C based
+            # routines
+            logging.debug(args)
+            logging.debug(list(map(type, args)))
+            F_theano_function = th.function(inputs=args,
+                                            outputs=F,
+                                            on_unused_input='ignore')
+            J_theano_function = th.function(inputs=args,
+                                            outputs=J,
+                                            on_unused_input='ignore')
+            self._theano_routines = [F_theano_function, J_theano_function]
+            self._compile(self.F_array, self._J_sparse_array,
+                          F_theano_function, J_theano_function)
+        elif module == "tensorflow":
+            sess = self._sess = tf.Session()
+            F, Jargs, args, self._map_extended = self._tensorflow_convert(
+                self.F_array,
+                self._J_sparse_array,
+                self._dbdcs)
+            self._tf_args = args
+            self._tf_vectors = [F, Jargs]
+            F_tf_function = sess.make_callable(F, self._tf_args)
+            Jargs_tf_function = sess.make_callable(Jargs, self._tf_args)
 
-    def _theano_convert(self, F_array, J_array):
+            def J_tf_function(*args):
+                Jval, rows, indptr, shape = Jargs_tf_function(*args)
+                Jsparse = csc_matrix((Jval, rows, indptr), shape)
+                return Jsparse
+
+            self._compile(self.F_array, self._J_sparse_array,
+                          F_tf_function, J_tf_function)
+
+    def _theano_convert(self, F_array, J_array, bdc):
         th_args = list(
             map(
                 partial(theano_code,
                         broadcastables={arg: (False,)
                                         for arg
-                                        in [Symbol('x'),
+                                        in [*self._symb_indep_vars,
                                             *self._discrete_variables,
                                             *self._symb_pars]}),
                 self._symbolic_args))
         ins = th.gof.graph.inputs(th_args)
         mapargs = {inp.name: inp
                    for inp in ins if isinstance(inp, T.TensorVariable)}
-        x_th = T.dvector('x')
+        indep_vars_th = [mapargs[var] for var in self._indep_vars]
+        x_th = indep_vars_th[0]  # TEMP FIX: only for 1D case
         periodic = T.bscalar('periodic')
         middle_point = int((self._window_range - 1) / 2)
         N = x_th.size
@@ -287,7 +343,7 @@ class Model:
         F = list(map(partial(theano_code,
                              broadcastables={arg: (False,)
                                              for arg
-                                             in [Symbol('x'),
+                                             in [*self._symb_indep_vars,
                                                  *self._discrete_variables,
                                                  *self._symb_pars]}),
                      F_array.flatten().tolist()))
@@ -295,7 +351,7 @@ class Model:
         J = list(map(partial(theano_code,
                              broadcastables={arg: (False,)
                                              for arg
-                                             in [Symbol('x'),
+                                             in [*self._symb_indep_vars,
                                                  *self._discrete_variables,
                                                  *self._symb_pars]}),
                      J_array.flatten().tolist()))
@@ -353,17 +409,166 @@ class Model:
 
         return F, sparse_J, th_args, map_extended
 
-    def _compile(self, F_array, J_array, F_theano_function, J_theano_function):
+    def _tensorflow_convert(self, F_array, J_array, bdc):
+
+        def repeat(tensor, n):
+            tensor = tf.reshape(tensor, [-1, 1])
+            tensor = tf.tile(tensor, [1, n])
+            tensor = tf.reshape(tensor, [-1])
+            return tensor
+
+        def repeat_axis(tensor, n):
+            tensor = tf.reshape(tensor, [-1, 1])
+            tensor = tf.tile(tensor, [1, n])
+            tensor = tf.reshape(tensor, [-1, 1])
+            return tensor
+
+        mapargs = {arg: tf.placeholder(tf.float64,
+                                       name=arg)
+                   for arg, sarg in zip(self._args, self._symbolic_args)}
+
+        to_feed = mapargs.copy()
+
+        x = mapargs['x']
+        N = tf.size(x)
+        L = x[-1] - x[0]
+        dx = L / (tf.cast(N, x.dtype) - 1)
+        to_feed['dx'] = dx
+
+        periodic = tf.placeholder_with_default(tf.constant(True), shape=())
+        middle_point = int((self._window_range - 1) / 2)
+
+        tf_args = [mapargs[key]
+                   for key
+                   in [*self._indep_vars,
+                       *self._dep_vars,
+                       *self._pars]] + [periodic]
+
+        map_extended = {}
+
+        for (varname, discretisation_tree) in \
+                self._symb_vars_with_spatial_diff_order.items():
+            pad_left, pad_right = self._bounds
+
+            per_extended_var = tf.concat([mapargs[varname][pad_left:],
+                                          mapargs[varname],
+                                          mapargs[varname][:pad_right]],
+                                         axis=0)
+
+            edge_extended_var = tf.concat([tf.tile(mapargs[varname][:1],
+                                                   [middle_point]),
+                                           mapargs[varname],
+                                           tf.tile(mapargs[varname][-1:],
+                                                   [middle_point])],
+                                          axis=0)
+
+            extended_var = tf.cond(periodic,
+                                   lambda: per_extended_var,
+                                   lambda: edge_extended_var)
+
+            map_extended[varname] = extended_var
+            for order in range(pad_left, pad_right + 1):
+                if order != 0:
+                    var = (f"{varname}_{'m' if order < 0 else 'p'}"
+                           f"{np.abs(order)}")
+                else:
+                    var = varname
+                new_var = extended_var[order - pad_left:
+                                       tf.size(extended_var) +
+                                       order - pad_right]
+                to_feed[var] = new_var
+
+        F = lambdify((self._symbolic_args),
+                     expr=self.F_array,
+                     modules="tensorflow")(*[to_feed[key]
+                                             for key
+                                             in self._args])
+        F = tf.transpose(tf.reshape(tf.concat(F, axis=0), (self._nvar, N)))
+        F = tf.reshape(tf.stack(F), [-1])
+
+        for key in self._pars:
+            to_feed[key] = tf.reshape(mapargs[key], [N, 1])
+
+        J = lambdify((self._symbolic_args),
+                     expr=self.J_array.tolist(),
+                     modules="tensorflow")(*[to_feed[key]
+                                             for key
+                                             in self._args])
+        J = [j if j != 0 else tf.constant(0., dtype=tf.float64) for j in J]
+        J = tf.stack(
+            [tf.cond(tf.equal(tf.rank(j), 0),
+                     lambda: repeat_axis(j, N),
+                     lambda: j) for j in J])
+
+        J = tf.gather(J, self._sparse_indices[0])
+        J = tf.transpose(J)
+        J = tf.squeeze(J)
+
+        i = tf.reshape(tf.range(N), (N, 1))
+        idx = tf.transpose(tf.reshape(tf.range(N * self._nvar),
+                                      (N, self._nvar)))
+
+        edge_extended_idx = tf.concat([repeat_axis(idx[:, :1], middle_point),
+                                       idx,
+                                       repeat_axis(idx[:, -1:], middle_point)],
+                                      axis=1)
+        edge_extended_idx = tf.reshape(tf.transpose(edge_extended_idx),
+                                       [-1])
+
+        per_extended_idx = tf.concat([idx[:, -middle_point:],
+                                      idx,
+                                      idx[:, :middle_point]],
+                                     axis=1)
+        per_extended_idx = tf.reshape(tf.transpose(per_extended_idx),
+                                      [-1])
+        extended_idx = tf.cond(periodic,
+                               lambda: per_extended_idx,
+                               lambda: edge_extended_idx)
+
+        rows = tf.tile(tf.range(self._nvar),
+                       [self._window_range * self._nvar]) + i * self._nvar
+        cols = repeat(tf.range(self._window_range * self._nvar),
+                      self._nvar) + i * self._nvar
+
+        rows = tf.transpose(tf.gather(tf.transpose(rows),
+                                      self._sparse_indices[0]))
+        rows = tf.reshape(rows, tf.shape(J))
+        rows = tf.reshape(rows, [-1])
+
+        cols = tf.gather(extended_idx, cols)
+        cols = tf.transpose(tf.gather(tf.transpose(cols),
+                                      self._sparse_indices[0]))
+        cols = tf.reshape(cols, tf.shape(J))
+        cols = tf.reshape(cols, [-1])
+
+        permutations = tf.nn.top_k(-cols, tf.size(cols), sorted=True)
+
+        J = tf.gather(tf.reshape(J, [-1]), permutations.indices)
+
+        rows = tf.gather(rows, permutations.indices)
+        cols = -permutations.values
+
+        uq, uq_idx, cnt = tf.unique_with_counts(cols)
+        count = tf.scatter_nd(tf.reshape(
+            uq + 1, [-1, 1]), cnt, [N * self._nvar + 1])
+
+        indptr = tf.cumsum(count)
+        shape = tf.stack([N * self._nvar, N * self._nvar])
+
+        return F, (J, rows, indptr, shape), tf_args, mapargs
+
+    def _compile(self, F_array, J_array,
+                 F_function, J_function):
         logging.debug('compile F')
         self.F = F_Routine(F_array,
                            (self._dep_vars +
                             self._help_funcs),
-                           self._pars, F_theano_function)
+                           self._pars, F_function)
         logging.debug('compile J')
         self.J = J_Routine(J_array,
                            (self._dep_vars +
                             self._help_funcs),
-                           self._pars, J_theano_function)
+                           self._pars, J_function)
 
     @property
     def fields_template(self):
@@ -372,11 +577,11 @@ class Model:
 
     @property
     def _args(self):
-        return map(str, self._symbolic_args)
+        return list(map(str, self._symbolic_args))
 
     @property
     def _symbolic_args(self):
-        return ([Symbol('x'),
+        return ([*list(self._symb_indep_vars),
                  *list(self._discrete_variables),
                  *list(self._symb_pars),
                  Symbol('dx')])
@@ -441,21 +646,6 @@ class Model:
                     unknowns[i, j] = Symbol(f'{var}_p{np.abs(order)}')
         return unknowns
 
-    def _coerce_inputs(self, diff_eqs, dep_vars, pars, helper_functions):
-        pars = tuple(pars) if pars is not None else tuple()
-        helper_functions = (tuple(helper_functions)
-                            if helper_functions is not None else tuple())
-
-        if isinstance(diff_eqs, (str, )):
-            diff_eqs = [diff_eqs]
-        if isinstance(dep_vars, (str, )):
-            dep_vars = [dep_vars]
-
-        diff_eqs = tuple(diff_eqs)
-        dep_vars = tuple(dep_vars)
-        helper_functions = tuple(helper_functions)
-        return diff_eqs, dep_vars, pars, helper_functions
-
     def _finite_diff_scheme(self, U, order):
         logging.debug("finite diff approximation %i, %s" % (order, U))
         dx = Symbol('dx')
@@ -496,38 +686,56 @@ class Model:
                                   'to 5th order not implemented yet')
 
     def _sympify_model(self,
-                       diff_eqs: tuple,
-                       dep_vars: tuple,
-                       pars: tuple,
-                       help_functions: tuple,
-                       sympify_namespace: dict) -> tuple:
+                       diff_eqs,
+                       indep_vars,
+                       dep_vars,
+                       pars,
+                       help_functions,
+                       bdc_conditions,
+                       sympify_namespace):
         logging.debug('enter _sympify_model')
         logging.debug(pformat(diff_eqs))
         logging.debug(pformat(dep_vars))
         logging.debug(pformat(pars))
         logging.debug(pformat(help_functions))
 
-        symbolic_dep_vars = tuple([Function(dep_var)(Symbol('x'))
+        symbolic_indep_vars = tuple([(Symbol(indep_var))
+                                     for indep_var in indep_vars])
+
+        symbolic_dep_vars = tuple([Function(dep_var)(*symbolic_indep_vars)
                                    for dep_var in dep_vars])
-        symbolic_help_functions = tuple([Function(help_function)(Symbol('x'))
+
+        symbolic_help_functions = tuple([Function(help_function)
+                                         (*symbolic_indep_vars)
                                          for help_function in help_functions])
         symbolic_pars = symbols(pars)
-        try:
-            symbolic_diff_eqs = tuple([sympify(func, locals=sympify_namespace)
-                                       .subs(zip(map(Symbol, dep_vars),
-                                                 (symbolic_dep_vars +
-                                                  symbolic_help_functions)))
-                                       .doit()
-                                       for func
-                                       in diff_eqs])
-        except (TypeError, SympifyError):
-            raise ValueError("badly formated differential equations")
-        return (symbolic_diff_eqs, symbolic_dep_vars,
-                symbolic_pars, symbolic_help_functions)
+
+        def sympify_equations(equations):
+            try:
+                return tuple(
+                    [sympify(func,
+                             locals=sympify_namespace)
+                     .subs(zip(map(Symbol,
+                                   dep_vars),
+                               (symbolic_dep_vars +
+                                symbolic_help_functions)))
+                     .doit()
+                     for func
+                     in equations])
+            except (TypeError, SympifyError):
+                raise ValueError("badly formated differential equations")
+
+        symbolic_diff_eqs, symbolic_bdcs = map(sympify_equations,
+                                               (diff_eqs,
+                                                bdc_conditions))
+
+        return (symbolic_diff_eqs, symbolic_indep_vars, symbolic_dep_vars,
+                symbolic_pars, symbolic_help_functions, symbolic_bdcs)
 
     def _approximate_derivative(self,
                                 symbolic_diff_eqs: tuple,
-                                symbolic_vars: tuple,
+                                symbolic_indep_vars: tuple,
+                                symbolic_dep_vars: tuple,
                                 symbolic_fields: tuple) -> tuple:
 
         logging.debug('enter _approximate_derivative')
@@ -543,7 +751,8 @@ class Model:
                     self._finite_diff_scheme(var,
                                              order))
             afunc = afunc.subs([(var, Symbol(str(var.func)))
-                                for var in symbolic_vars + symbolic_fields])
+                                for var in symbolic_dep_vars +
+                                symbolic_fields])
             approximated_diff_eqs.append(afunc.expand())
         return tuple(approximated_diff_eqs)
 

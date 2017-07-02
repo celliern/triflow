@@ -109,6 +109,13 @@ def test_model_api():
         Model('dxxxxxU', 'U')
     with pytest.raises(ValueError):
         Model('dxxx(dx)', 'U')
+    x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
+    U = np.cos(x * 2 * np.pi / 10)
+    s = np.zeros_like(x)
+    fields = model.fields_template(x=x, U=U, s=s)
+    parameters = dict(periodic=True, k=1)
+    model.F(fields, parameters)
+    model.J(fields, parameters)
 
 
 def test_save_load(heat_model):
