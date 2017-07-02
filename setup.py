@@ -16,6 +16,8 @@ setup(
 
     license='BEERWARE',
 
+    long_description=open('README.md').read(),
+
     # ext_modules=ext_modules,
     # Active la prise en compte du fichier MANIFEST.in
     include_package_data=True,
