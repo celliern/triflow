@@ -30,15 +30,32 @@ def test_display_fields():
     from triflow import Model, Simulation, displays
     import numpy as np
 
-    model = Model("dxxU", "U")
+    model = Model("dxxU", "U", help_functions="s")
     parameters = dict(periodic=False)
 
     x = np.linspace(0, 10, 50, endpoint=True)
     U = x ** 2
 
-    fields = model.fields_template(x=x, U=U)
-    simul = Simulation(model, 0, fields, parameters, dt=1, tmax=50, tol=1E-1,)
+    fields = model.fields_template(x=x, U=U, s=x * 0 + 1)
+    simul = Simulation(model, 0, fields, parameters,
+                       dt=1, tmax=50, tol=1E-1,)
 
     with pytest.raises(AttributeError):
-        display = displays.bokeh_fields_update(simul, "U", notebook=True)
+        display = displays.bokeh_fields_update(simul,
+                                               ["U", "s"],
+                                               notebook=True)
+        display(0, fields)
+
+    with pytest.raises(AttributeError):
+        display = displays.bokeh_fields_update(simul,
+                                               ["U", "s"],
+                                               notebook=True,
+                                               stack=True)
+        display(0, fields)
+
+    with pytest.raises(AttributeError):
+        display = displays.bokeh_fields_update(
+            simul, [["dtU",
+                     lambda t, fields, key: fields.U**2]],
+            notebook=True)
         display(0, fields)

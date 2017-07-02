@@ -26,6 +26,8 @@ logging = logging.getLogger(__name__)
 
 sys.setrecursionlimit(40000)
 
+config = tf.ConfigProto(device_count={'GPU': 0})
+
 
 def _generate_sympify_namespace(independent_variables,
                                 dependent_variables,
@@ -73,9 +75,9 @@ def _generate_sympify_namespace(independent_variables,
 
 
 def _reduce_model(eq_diffs, dep_vars, pars,
-                  help_functions):
+                  help_functions, bdc_conditions, module):
     model = Model(eq_diffs, dep_vars, pars,
-                  help_functions)
+                  help_functions, bdc_conditions, module)
 
     return model
 
@@ -98,6 +100,9 @@ class Model:
           list of the parameters. Can be feed with a scalar of an array with the same size
       help_functions : None, optional
           All fields which have not to be solved with the time derivative but will be derived in space.
+      module : "theano", optional
+          Choose if the main routines will be dealt with theano (by default) or tensorflow.
+          Theano has better performance, tensorflow is faster to compile. Note bene: tensorflow processing hasn't been fully tested yet.
 
       Attributes
       ----------
@@ -139,15 +144,13 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
-                 module="tensorflow"):
+                 module="theano"):
         logging.debug('enter __init__ Model')
-
-        # coerce the inputs the way to have coherent types
-        # TODO: be more pythonic, it should not be necessary with coherent
-        # duck typing..
+        self._module = module
         self._symb_t = Symbol("t")
         indep_vars = ["x"]
 
+        # coerce the inputs the way to have coherent types
         def coerce(arg):
             if arg is None:
                 return tuple()
@@ -276,7 +279,7 @@ class Model:
             self._compile(self.F_array, self._J_sparse_array,
                           F_theano_function, J_theano_function)
         elif module == "tensorflow":
-            sess = self._sess = tf.Session()
+            sess = self._sess = tf.Session(config=config)
             F, Jargs, args, self._map_extended = self._tensorflow_convert(
                 self.F_array,
                 self._J_sparse_array,
@@ -758,4 +761,5 @@ class Model:
 
     def __reduce__(self):
         return (_reduce_model, (self._diff_eqs, self._dep_vars,
-                                self._pars, self._help_funcs))
+                                self._pars, self._help_funcs,
+                                self._bdcs, self._module))

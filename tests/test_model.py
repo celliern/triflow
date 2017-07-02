@@ -10,10 +10,20 @@ from triflow import Model
 
 
 @pytest.fixture
-def heat_model():
+def heat_model_th():
     model = Model(differential_equations="k * dxxT",
                   dependent_variables="T",
-                  parameters="k")
+                  parameters="k",
+                  module="theano")
+    return model
+
+
+@pytest.fixture
+def heat_model_tf():
+    model = Model(differential_equations="k * dxxT",
+                  dependent_variables="T",
+                  parameters="k",
+                  module="tensorflow")
     return model
 
 
@@ -26,10 +36,9 @@ def heat_model():
 @pytest.mark.parametrize("var", [func("U") for func in (str, tuple, list)])
 @pytest.mark.parametrize("par", [func("k") for func in (str, tuple, list)])
 @pytest.mark.parametrize("k", [1, np.ones((100,))])
-def test_model_monovariate(func, var, par, k):
-    model = Model(func,
-                  var,
-                  par)
+@pytest.mark.parametrize("module", ["theano", "tensorflow"])
+def test_model_monovariate(func, var, par, k, module):
+    model = Model(func, var, par, module=module)
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
     U = np.cos(x * 2 * np.pi / 10)
     fields = model.fields_template(x=x, U=U)
@@ -55,10 +64,9 @@ def test_model_monovariate(func, var, par, k):
 @pytest.mark.parametrize("var", [func(["u", "v"])
                                  for func in (tuple, list)])
 @pytest.mark.parametrize("par", [func(["k1", "k2"]) for func in (tuple, list)])
-def test_model_bivariate(func, var, par):
-    model = Model(func,
-                  var,
-                  par)
+@pytest.mark.parametrize("module", ["theano", "tensorflow"])
+def test_model_bivariate(func, var, par, module):
+    model = Model(func, var, par, module=module)
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
     u = np.cos(x * 2 * np.pi / 10)
     v = np.sin(x * 2 * np.pi / 10)
@@ -118,36 +126,67 @@ def test_model_api():
     model.J(fields, parameters)
 
 
-def test_save_load(heat_model):
+def test_save_load_th(heat_model_th):
 
     with tempdir() as d:
-        heat_model.save(d / 'heat_model')
-        loaded_heat_model = Model.load(d / 'heat_model')
+        heat_model_th.save(d / 'heat_model_th')
+        loaded_heat_model_th = Model.load(d / 'heat_model_th')
 
         x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
         T = np.cos(x * 2 * np.pi / 10)
-        initial_fields = heat_model.fields_template(x=x, T=T)
+        initial_fields = heat_model_th.fields_template(x=x, T=T)
         parameters = dict(periodic=True, k=1)
 
-        assert (loaded_heat_model._symb_diff_eqs ==
-                heat_model._symb_diff_eqs)
-        assert (loaded_heat_model._symb_dep_vars ==
-                heat_model._symb_dep_vars)
-        assert (loaded_heat_model._symb_pars ==
-                heat_model._symb_pars)
-        assert (loaded_heat_model._symb_help_funcs ==
-                heat_model._symb_help_funcs)
-        assert (loaded_heat_model.F_array ==
-                heat_model.F_array)
-        assert (loaded_heat_model.J_array ==
-                heat_model.J_array).all()
-        assert (loaded_heat_model._J_sparse_array ==
-                heat_model._J_sparse_array).all()
-        assert (list(map(str, loaded_heat_model._th_args)) ==
-                list(map(str, heat_model._th_args)))
-        assert (list(map(str, loaded_heat_model._th_vectors)) ==
-                list(map(str, heat_model._th_vectors)))
-        assert (loaded_heat_model.F(initial_fields, parameters) ==
-                heat_model.F(initial_fields, parameters)).all()
-        assert (loaded_heat_model.J(initial_fields, parameters).todense() ==
-                heat_model.J(initial_fields, parameters).todense()).all()
+        assert (loaded_heat_model_th._symb_diff_eqs ==
+                heat_model_th._symb_diff_eqs)
+        assert (loaded_heat_model_th._symb_dep_vars ==
+                heat_model_th._symb_dep_vars)
+        assert (loaded_heat_model_th._symb_pars ==
+                heat_model_th._symb_pars)
+        assert (loaded_heat_model_th._symb_help_funcs ==
+                heat_model_th._symb_help_funcs)
+        assert (loaded_heat_model_th.F_array ==
+                heat_model_th.F_array)
+        assert (loaded_heat_model_th.J_array ==
+                heat_model_th.J_array).all()
+        assert (loaded_heat_model_th._J_sparse_array ==
+                heat_model_th._J_sparse_array).all()
+        assert (list(map(str, loaded_heat_model_th._th_args)) ==
+                list(map(str, heat_model_th._th_args)))
+        assert (list(map(str, loaded_heat_model_th._th_vectors)) ==
+                list(map(str, heat_model_th._th_vectors)))
+        assert (loaded_heat_model_th.F(initial_fields, parameters) ==
+                heat_model_th.F(initial_fields, parameters)).all()
+        assert (loaded_heat_model_th.J(initial_fields, parameters).todense() ==
+                heat_model_th.J(initial_fields, parameters).todense()).all()
+
+
+def test_save_load_tf(heat_model_tf):
+
+    with tempdir() as d:
+        heat_model_tf.save(d / 'heat_model_tf')
+        loaded_heat_model_tf = Model.load(d / 'heat_model_tf')
+
+        x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+        T = np.cos(x * 2 * np.pi / 10)
+        initial_fields = heat_model_tf.fields_template(x=x, T=T)
+        parameters = dict(periodic=True, k=1)
+
+        assert (loaded_heat_model_tf._symb_diff_eqs ==
+                heat_model_tf._symb_diff_eqs)
+        assert (loaded_heat_model_tf._symb_dep_vars ==
+                heat_model_tf._symb_dep_vars)
+        assert (loaded_heat_model_tf._symb_pars ==
+                heat_model_tf._symb_pars)
+        assert (loaded_heat_model_tf._symb_help_funcs ==
+                heat_model_tf._symb_help_funcs)
+        assert (loaded_heat_model_tf.F_array ==
+                heat_model_tf.F_array)
+        assert (loaded_heat_model_tf.J_array ==
+                heat_model_tf.J_array).all()
+        assert (loaded_heat_model_tf._J_sparse_array ==
+                heat_model_tf._J_sparse_array).all()
+        assert (loaded_heat_model_tf.F(initial_fields, parameters) ==
+                heat_model_tf.F(initial_fields, parameters)).all()
+        assert (loaded_heat_model_tf.J(initial_fields, parameters).todense() ==
+                heat_model_tf.J(initial_fields, parameters).todense()).all()
