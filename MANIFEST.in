@@ -1,4 +1,6 @@
-graft examples
-graft docs
-graft source_doc
-graft tests
+include *.md
+include *.rst
+recursive-include examples
+recursive-include docs
+recursive-include source_docs
+recursive-include tests
