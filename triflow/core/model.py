@@ -9,15 +9,11 @@ from pickle import dump, load
 from pprint import pformat
 
 import numpy as np
-import theano as th
-import theano.sparse as ths
+
 from sympy import (Derivative, Function, Symbol,
                    SympifyError, symbols, sympify, lambdify)
 from sympy.printing.theanocode import theano_code
 from scipy.sparse import csc_matrix
-from theano import tensor as T
-from theano.ifelse import ifelse
-import tensorflow as tf
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 
@@ -25,8 +21,6 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 sys.setrecursionlimit(40000)
-
-config = tf.ConfigProto(device_count={'GPU': 0})
 
 
 def _generate_sympify_namespace(independent_variables,
@@ -259,6 +253,7 @@ class Model:
         # We convert the sympy description of the system into a theano
         # graph compilation
         if module == "theano":
+            from theano import function
             F, J, args, self._map_extended = self._theano_convert(
                 self.F_array,
                 self._J_sparse_array,
@@ -269,17 +264,18 @@ class Model:
             # routines
             logging.debug(args)
             logging.debug(list(map(type, args)))
-            F_theano_function = th.function(inputs=args,
-                                            outputs=F,
-                                            on_unused_input='ignore')
-            J_theano_function = th.function(inputs=args,
-                                            outputs=J,
-                                            on_unused_input='ignore')
+            F_theano_function = function(inputs=args,
+                                         outputs=F,
+                                         on_unused_input='ignore')
+            J_theano_function = function(inputs=args,
+                                         outputs=J,
+                                         on_unused_input='ignore')
             self._theano_routines = [F_theano_function, J_theano_function]
             self._compile(self.F_array, self._J_sparse_array,
                           F_theano_function, J_theano_function)
         elif module == "tensorflow":
-            sess = self._sess = tf.Session(config=config)
+            import tensorflow as tf
+            sess = self._sess = tf.Session()
             F, Jargs, args, self._map_extended = self._tensorflow_convert(
                 self.F_array,
                 self._J_sparse_array,
@@ -298,6 +294,10 @@ class Model:
                           F_tf_function, J_tf_function)
 
     def _theano_convert(self, F_array, J_array, bdc):
+        from theano import tensor as T
+        from theano.ifelse import ifelse
+        import theano as th
+        import theano.sparse as ths
         th_args = list(
             map(
                 partial(theano_code,
@@ -413,6 +413,7 @@ class Model:
         return F, sparse_J, th_args, map_extended
 
     def _tensorflow_convert(self, F_array, J_array, bdc):
+        import tensorflow as tf
 
         def repeat(tensor, n):
             tensor = tf.reshape(tensor, [-1, 1])
