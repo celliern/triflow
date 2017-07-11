@@ -42,7 +42,7 @@ setup(
     extras_require={
         'bokeh': ["bokeh"],
     },
-    download_url='https://github.com/celliern/triflow/archive/v0.4.7.tar.gz',
+    download_url='https://github.com/celliern/triflow/archive/v0.4.8.tar.gz',
     # Il est d'usage de mettre quelques metadata à propos de sa lib
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers.
 

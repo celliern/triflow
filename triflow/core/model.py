@@ -446,6 +446,7 @@ class Model:
                    for key
                    in [*self._indep_vars,
                        *self._dep_vars,
+                       *self._help_funcs,
                        *self._pars]] + [periodic]
 
         map_extended = {}
@@ -459,11 +460,11 @@ class Model:
                                           mapargs[varname][:pad_right]],
                                          axis=0)
 
-            edge_extended_var = tf.concat([tf.tile(mapargs[varname][:1],
-                                                   [middle_point]),
+            edge_extended_var = tf.concat([repeat(mapargs[varname][:1],
+                                                  middle_point),
                                            mapargs[varname],
-                                           tf.tile(mapargs[varname][-1:],
-                                                   [middle_point])],
+                                           repeat(mapargs[varname][-1:],
+                                                  middle_point)],
                                           axis=0)
 
             extended_var = tf.cond(periodic,
@@ -487,21 +488,21 @@ class Model:
                      modules="tensorflow")(*[to_feed[key]
                                              for key
                                              in self._args])
-        F = tf.transpose(tf.reshape(tf.concat(F, axis=0), (self._nvar, N)))
-        F = tf.reshape(tf.stack(F), [-1])
-
-        for key in self._pars:
-            to_feed[key] = tf.reshape(mapargs[key], [N, 1])
+        F = tf.transpose(tf.reshape(tf.concat(F, axis=0, name="concat_F"),
+                                    (self._nvar, N)))
+        F = tf.reshape(tf.stack(F), [-1], "flatten_F")
 
         J = lambdify((self._symbolic_args),
                      expr=self.J_array.tolist(),
                      modules="tensorflow")(*[to_feed[key]
                                              for key
                                              in self._args])
+
         J = [j if j != 0 else tf.constant(0., dtype=tf.float64) for j in J]
+
         J = tf.stack(
             [tf.cond(tf.equal(tf.rank(j), 0),
-                     lambda: repeat_axis(j, N),
+                     lambda: repeat(j, N),
                      lambda: j) for j in J])
 
         J = tf.gather(J, self._sparse_indices[0])
@@ -512,9 +513,13 @@ class Model:
         idx = tf.transpose(tf.reshape(tf.range(N * self._nvar),
                                       (N, self._nvar)))
 
-        edge_extended_idx = tf.concat([repeat_axis(idx[:, :1], middle_point),
+        edge_extended_idx = tf.concat([tf.reshape(repeat_axis(idx[:, :1],
+                                                              middle_point),
+                                                  (self._nvar, -1)),
                                        idx,
-                                       repeat_axis(idx[:, -1:], middle_point)],
+                                       tf.reshape(repeat_axis(idx[:, -1:],
+                                                              middle_point),
+                                                  (self._nvar, -1))],
                                       axis=1)
         edge_extended_idx = tf.reshape(tf.transpose(edge_extended_idx),
                                        [-1])
@@ -533,7 +538,6 @@ class Model:
                        [self._window_range * self._nvar]) + i * self._nvar
         cols = repeat(tf.range(self._window_range * self._nvar),
                       self._nvar) + i * self._nvar
-
         rows = tf.transpose(tf.gather(tf.transpose(rows),
                                       self._sparse_indices[0]))
         rows = tf.reshape(rows, tf.shape(J))
