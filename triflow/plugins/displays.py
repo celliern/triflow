@@ -47,7 +47,7 @@ class bokeh_fields_update():
         setattr(self, '_push', push_notebook)
 
         keys = keys if keys else [
-            key for key in simul.fields._keys if key != 'x']
+            key for key in simul.fields.keys() if key != 'x']
 
         self._datafunc = {'x': lambda t, fields, key: fields.x}
         for key in keys:
@@ -61,19 +61,19 @@ class bokeh_fields_update():
                                                   key)
                                              for (key, func)
                                              in self._datafunc.items()})
-        self._keys = list(self._datafunc.keys())
-        self._keys.remove("x")
+        self.keys = list(self._datafunc.keys())
+        self.keys.remove("x")
 
         if stack:
             fig = figure(**fig_kwargs)
-            for key in self._keys:
+            for key in self.keys:
                 fig.line('x', key, source=self._datasource,
                          **line_kwargs.get(key, {}))
             self._handler = show(fig, notebook_handle=True)
             return
         else:
             figs = {}
-            for key in self._keys:
+            for key in self.keys:
                 figs[key] = figure(**fig_kwargs.get(key, {}), title=key)
                 figs[key].line('x', key, source=self._datasource,
                                **line_kwargs.get(key, {}))
