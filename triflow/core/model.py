@@ -94,6 +94,8 @@ class Model:
           list of the parameters. Can be feed with a scalar of an array with the same size
       help_functions : None, optional
           All fields which have not to be solved with the time derivative but will be derived in space.
+      double: bool, optional
+          Choose if the dtypes are float64 (the default) or float32
       module : "theano", optional
           Choose if the main routines will be dealt with theano (by default) or tensorflow.
           Theano has better performance, tensorflow is faster to compile. Note bene: tensorflow processing hasn't been fully tested yet.
@@ -138,8 +140,10 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
+                 double=True,
                  module="theano"):
         logging.debug('enter __init__ Model')
+        self._double = double
         self._module = module
         self._symb_t = Symbol("t")
         indep_vars = ["x"]
@@ -298,6 +302,7 @@ class Model:
         from theano.ifelse import ifelse
         import theano as th
         import theano.sparse as ths
+        cast = "float64" if self._double else "float32"
         th_args = list(
             map(
                 partial(theano_code,
@@ -305,14 +310,19 @@ class Model:
                                         for arg
                                         in [*self._symb_indep_vars,
                                             *self._discrete_variables,
-                                            *self._symb_pars]}),
+                                            *self._symb_pars]},
+                        dtypes={arg: cast
+                                for arg
+                                in [*self._symb_indep_vars,
+                                    *self._discrete_variables,
+                                    *self._symb_pars]},),
                 self._symbolic_args))
         ins = th.gof.graph.inputs(th_args)
         mapargs = {inp.name: inp
                    for inp in ins if isinstance(inp, T.TensorVariable)}
         indep_vars_th = [mapargs[var] for var in self._indep_vars]
         x_th = indep_vars_th[0]  # TEMP FIX: only for 1D case
-        periodic = T.bscalar('periodic')
+        periodic = T.scalar('periodic', dtype=cast)
         middle_point = int((self._window_range - 1) / 2)
         N = x_th.size
         L = x_th[-1]
@@ -348,7 +358,12 @@ class Model:
                                              for arg
                                              in [*self._symb_indep_vars,
                                                  *self._discrete_variables,
-                                                 *self._symb_pars]}),
+                                                 *self._symb_pars]},
+                             dtypes={arg: cast
+                                     for arg
+                                     in [*self._symb_indep_vars,
+                                         *self._discrete_variables,
+                                         *self._symb_pars]},),
                      F_array.flatten().tolist()))
 
         J = list(map(partial(theano_code,
@@ -356,7 +371,12 @@ class Model:
                                              for arg
                                              in [*self._symb_indep_vars,
                                                  *self._discrete_variables,
-                                                 *self._symb_pars]}),
+                                                 *self._symb_pars]},
+                             dtypes={arg: cast
+                                     for arg
+                                     in [*self._symb_indep_vars,
+                                         *self._discrete_variables,
+                                         *self._symb_pars]},),
                      J_array.flatten().tolist()))
         J = [Ji if not isinstance(Ji, (float, int)) else th.shared(Ji)
              for Ji in J]
@@ -414,6 +434,7 @@ class Model:
 
     def _tensorflow_convert(self, F_array, J_array, bdc):
         import tensorflow as tf
+        cast = tf.float64 if self._double else tf.float32
 
         def repeat(tensor, n):
             tensor = tf.reshape(tensor, [-1, 1])
@@ -427,7 +448,7 @@ class Model:
             tensor = tf.reshape(tensor, [-1, 1])
             return tensor
 
-        mapargs = {arg: tf.placeholder(tf.float64,
+        mapargs = {arg: tf.placeholder(cast,
                                        name=arg)
                    for arg, sarg in zip(self._args, self._symbolic_args)}
 
@@ -498,7 +519,7 @@ class Model:
                                              for key
                                              in self._args])
 
-        J = [j if j != 0 else tf.constant(0., dtype=tf.float64) for j in J]
+        J = [j if j != 0 else tf.constant(0., dtype=cast) for j in J]
 
         J = tf.stack(
             [tf.cond(tf.equal(tf.rank(j), 0),
