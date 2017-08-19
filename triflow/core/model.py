@@ -270,10 +270,12 @@ class Model:
             logging.debug(list(map(type, args)))
             F_theano_function = function(inputs=args,
                                          outputs=F,
-                                         on_unused_input='ignore')
+                                         on_unused_input='ignore',
+                                         allow_downcast=True)
             J_theano_function = function(inputs=args,
                                          outputs=J,
-                                         on_unused_input='ignore')
+                                         on_unused_input='ignore',
+                                         allow_downcast=True)
             self._theano_routines = [F_theano_function, J_theano_function]
             self._compile(self.F_array, self._J_sparse_array,
                           F_theano_function, J_theano_function)

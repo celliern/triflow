@@ -47,8 +47,8 @@ class BaseFields:
 
     def __init__(self, **inputs):
         self._keys = (['x'] +
-                     list(self.dependent_variables) +
-                     list(self.helper_functions))
+                      list(self.dependent_variables) +
+                      list(self.helper_functions))
         [self.__setattr__(key, inputs[key]) for key in set(self._keys)]
 
         self.size = len(self.x)
