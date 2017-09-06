@@ -9,11 +9,11 @@ from pickle import dump, load
 from pprint import pformat
 
 import numpy as np
-
-from sympy import (Derivative, Function, Symbol,
-                   SympifyError, symbols, sympify, lambdify)
-from sympy.printing.theanocode import theano_code
 from scipy.sparse import csc_matrix
+from sympy import (Derivative, Function, Symbol, SympifyError, lambdify,
+                   symbols, sympify)
+from sympy.printing.theanocode import theano_code
+from theano import function
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 
@@ -96,9 +96,6 @@ class Model:
           All fields which have not to be solved with the time derivative but will be derived in space.
       double: bool, optional
           Choose if the dtypes are float64 (the default) or float32
-      module : "theano", optional
-          Choose if the main routines will be dealt with theano (by default) or tensorflow.
-          Theano has better performance, tensorflow is faster to compile. Note bene: tensorflow processing hasn't been fully tested yet.
 
       Attributes
       ----------
@@ -140,11 +137,9 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
-                 double=True,
-                 module="theano"):
+                 double=True):
         logging.debug('enter __init__ Model')
         self._double = double
-        self._module = module
         self._symb_t = Symbol("t")
         indep_vars = ["x"]
 
@@ -256,48 +251,27 @@ class Model:
         # return
         # We convert the sympy description of the system into a theano
         # graph compilation
-        if module == "theano":
-            from theano import function
-            F, J, args, self._map_extended = self._theano_convert(
-                self.F_array,
-                self._J_sparse_array,
-                self._dbdcs)
-            self._th_args = args
-            self._th_vectors = [F, J]
-            # We compile the previous graphs and obtain optimized C based
-            # routines
-            logging.debug(args)
-            logging.debug(list(map(type, args)))
-            F_theano_function = function(inputs=args,
-                                         outputs=F,
-                                         on_unused_input='ignore',
-                                         allow_input_downcast=True)
-            J_theano_function = function(inputs=args,
-                                         outputs=J,
-                                         on_unused_input='ignore',
-                                         allow_input_downcast=True)
-            self._theano_routines = [F_theano_function, J_theano_function]
-            self._compile(self.F_array, self._J_sparse_array,
-                          F_theano_function, J_theano_function)
-        elif module == "tensorflow":
-            import tensorflow as tf
-            sess = self._sess = tf.Session()
-            F, Jargs, args, self._map_extended = self._tensorflow_convert(
-                self.F_array,
-                self._J_sparse_array,
-                self._dbdcs)
-            self._tf_args = args
-            self._tf_vectors = [F, Jargs]
-            F_tf_function = sess.make_callable(F, self._tf_args)
-            Jargs_tf_function = sess.make_callable(Jargs, self._tf_args)
-
-            def J_tf_function(*args):
-                Jval, rows, indptr, shape = Jargs_tf_function(*args)
-                Jsparse = csc_matrix((Jval, rows, indptr), shape)
-                return Jsparse
-
-            self._compile(self.F_array, self._J_sparse_array,
-                          F_tf_function, J_tf_function)
+        F, J, args, self._map_extended = self._theano_convert(
+            self.F_array,
+            self._J_sparse_array,
+            self._dbdcs)
+        self._th_args = args
+        self._th_vectors = [F, J]
+        # We compile the previous graphs and obtain optimized C based
+        # routines
+        logging.debug(args)
+        logging.debug(list(map(type, args)))
+        F_theano_function = function(inputs=args,
+                                     outputs=F,
+                                     on_unused_input='ignore',
+                                     allow_input_downcast=True)
+        J_theano_function = function(inputs=args,
+                                     outputs=J,
+                                     on_unused_input='ignore',
+                                     allow_input_downcast=True)
+        self._theano_routines = [F_theano_function, J_theano_function]
+        self._compile(self.F_array, self._J_sparse_array,
+                      F_theano_function, J_theano_function)
 
     def _theano_convert(self, F_array, J_array, bdc):
         from theano import tensor as T
@@ -324,7 +298,7 @@ class Model:
                    for inp in ins if isinstance(inp, T.TensorVariable)}
         indep_vars_th = [mapargs[var] for var in self._indep_vars]
         x_th = indep_vars_th[0]  # TEMP FIX: only for 1D case
-        periodic = T.scalar('periodic', dtype=cast)
+        periodic = T.scalar('periodic')
         middle_point = int((self._window_range - 1) / 2)
         N = x_th.size
         L = x_th[-1]
@@ -433,160 +407,6 @@ class Model:
                    periodic]
 
         return F, sparse_J, th_args, map_extended
-
-    def _tensorflow_convert(self, F_array, J_array, bdc):
-        import tensorflow as tf
-        cast = tf.float64 if self._double else tf.float32
-
-        def repeat(tensor, n):
-            tensor = tf.reshape(tensor, [-1, 1])
-            tensor = tf.tile(tensor, [1, n])
-            tensor = tf.reshape(tensor, [-1])
-            return tensor
-
-        def repeat_axis(tensor, n):
-            tensor = tf.reshape(tensor, [-1, 1])
-            tensor = tf.tile(tensor, [1, n])
-            tensor = tf.reshape(tensor, [-1, 1])
-            return tensor
-
-        mapargs = {arg: tf.placeholder(cast,
-                                       name=arg)
-                   for arg, sarg in zip(self._args, self._symbolic_args)}
-
-        to_feed = mapargs.copy()
-
-        x = mapargs['x']
-        N = tf.size(x)
-        L = x[-1] - x[0]
-        dx = L / (tf.cast(N, x.dtype) - 1)
-        to_feed['dx'] = dx
-
-        periodic = tf.placeholder_with_default(tf.constant(True), shape=())
-        middle_point = int((self._window_range - 1) / 2)
-
-        tf_args = [mapargs[key]
-                   for key
-                   in [*self._indep_vars,
-                       *self._dep_vars,
-                       *self._help_funcs,
-                       *self._pars]] + [periodic]
-
-        map_extended = {}
-
-        for (varname, discretisation_tree) in \
-                self._symb_vars_with_spatial_diff_order.items():
-            pad_left, pad_right = self._bounds
-
-            per_extended_var = tf.concat([mapargs[varname][pad_left:],
-                                          mapargs[varname],
-                                          mapargs[varname][:pad_right]],
-                                         axis=0)
-
-            edge_extended_var = tf.concat([repeat(mapargs[varname][:1],
-                                                  middle_point),
-                                           mapargs[varname],
-                                           repeat(mapargs[varname][-1:],
-                                                  middle_point)],
-                                          axis=0)
-
-            extended_var = tf.cond(periodic,
-                                   lambda: per_extended_var,
-                                   lambda: edge_extended_var)
-
-            map_extended[varname] = extended_var
-            for order in range(pad_left, pad_right + 1):
-                if order != 0:
-                    var = (f"{varname}_{'m' if order < 0 else 'p'}"
-                           f"{np.abs(order)}")
-                else:
-                    var = varname
-                new_var = extended_var[order - pad_left:
-                                       tf.size(extended_var) +
-                                       order - pad_right]
-                to_feed[var] = new_var
-
-        F = lambdify((self._symbolic_args),
-                     expr=self.F_array,
-                     modules="tensorflow")(*[to_feed[key]
-                                             for key
-                                             in self._args])
-        F = tf.transpose(tf.reshape(tf.concat(F, axis=0, name="concat_F"),
-                                    (self._nvar, N)))
-        F = tf.reshape(tf.stack(F), [-1], "flatten_F")
-
-        J = lambdify((self._symbolic_args),
-                     expr=self.J_array.tolist(),
-                     modules="tensorflow")(*[to_feed[key]
-                                             for key
-                                             in self._args])
-
-        J = [j if j != 0 else tf.constant(0., dtype=cast) for j in J]
-
-        J = tf.stack(
-            [tf.cond(tf.equal(tf.rank(j), 0),
-                     lambda: repeat(j, N),
-                     lambda: j) for j in J])
-
-        J = tf.gather(J, self._sparse_indices[0])
-        J = tf.transpose(J)
-        J = tf.squeeze(J)
-
-        i = tf.reshape(tf.range(N), (N, 1))
-        idx = tf.transpose(tf.reshape(tf.range(N * self._nvar),
-                                      (N, self._nvar)))
-
-        edge_extended_idx = tf.concat([tf.reshape(repeat_axis(idx[:, :1],
-                                                              middle_point),
-                                                  (self._nvar, -1)),
-                                       idx,
-                                       tf.reshape(repeat_axis(idx[:, -1:],
-                                                              middle_point),
-                                                  (self._nvar, -1))],
-                                      axis=1)
-        edge_extended_idx = tf.reshape(tf.transpose(edge_extended_idx),
-                                       [-1])
-
-        per_extended_idx = tf.concat([idx[:, -middle_point:],
-                                      idx,
-                                      idx[:, :middle_point]],
-                                     axis=1)
-        per_extended_idx = tf.reshape(tf.transpose(per_extended_idx),
-                                      [-1])
-        extended_idx = tf.cond(periodic,
-                               lambda: per_extended_idx,
-                               lambda: edge_extended_idx)
-
-        rows = tf.tile(tf.range(self._nvar),
-                       [self._window_range * self._nvar]) + i * self._nvar
-        cols = repeat(tf.range(self._window_range * self._nvar),
-                      self._nvar) + i * self._nvar
-        rows = tf.transpose(tf.gather(tf.transpose(rows),
-                                      self._sparse_indices[0]))
-        rows = tf.reshape(rows, tf.shape(J))
-        rows = tf.reshape(rows, [-1])
-
-        cols = tf.gather(extended_idx, cols)
-        cols = tf.transpose(tf.gather(tf.transpose(cols),
-                                      self._sparse_indices[0]))
-        cols = tf.reshape(cols, tf.shape(J))
-        cols = tf.reshape(cols, [-1])
-
-        permutations = tf.nn.top_k(-cols, tf.size(cols), sorted=True)
-
-        J = tf.gather(tf.reshape(J, [-1]), permutations.indices)
-
-        rows = tf.gather(rows, permutations.indices)
-        cols = -permutations.values
-
-        uq, uq_idx, cnt = tf.unique_with_counts(cols)
-        count = tf.scatter_nd(tf.reshape(
-            uq + 1, [-1, 1]), cnt, [N * self._nvar + 1])
-
-        indptr = tf.cumsum(count)
-        shape = tf.stack([N * self._nvar, N * self._nvar])
-
-        return F, (J, rows, indptr, shape), tf_args, mapargs
 
     def _compile(self, F_array, J_array,
                  F_function, J_function):

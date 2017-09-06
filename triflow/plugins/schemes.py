@@ -37,7 +37,9 @@ class ROW_general:
         return Id
 
     def __init__(self, model, alpha, gamma, b, b_pred=None,
-                 time_stepping=False, tol=None, max_iter=None, dt_min=None):
+                 time_stepping=False, tol=None,
+                 max_iter=None, dt_min=None,
+                 safety_factor=0.9):
         self._internal_dt = None
         self._model = model
         self._alpha = alpha
@@ -47,6 +49,7 @@ class ROW_general:
         self._s = len(b)
         self._time_control = time_stepping
         self._tol = tol
+        self._safety_factor = safety_factor
         self._max_iter = max_iter
         self._dt_min = dt_min
 
@@ -139,7 +142,8 @@ class ROW_general:
                                                            pars,
                                                            hook)
                 logging.debug(f"error: {self._err}")
-                dt = (0.9 * dt * np.sqrt(self._tol / self._err))
+                dt = (self._safety_factor *
+                      dt * np.sqrt(self._tol / self._err))
             fields = newfields.copy()
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
