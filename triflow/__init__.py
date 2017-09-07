@@ -3,7 +3,7 @@
 
 from triflow.core.model import Model  # noqa
 from triflow.core.simulation import Simulation  # noqa
-from triflow.plugins import schemes, signals, displays  # noqa
+from triflow.plugins import schemes, signals, displays, container  # noqa
 
 import logging
 from logging import NullHandler
