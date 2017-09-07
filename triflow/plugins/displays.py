@@ -35,6 +35,8 @@ class bokeh_fields_update():
     def __init__(self, simul, keys=None,
                  line_kwargs={},
                  fig_kwargs={},
+                 default_fig_kwargs={"width": 600, "height": 400},
+                 default_line_kwargs={},
                  notebook=True,
                  stack=False):
         from bokeh.io import push_notebook, output_notebook
@@ -65,8 +67,10 @@ class bokeh_fields_update():
         self.keys.remove("x")
 
         if stack:
-            fig = figure(**fig_kwargs)
+            fig = figure(**default_fig_kwargs)
             for key in self.keys:
+                line_config = default_line_kwargs.copy()
+                line_config.update(line_kwargs.get(key, {}))
                 fig.line('x', key, source=self._datasource,
                          **line_kwargs.get(key, {}))
             self._handler = show(fig, notebook_handle=True)
@@ -74,9 +78,13 @@ class bokeh_fields_update():
         else:
             figs = {}
             for key in self.keys:
-                figs[key] = figure(**fig_kwargs.get(key, {}), title=key)
+                fig_config = default_fig_kwargs.copy()
+                fig_config.update(fig_kwargs.get(key, {}))
+                line_config = default_line_kwargs.copy()
+                line_config.update(line_kwargs.get(key, {}))
+                figs[key] = figure(**fig_config, title=key)
                 figs[key].line('x', key, source=self._datasource,
-                               **line_kwargs.get(key, {}))
+                               **line_config)
 
             self._handler = show(Column(*[figs[key]
                                           for key
@@ -106,7 +114,10 @@ class bokeh_probes_update():
     """  # noqa
 
     def __init__(self, simul, probes,
-                 line_kwargs={}, fig_kwargs={},
+                 line_kwargs={},
+                 fig_kwargs={},
+                 default_fig_kwargs={"width": 600, "height": 400},
+                 default_line_kwargs={},
                  notebook=True):
 
         from bokeh.io import push_notebook, output_notebook
@@ -124,9 +135,13 @@ class bokeh_probes_update():
                                                     in probes.items()}))
         figs = {}
         for name, probe in probes.items():
-            figs[name] = figure(**fig_kwargs.get(name, {}), title=name)
+            fig_config = default_fig_kwargs.copy()
+            fig_config.update(fig_kwargs.get(name, {}))
+            line_config = default_line_kwargs.copy()
+            line_config.update(line_kwargs.get(name, {}))
+            figs[name] = figure(**fig_config, title=name)
             figs[name].line('t', name, source=self._datasource,
-                            **line_kwargs.get(name, {}))
+                            **line_config)
         self._handler = show(Column(*[figs[name] for name in probes]),
                              notebook_handle=True)
         self._probes = probes
