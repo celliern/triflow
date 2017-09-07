@@ -364,7 +364,8 @@ class scipy_ode:
           extra arguments provided to the scipy integration scheme.
       """  # noqa
 
-    def __init__(self, model, integrator='vode', **integrator_kwargs):
+    def __init__(self, model, jac=False,
+                 integrator='vode', **integrator_kwargs):
         def func_scipy_proxy(t, U, fields, pars, hook):
             fields.fill(U)
             fields, pars = hook(t, fields, pars)
@@ -376,7 +377,7 @@ class scipy_ode:
             return model.J(fields, pars, sparse=False)
 
         self._solv = ode(func_scipy_proxy,
-                         jac=jacob_scipy_proxy)
+                         jac=jacob_scipy_proxy if jac else None)
         self._solv.set_integrator(integrator, **integrator_kwargs)
 
     def __call__(self, t, fields, dt, pars,
