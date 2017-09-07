@@ -141,8 +141,6 @@ def test_save_load(heat_model):
                 heat_model._J_sparse_array).all()
         assert (list(map(str, loaded_heat_model._args)) ==
                 list(map(str, heat_model._args)))
-        assert (list(map(str, loaded_heat_model._vectors)) ==
-                list(map(str, heat_model._vectors)))
         assert (loaded_heat_model.F(initial_fields, parameters) ==
                 heat_model.F(initial_fields, parameters)).all()
         assert (loaded_heat_model.J(initial_fields, parameters).todense() ==

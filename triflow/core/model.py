@@ -70,9 +70,9 @@ def _generate_sympify_namespace(independent_variables,
 
 
 def _reduce_model(eq_diffs, dep_vars, pars,
-                  help_functions, bdc_conditions, module):
+                  help_functions, bdc_conditions):
     model = Model(eq_diffs, dep_vars, pars,
-                  help_functions, bdc_conditions, module)
+                  help_functions, bdc_conditions)
 
     return model
 
@@ -607,4 +607,4 @@ parameters:     {pars}"""
     def __reduce__(self):
         return (_reduce_model, (self._diff_eqs, self._dep_vars,
                                 self._pars, self._help_funcs,
-                                self._bdcs, self._module))
+                                self._bdcs))
