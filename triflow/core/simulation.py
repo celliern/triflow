@@ -211,7 +211,7 @@ Hook function
                            started_date=(self._started_timestamp
                                          .to_cookie_string()),
                            last_date=(self._last_timestamp
-                                         .to_cookie_string()))
+                                      .to_cookie_string()))
         return repr
 
     def add_display(self, display, *display_args, **display_kwargs):
