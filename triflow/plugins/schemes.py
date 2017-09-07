@@ -24,6 +24,10 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 
+def null_hook(t, fields, pars):
+    return fields, pars
+
+
 class ROW_general:
     """Rosenbrock Wanner class of temporal solvers
 
@@ -54,7 +58,7 @@ class ROW_general:
         self._dt_min = dt_min
 
     def __call__(self, t, fields, dt, pars,
-                 hook=lambda t, fields, pars: (fields, pars)):
+                 hook=null_hook):
         """Perform a step of the solver: took a time and a system state as a
           triflow Fields container and return the next time step with updated
           container.
@@ -95,7 +99,7 @@ class ROW_general:
         return t, fields
 
     def _fixed_step(self, t, fields, dt, pars,
-                    hook=lambda t, fields, pars: (fields, pars)):
+                    hook=null_hook):
         fields = fields.copy()
         fields, pars = hook(t, fields, pars)
         J = self._model.J(fields, pars)
@@ -127,7 +131,7 @@ class ROW_general:
                                 if U_pred is not None else None)
 
     def _variable_step(self, t, fields, dt, pars,
-                       hook=lambda t, fields, pars: (fields, pars)):
+                       hook=null_hook):
 
         self._next_time_step = t + dt
         self._internal_iter = 0
@@ -381,7 +385,7 @@ class scipy_ode:
         self._solv.set_integrator(integrator, **integrator_kwargs)
 
     def __call__(self, t, fields, dt, pars,
-                 hook=lambda t, fields, pars: (fields, pars)):
+                 hook=null_hook):
         """Perform a step of the solver: took a time and a system state as a
           triflow Fields container and return the next time step with updated
           container.
@@ -444,7 +448,7 @@ class Theta:
         self._solver = solver
 
     def __call__(self, t, fields, dt, pars,
-                 hook=lambda t, fields, pars: (fields, pars)):
+                 hook=null_hook):
         """Perform a step of the solver: took a time and a system state as a
           triflow Fields container and return the next time step with updated
           container.

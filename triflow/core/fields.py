@@ -2,6 +2,7 @@
 # coding=utf8
 
 import numpy as np
+import pandas as pd
 
 
 class BaseFields:
@@ -60,6 +61,10 @@ class BaseFields:
         for var in self._keys:
             self.__setattr__(var, self.structured[var].squeeze())
 
+    def __repr__(self):
+        repr = "<Fields: {av_data}>".format(av_data=self._keys)
+        return repr
+
     @property
     def flat(self):
         """numpy.ndarray.view: flat view of the main numpy array
@@ -116,5 +121,10 @@ class BaseFields:
     def keys(self):
         return self._keys
 
-    def __repr__(self):
-        return self.structured.__repr__()
+    def to_csv(self, path):
+        df = pd.DataFrame({key: self[key] for key in self.keys()})
+        df.to_csv(path)
+
+    def to_clipboard(self):
+        df = pd.DataFrame({key: self[key] for key in self.keys()})
+        df.to_clipboard()

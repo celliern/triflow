@@ -3,13 +3,19 @@
 
 import inspect
 import logging
+import pprint
 
+import pendulum
 from coolname import generate_slug
-
-from triflow.plugins import schemes
+from path import Path
+from triflow.plugins import container, schemes
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+
+def null_hook(t, fields, pars):
+    return fields, pars
 
 
 class Simulation(object):
@@ -81,7 +87,7 @@ class Simulation(object):
       """  # noqa
 
     def __init__(self, model, t, fields, physical_parameters, dt,
-                 id=None, hook=lambda t, fields, pars: (fields, pars),
+                 id=None, hook=null_hook,
                  scheme=schemes.RODASPR,
                  tmax=None, **kwargs):
 
@@ -106,9 +112,21 @@ class Simulation(object):
         self._scheme = scheme(model, **intersection_kwargs(kwargs,
                                                            scheme.__init__))
         self.status = 'created'
+
+        self._created_timestamp = pendulum.now()
+        self._started_timestamp = None
+        self._last_timestamp = None
+        self._actual_timestamp = pendulum.now()
         self._hook = hook
+        self._container = None
         self._displays = []
         self._iterator = self.compute()
+
+    # @staticmethod
+    # def restart_simulation(model, path, id):
+    #     old_container = container.TreantContainer(Path(path) / id, mode="r")
+    #     fields = old_container.data
+    #     return Simulation(model, )
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -121,6 +139,7 @@ class Simulation(object):
         fields = self.fields
         t = self.t
         pars = self.physical_parameters
+        self._started_timestamp = pendulum.now()
         for display in self._displays:
             display(t, fields)
         try:
@@ -130,15 +149,70 @@ class Simulation(object):
                                          pars, hook=self._hook)
                 self.fields = fields
                 self.t = t
+                self.i += 1
                 self.physical_parameters = pars
+                self._last_timestamp = self._actual_timestamp
+                self._actual_timestamp = pendulum.now()
                 if not self._takewhile():
                     return
                 for display in self._displays:
                     display(self.t, self.fields)
+                if self._container:
+                    self._container.append(t, fields)
                 yield self.t, self.fields
         except RuntimeError:
             self.status = 'failed'
+            if self._container:
+                self._container.treant.categories["status"] = "failed"
             raise
+
+    def __repr__(self):
+        repr = """
+{simul_name:=^30}
+
+created:      {created_date}
+started:      {started_date}
+last:         {last_date}
+
+time:         {t:g}
+iteration:    {iter:g}
+
+last step:    {step_time}
+total time:   {running_time}
+
+Physical parameters
+-------------------
+{parameters}
+
+Hook function
+-------------
+{hook_source}
+
+=========== Model ===========
+{model_repr}
+
+"""
+        repr = repr.format(simul_name=" %s " % self.id,
+                           parameters="\n\t".join(
+                               [("%s:" % key).ljust(12) +
+                                pprint.pformat(value)
+                                for key, value
+                                in self.physical_parameters.items()]),
+                           t=self.t,
+                           iter=self.i,
+                           model_repr=self.model,
+                           hook_source=inspect.getsource(self._hook),
+                           step_time=self._last_timestamp.diff(
+                               self._actual_timestamp),
+                           running_time=self._started_timestamp.diff(
+                               self._actual_timestamp),
+                           created_date=(self._created_timestamp
+                                         .to_cookie_string()),
+                           started_date=(self._started_timestamp
+                                         .to_cookie_string()),
+                           last_date=(self._last_timestamp
+                                         .to_cookie_string()))
+        return repr
 
     def add_display(self, display, *display_args, **display_kwargs):
         """add a display for the simulation.
@@ -154,12 +228,48 @@ class Simulation(object):
         """  # noqa
         self._displays.append(display(self, *display_args, **display_kwargs))
 
+    def attach_container(self, path="output/", mode="w",
+                         nbuffer=50, timeout=180):
+        """add a TreantContainer to the simulation which allows some
+        persistance to the simulation.
+
+        Parameters
+        ----------
+        path : str
+            path for the container
+        mode : str, optional
+            "a" or "w"
+        nbuffer : int, optional
+            wait until nbuffer data in the Queue before save on disk.
+        timeout : int, optional
+            wait until timeout since last flush before save on disk.
+        """
+        container_path = Path(path) / self.id
+        self._container = container.TreantContainer(
+            container_path,
+            t0=self.t,
+            initial_fields=self.fields,
+            metadata=dict(id=self.id, dt=self.dt, tmax=self.tmax,
+                          timestamp="{:%Y-%m-%d %H:%M:%S}"
+                          .format(self._created_timestamp),
+                          hook=inspect.getsource(self._hook),
+                          **self.physical_parameters),
+            mode=mode,
+            nbuffer=nbuffer,
+            timeout=timeout)
+        logging.info("Persistent container attached (%s)"
+                     % container_path.abspath())
+        self._container.treant.categories["status"] = "created"
+
     def _takewhile(self):
         if self.tmax is None:
             return True
         if self.t <= self.tmax:
             return True
         self.status = 'finished'
+        if self._container:
+            self._container.treant.categories["status"] = "finished"
+            self._container.close()
         return False
 
     def __iter__(self):

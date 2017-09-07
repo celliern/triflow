@@ -436,6 +436,22 @@ class Model:
         with open(filename, 'wb') as f:
             dump(self, f)
 
+    def __repr__(self):
+        repr = """
+{equations}
+
+Variables
+---------
+unknowns:       {vars}
+helpers:        {helps}
+parameters:     {pars}"""
+        repr = repr.format(
+            vars=", ".join(self._dep_vars),
+            helps=", ".join(self._help_funcs) if self._pars else None,
+            equations="\n".join(self._diff_eqs),
+            pars=", ".join(self._pars) if self._pars else None)
+        return repr
+
     @staticmethod
     def load(filename):
         """load a pre-compiled triflow model. The internal of theano allow a

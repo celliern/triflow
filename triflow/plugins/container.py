@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
+from collections import namedtuple
 import logging
 import time
 
@@ -14,6 +15,8 @@ log = logging.getLogger(__name__)
 log.handlers = []
 log.addHandler(logging.NullHandler())
 
+FieldsData = namedtuple("FieldsData", ["data", "metadata"])
+
 
 class TreantContainer(object):
 
@@ -26,8 +29,15 @@ class TreantContainer(object):
         self._mode = mode
         self._writing_queue = None
 
+        path = Path(path)
+
         if self._mode == "w":
             Path(path).rmtree_p()
+
+        if self._mode == "r":
+            if not path.exists():
+                raise IOError("Container not found.")
+            return
 
         self.treant = dtr.Treant(path)
 
@@ -39,9 +49,6 @@ class TreantContainer(object):
             self.keys = initial_keys
             self.keys.remove('x')
             self.keys.remove('t')
-
-        if self._mode == "r":
-            return
 
         if initial_fields:
             if len(initial_keys) == 0:
@@ -96,7 +103,7 @@ class TreantContainer(object):
                 return
         except AttributeError:
             return
-        log.debug("flushing queue")
+        log.debug("Flushing queue.")
         full_t = []
         full_fields = {key: [] for key in self.keys}
         while not self._writing_queue.empty():
@@ -119,7 +126,7 @@ class TreantContainer(object):
                 full_fields[key],
                 axis=0
             )
-        log.debug("queue empty")
+        log.debug("Queue empty.")
 
     def append(self, t, fields):
         if self._mode == "r":
@@ -131,7 +138,7 @@ class TreantContainer(object):
         # time.sleep(0.01)
         if (self._writing_queue.full() or
                 (time.time() - self._time_last_flush > self._timeout)):
-            logging.debug('flushing')
+            logging.debug('Flushing')
             self.flush()
             self._time_last_flush = time.time()
 
@@ -167,3 +174,9 @@ class TreantContainer(object):
             return self.__getitem__(key)
         except KeyError:
             raise AttributeError
+
+    @staticmethod
+    def get_last(path):
+        with TreantContainer(path, "r") as container:
+            return FieldsData(data=dict(**container.data),
+                              metadata=dict(**container.metadata))

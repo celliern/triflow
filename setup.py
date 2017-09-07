@@ -28,6 +28,8 @@ setup(
     tests_require=['pytest', 'pytest-cov', 'pylama',
                    'pytest-pep8'],
     install_requires=[
+            'pendulum',
+            'pandas',
             'mpmath',
             'numpy',
             'path.py',
@@ -37,6 +39,9 @@ setup(
             'sympy',
             'toolz',
             'coolname',
+            'bokeh',
+            'datreant.core',
+            'datreant.data',
             'theano',
             'nose_parameterized'],
     extras_require={
