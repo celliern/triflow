@@ -305,17 +305,14 @@ class Model:
                 self._symb_vars_with_spatial_diff_order.items():
             pad_left, pad_right = self._bounds
 
-            per_extended_var = T.concatenate([mapargs[varname][pad_left:],
-                                              mapargs[varname],
-                                              mapargs[varname][:pad_right]],
-                                             axis=0)
+            th_arg = mapargs[varname]
 
-            edge_extended_var = T.concatenate([T.repeat(mapargs[varname][:1],
-                                                        middle_point),
-                                               mapargs[varname],
-                                               T.repeat(mapargs[varname][-1:],
-                                                        middle_point)],
-                                              axis=0)
+            per_extended_var = T.concatenate([th_arg[pad_left:],
+                                              th_arg,
+                                              th_arg[:pad_right]])
+            edge_extended_var = T.concatenate([[th_arg[0]] * middle_point,
+                                               th_arg,
+                                               [th_arg[-1]] * middle_point])
 
             extended_var = ifelse(periodic,
                                   per_extended_var,
