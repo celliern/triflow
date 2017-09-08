@@ -43,7 +43,7 @@ class ROW_general:
     def __init__(self, model, alpha, gamma, b, b_pred=None,
                  time_stepping=False, tol=None,
                  max_iter=None, dt_min=None,
-                 safety_factor=0.9):
+                 safety_factor=0.9, recompute_target=False):
         self._internal_dt = None
         self._model = model
         self._alpha = alpha
@@ -56,6 +56,7 @@ class ROW_general:
         self._safety_factor = safety_factor
         self._max_iter = max_iter
         self._dt_min = dt_min
+        self._recompute_target = recompute_target
 
     def __call__(self, t, fields, dt, pars,
                  hook=null_hook):
@@ -134,42 +135,56 @@ class ROW_general:
                        hook=null_hook):
 
         self._next_time_step = t + dt
+        self._max_dt = t
         self._internal_iter = 0
         dt = self._internal_dt = (1E-6 if self._internal_dt is None
                                   else self._internal_dt)
         while True:
             self._err = None
             while (self._err is None or self._err > self._tol):
-                _, newfields, self._err = self._fixed_step(t,
-                                                           fields,
-                                                           dt,
-                                                           pars,
-                                                           hook)
+                new_t, new_fields, self._err = self._fixed_step(t,
+                                                                fields,
+                                                                dt,
+                                                                pars,
+                                                                hook)
                 logging.debug(f"error: {self._err}")
                 dt = (self._safety_factor *
                       dt * np.sqrt(self._tol / self._err))
-            fields = newfields.copy()
+
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
-            if t + dt >= self._next_time_step:
-                logging.debug('new t more than next expected time step')
-                dt = self._next_time_step - t
-                logging.debug(f'dt falling to {dt}')
-            self._internal_dt = dt
-            t = t + self._internal_dt
-            self._internal_iter += 1
-            if np.isclose(t, self._next_time_step):
-                self._internal_dt = dt
+            if new_t >= self._next_time_step:
+                logging.debug('new t more than next expected time step, '
+                              'compute with proper timestep')
+                if self._recompute_target:
+                    t, fields, self._err = self._fixed_step(
+                        t, fields,
+                        self._next_time_step - t,
+                        pars, hook)
+                else:
+                    inter_U = (fields.uflat * (1 -
+                                               (new_t -
+                                                self._next_time_step) /
+                                               (new_t - t)) +
+                               new_fields.uflat * ((new_t -
+                                                    self._next_time_step) /
+                                                   (new_t - t)))
+                    fields.fill(inter_U)
                 fields, pars = hook(t, fields, pars)
+                dt = self._internal_dt = (self._safety_factor *
+                                          dt * np.sqrt(self._tol / self._err))
                 return self._next_time_step, fields
+            t = new_t
+            fields = new_fields.copy()
+            self._internal_iter += 1
             if self._internal_iter > (self._max_iter
                                       if self._max_iter
                                       else self._internal_iter + 1):
                 raise RuntimeError("Rosebrock internal iteration "
                                    "above max iterations authorized")
-            if self._internal_dt < (self._dt_min
-                                    if self._dt_min
-                                    else self._internal_dt * .5):
+            if dt < (self._dt_min
+                     if self._dt_min
+                     else dt * .5):
                 raise RuntimeError("Rosebrock internal time step "
                                    "less than authorized")
 
@@ -207,10 +222,12 @@ class ROS3PRw(ROW_general):
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
+      recompute_target : bool, optional, default False
+          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None):
+                 max_iter=None, dt_min=None, recompute_target=False):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
@@ -230,7 +247,8 @@ class ROS3PRw(ROW_general):
         gamma[2, 1] = -8.7306695894642317e-01
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
                          time_stepping=time_stepping, tol=tol,
-                         max_iter=max_iter, dt_min=dt_min)
+                         max_iter=max_iter, dt_min=dt_min,
+                         recompute_target=recompute_target)
 
 
 class ROS3PRL(ROW_general):
@@ -248,10 +266,12 @@ class ROS3PRL(ROW_general):
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
+      recompute_target : bool, optional, default False
+          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None):
+                 max_iter=None, dt_min=None, recompute_target=False):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
         gamma_i = 4.3586652150845900e-01
@@ -280,7 +300,8 @@ class ROS3PRL(ROW_general):
         gamma[3, 2] = -3.2405197677907682e-01
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
                          time_stepping=time_stepping, tol=tol,
-                         max_iter=max_iter, dt_min=dt_min)
+                         max_iter=max_iter, dt_min=dt_min,
+                         recompute_target=recompute_target)
 
 
 class RODASPR(ROW_general):
@@ -298,10 +319,12 @@ class RODASPR(ROW_general):
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
+      recompute_target : bool, optional, default False
+          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None):
+                 max_iter=None, dt_min=None, recompute_target=False):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [-7.9683251690137014E-1,
@@ -351,7 +374,8 @@ class RODASPR(ROW_general):
         gamma[5, 4] = -3.57142857e-1
         super().__init__(model, alpha, gamma, b, b_pred=b_pred,
                          time_stepping=time_stepping, tol=tol,
-                         max_iter=max_iter, dt_min=dt_min)
+                         max_iter=max_iter, dt_min=dt_min,
+                         recompute_target=recompute_target)
 
 
 class scipy_ode:
