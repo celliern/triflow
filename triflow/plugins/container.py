@@ -18,6 +18,12 @@ log.addHandler(logging.NullHandler())
 FieldsData = namedtuple("FieldsData", ["data", "metadata"])
 
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 class TreantContainer(object):
 
     def __init__(self, path, mode='a', *,
@@ -37,7 +43,6 @@ class TreantContainer(object):
         if self._mode == "r":
             if not path.exists():
                 raise IOError("Container not found.")
-            return
 
         self.treant = dtr.Treant(path)
 
@@ -176,7 +181,17 @@ class TreantContainer(object):
             raise AttributeError
 
     @staticmethod
+    def get_all(path):
+        with TreantContainer(path, "r") as container:
+            return FieldsData(data=AttrDict(**container.data),
+                              metadata=AttrDict(**container.metadata))
+
+    @staticmethod
     def get_last(path):
         with TreantContainer(path, "r") as container:
-            return FieldsData(data=dict(**container.data),
-                              metadata=dict(**container.metadata))
+            return FieldsData(data=AttrDict(**{key: value[-1]
+                                               for key, value
+                                               in dict(container.data).items()
+                                               if key != "x"},
+                                            x=container.data["x"]),
+                              metadata=AttrDict(**container.metadata))

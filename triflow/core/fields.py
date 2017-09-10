@@ -53,10 +53,9 @@ class BaseFields:
         [self.__setattr__(key, inputs[key]) for key in set(self._keys)]
 
         self.size = len(self.x)
-
-        data = list(zip(*[getattr(self, var)
-                          for var in self._keys]))
-        self.array = np.array(data)
+        self.array = np.empty((self.size, len(self._keys)))
+        for i, var in enumerate(self._keys):
+            self.array[:, i] = getattr(self, var)
         self._dtype = [(var, float) for var in self._keys]
         for var in self._keys:
             self.__setattr__(var, self.structured[var].squeeze())

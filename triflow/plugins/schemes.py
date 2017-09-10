@@ -16,6 +16,7 @@ import logging
 
 import numpy as np
 import scipy.sparse as sps
+from scipy.interpolate import interp1d
 from scipy.integrate import ode
 from scipy.linalg import norm
 from toolz import memoize
@@ -43,7 +44,7 @@ class ROW_general:
     def __init__(self, model, alpha, gamma, b, b_pred=None,
                  time_stepping=False, tol=None,
                  max_iter=None, dt_min=None,
-                 safety_factor=0.9, recompute_target=False):
+                 safety_factor=0.9, recompute_target=True):
         self._internal_dt = None
         self._model = model
         self._alpha = alpha
@@ -57,6 +58,7 @@ class ROW_general:
         self._max_iter = max_iter
         self._dt_min = dt_min
         self._recompute_target = recompute_target
+        self._interp_cache = None
 
     def __call__(self, t, fields, dt, pars,
                  hook=null_hook):
@@ -105,8 +107,8 @@ class ROW_general:
         fields, pars = hook(t, fields, pars)
         J = self._model.J(fields, pars)
         Id = self.__cache__(fields.uflat.size)
-        A = Id - self._gamma[0, 0] * dt * J
-        luf = sps.linalg.splu(A)
+        self._A = A = Id - self._gamma[0, 0] * dt * J
+        luf = sps.linalg.factorized(A)
         ks = []
         fields_i = fields.copy()
         for i in np.arange(self._s):
@@ -114,11 +116,11 @@ class ROW_general:
                           sum([self._alpha[i, j] * ks[j]
                                for j in range(i)]))
             F = self._model.F(fields_i, pars)
-            ks.append(luf.solve(dt * F + dt * (J @ sum([self._gamma[i, j] *
-                                                        ks[j]
-                                                        for j
-                                                        in range(i)])
-                                               if i > 0 else 0)))
+            ks.append(luf(dt * F + dt * (J @ sum([self._gamma[i, j] *
+                                                  ks[j]
+                                                  for j
+                                                  in range(i)])
+                                         if i > 0 else 0)))
         U = fields.uflat.copy()
         U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
@@ -137,8 +139,18 @@ class ROW_general:
         self._next_time_step = t + dt
         self._max_dt = t
         self._internal_iter = 0
-        dt = self._internal_dt = (1E-6 if self._internal_dt is None
-                                  else self._internal_dt)
+        try:
+            fields.fill(self._interp_cache(self._next_time_step))
+            return self._next_time_step, fields
+        except (TypeError, ValueError):
+            pass
+        if not self._recompute_target:
+            dt = self._internal_dt = (1E-6 if self._internal_dt is None
+                                      else self._internal_dt)
+        else:
+            dt = self._internal_dt = min((1E-6 if self._internal_dt is None
+                                          else self._internal_dt),
+                                         dt)
         while True:
             self._err = None
             while (self._err is None or self._err > self._tol):
@@ -148,31 +160,28 @@ class ROW_general:
                                                                 pars,
                                                                 hook)
                 logging.debug(f"error: {self._err}")
-                dt = (self._safety_factor *
-                      dt * np.sqrt(self._tol / self._err))
+                dt = self._internal_dt = (self._safety_factor *
+                                          dt * np.sqrt(self._tol / self._err))
 
             logging.debug(f'dt computed after err below tol: {dt}')
             logging.debug(f'ROS_vart, t {t}')
             if new_t >= self._next_time_step:
+                target_dt = self._next_time_step - t
                 logging.debug('new t more than next expected time step, '
-                              'compute with proper timestep')
+                              f'compute with proper timestep {target_dt}')
                 if self._recompute_target:
                     t, fields, self._err = self._fixed_step(
                         t, fields,
                         self._next_time_step - t,
                         pars, hook)
                 else:
-                    inter_U = (fields.uflat * (1 -
-                                               (new_t -
-                                                self._next_time_step) /
-                                               (new_t - t)) +
-                               new_fields.uflat * ((new_t -
-                                                    self._next_time_step) /
-                                                   (new_t - t)))
-                    fields.fill(inter_U)
+                    self._interp_cache = interp1d([t, new_t],
+                                                  [fields.uflat[None],
+                                                   new_fields.uflat[None]],
+                                                  axis=0)
+                    fields.fill(self._interp_cache(self._next_time_step))
+                self._internal_iter += 1
                 fields, pars = hook(t, fields, pars)
-                dt = self._internal_dt = (self._safety_factor *
-                                          dt * np.sqrt(self._tol / self._err))
                 return self._next_time_step, fields
             t = new_t
             fields = new_fields.copy()
@@ -227,7 +236,7 @@ class ROS3PRw(ROW_general):
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None, recompute_target=False):
+                 max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
@@ -271,7 +280,7 @@ class ROS3PRL(ROW_general):
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None, recompute_target=False):
+                 max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
         gamma_i = 4.3586652150845900e-01
@@ -324,7 +333,7 @@ class RODASPR(ROW_general):
       """  # noqa
 
     def __init__(self, model, tol=1E-2, time_stepping=True,
-                 max_iter=None, dt_min=None, recompute_target=False):
+                 max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [-7.9683251690137014E-1,
