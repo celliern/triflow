@@ -145,6 +145,8 @@ class Simulation(object):
         try:
             while True:
                 fields, pars = self._hook(t, fields, pars)
+                if self.tmax and (t + self.dt >= self.tmax):
+                    self.dt = self.tmax - t
                 t, fields = self._scheme(t, fields, self.dt,
                                          pars, hook=self._hook)
                 self.fields = fields
@@ -153,13 +155,17 @@ class Simulation(object):
                 self.physical_parameters = pars
                 self._last_timestamp = self._actual_timestamp
                 self._actual_timestamp = pendulum.now()
-                if not self._takewhile():
-                    return
                 for display in self._displays:
                     display(self.t, self.fields)
                 if self._container:
                     self._container.append(t, fields)
                 yield self.t, self.fields
+                if self.tmax and (self.t >= self.tmax):
+                    if self._container:
+                        self._container.treant.categories["status"] =\
+                            "finished"
+                        self._container.close()
+                    return
         except RuntimeError:
             self.status = 'failed'
             if self._container:
@@ -260,17 +266,6 @@ Hook function
         logging.info("Persistent container attached (%s)"
                      % container_path.abspath())
         self._container.treant.categories["status"] = "created"
-
-    def _takewhile(self):
-        if self.tmax is None:
-            return True
-        if self.t <= self.tmax:
-            return True
-        self.status = 'finished'
-        if self._container:
-            self._container.treant.categories["status"] = "finished"
-            self._container.close()
-        return False
 
     def __iter__(self):
         return self.compute()
