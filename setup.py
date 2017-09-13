@@ -28,6 +28,7 @@ setup(
     tests_require=['pytest', 'pytest-cov', 'pylama',
                    'pytest-pep8'],
     install_requires=[
+            'xarray',
             'pendulum',
             'pandas',
             'mpmath',

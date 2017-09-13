@@ -3,9 +3,10 @@
 
 import numpy as np
 import pandas as pd
+from xarray import Dataset
 
 
-class BaseFields:
+class BaseFields(Dataset):
     """Specialized container which expose the data as a structured numpy array,
       give access to the dependants variables and the herlpers function as
       attributes (as a numpy rec array) and is able to give access to a flat
@@ -25,62 +26,98 @@ class BaseFields:
         Number of discretisation nodes
       """  # noqa
     @staticmethod
-    def factory(dependent_variables, helper_functions):
+    def factory(coords,
+                dependent_variables,
+                helper_functions):
         """Fields factory generating specialized container build around a
-          triflow Model.
+          triflow Model and xarray.
 
           Parameters
           ----------
-          dependent_variables : iterable of str
-              name of the dependent variables
-          helper_functions : iterable of str
-              name of the helper functions
+          coords: iterable of str:
+              coordinates name. First coordinate have to be shared with all
+              variables
+          dependent_variables : iterable tuple (name, coords)
+              coordinates and name of the dependent variables
+          helper_functions : iterable tuple (name, coords)
+              coordinates and name of the helpers functions
 
           Returns
           -------
           triflow.BaseFields
-              Specialized container which expose the data as a structured numpy array
-          """  # noqa
+              Specialized container which expose the data as a structured
+              numpy array
+          """
         Field = BaseFields
-        Field.dependent_variables = dependent_variables
-        Field.helper_functions = helper_functions
+        Field._coords = coords
+        Field._dependent_variables_info = dependent_variables
+        Field._helper_functions_info = helper_functions
         return Field
 
+    @staticmethod
+    def factory1D(dependent_variables,
+                  helper_functions):
+        """Fields factory generating specialized container build around a
+          triflow Model and xarray.
+          Wrapper for 1D data.
+
+          Parameters
+          ----------
+          dependent_variables : iterable for str
+              name of the dependent variables
+          helper_functions : iterable of str
+              name of the helpers functions
+
+          Returns
+          -------
+          triflow.BaseFields
+              Specialized container which expose the data as a structured
+              numpy array
+          """
+        return BaseFields.factory(("x", ),
+                                  [(name, ("x", ))
+                                   for name
+                                   in dependent_variables],
+                                  [(name, ("x", ))
+                                   for name
+                                   in helper_functions],)
+
     def __init__(self, **inputs):
-        self._keys = (['x'] +
-                      list(self.dependent_variables) +
-                      list(self.helper_functions))
-        [self.__setattr__(key, inputs[key]) for key in set(self._keys)]
+        self._var_info = [*list(self._dependent_variables_info),
+                          *list(self._helper_functions_info)]
+        self._dependent_variables = [dep[0]
+                                     for dep
+                                     in self._dependent_variables_info]
+        self._helper_functions = [dep[0]
+                                  for dep
+                                  in self._helper_functions_info]
+        self._keys, self._coords_info = zip(*self._var_info)
 
-        self.size = len(self.x)
-        self.array = np.empty((self.size, len(self._keys)))
-        for i, var in enumerate(self._keys):
-            self.array[:, i] = getattr(self, var)
-        self._dtype = [(var, float) for var in self._keys]
-        for var in self._keys:
-            self.__setattr__(var, self.structured[var].squeeze())
+        super().__init__(data_vars={key: (coords, inputs[key])
+                                    for key, coords in self._var_info},
+                         coords={coord: inputs[coord]
+                                 for coord in self._coords})
 
-    def __repr__(self):
-        repr = "<Fields: {av_data}>".format(av_data=self._keys)
-        return repr
+    def copy(self):
+        Field = BaseFields.factory(self._coords,
+                                   self._dependent_variables_info,
+                                   self._helper_functions_info)
+        new_array = Field(**{key: self[key].values
+                             for key
+                             in (self._keys + self._coords)})
+        return new_array
 
     @property
-    def flat(self):
-        """numpy.ndarray.view: flat view of the main numpy array
+    def size(self):
+        """numpy.ndarray.view: view of the dependent variables of the main numpy array
         """  # noqa
-        return self.array.ravel()
-
-    @property
-    def structured(self):
-        """numpy.ndarray.view: structured view of the main numpy array
-        """  # noqa
-        return self.array.view(dtype=self._dtype)
+        return self["x"].size
 
     @property
     def uarray(self):
         """numpy.ndarray.view: view of the dependent variables of the main numpy array
         """  # noqa
-        return self.array[:, 1: (1 + len(self.dependent_variables))]
+        return self[self._dependent_variables]
 
     @property
     def uflat(self):
@@ -90,40 +127,38 @@ class BaseFields:
         Be carefull, modification of these data will not be reflected on
         the main array!
         """  # noqa
-        uflat = self.array[:, 1: (1 +
-                                  len(self.dependent_variables))].ravel()
-        return uflat
-
-    def fill(self, flat_array):
-        """take a flat numpy array and update inplace the dependent
-        variables of the container
-
-        Parameters
-        ----------
-        flat_array : numpy.ndarray
-            flat array which will be put in the dependant variable flat array.
-        """  # noqa
-        self.uarray[:] = flat_array.reshape(self.uarray.shape)
-
-    def __getitem__(self, index):
-        return self.structured[index].squeeze()
-
-    def __iter__(self):
-        return (self.array[i] for i in range(self.size))
-
-    def copy(self):
-        old_values = {var: getattr(self, var).squeeze()
-                      for var in self._keys}
-
-        return self.__class__(**old_values)
+        aligned_arrays = [self[key].values[[(slice(None)
+                                             if c in coords
+                                             else None)
+                                            for c in self._coords]]
+                          for key, coords in self._dependent_variables_info]
+        return np.hstack(aligned_arrays).flatten("F")
 
     def keys(self):
         return self._keys
 
+    def to_df(self):
+        if len(self.coords) > 1:
+            raise ValueError("CSV files only available for 1D arrays")
+        data = {key: self.to_dict()['data_vars'][key]['data']
+                for key
+                in self.keys()}
+        df = pd.DataFrame(dict(x=self.x, **data))
+        return df
+
+    def fill(self, uflat):
+        rarray = uflat.reshape((self.coords["x"].size, -1), order="F")
+        ptr = 0
+        for var, coords in self._dependent_variables_info:
+            coords = list(coords)
+            coords.remove(self._coords[0])
+            next_ptr = ptr + sum([self.coords[key].size for key in coords])
+            next_ptr = ptr + 1 if next_ptr == ptr else next_ptr
+            self[var][:] = rarray[:, ptr:next_ptr].squeeze()
+            ptr = next_ptr
+
     def to_csv(self, path):
-        df = pd.DataFrame({key: self[key] for key in self.keys()})
-        df.to_csv(path)
+        self.to_df().to_csv(path)
 
     def to_clipboard(self):
-        df = pd.DataFrame({key: self[key] for key in self.keys()})
-        df.to_clipboard()
+        self.to_df().to_clipboard()

@@ -282,8 +282,8 @@ class Model:
 
     @property
     def fields_template(self):
-        return BaseFields.factory(self._dep_vars,
-                                  self._help_funcs)
+        return BaseFields.factory1D(self._dep_vars,
+                                    self._help_funcs)
 
     @property
     def _args(self):
