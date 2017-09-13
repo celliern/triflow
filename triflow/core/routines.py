@@ -35,8 +35,10 @@ class F_Routine(ModelRoutine):
       """  # noqa
 
     def __call__(self, fields, pars):
-        uargs = [fields['x'], *[fields[key] for key in self.args]]
-        pargs = [pars[key] + fields.x * 0 if key != 'periodic' else pars[key]
+        uargs = [fields['x'].values, *[fields[key].values
+                                       for key in self.args]]
+        pargs = [pars[key] + fields["x"].values * 0
+                 if key != 'periodic' else pars[key]
                  for key
                  in self.pars]
         F = self._ufunc(*uargs, *pargs)
@@ -80,8 +82,9 @@ class J_Routine(ModelRoutine):
       """  # noqa
 
     def __call__(self, fields, pars, sparse=True):
-        uargs = [fields['x'], *[fields[key] for key in self.args]]
-        pargs = [pars[key] + fields['x'] * 0
+        uargs = [fields['x'].values,
+                 *[fields[key].values for key in self.args]]
+        pargs = [pars[key] + fields['x'].values * 0
                  if key != 'periodic' else pars[key]
                  for key
                  in self.pars]

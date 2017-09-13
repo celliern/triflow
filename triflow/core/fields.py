@@ -147,7 +147,7 @@ class BaseFields(Dataset):
         return df
 
     def fill(self, uflat):
-        rarray = uflat.reshape((self.coords["x"].size, -1), order="F")
+        rarray = uflat.reshape((self.coords["x"].size, -1))
         ptr = 0
         for var, coords in self._dependent_variables_info:
             coords = list(coords)

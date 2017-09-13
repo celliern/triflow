@@ -211,10 +211,14 @@ Hook function
                            iter=self.i,
                            model_repr=self.model,
                            hook_source=inspect.getsource(self._hook),
-                           step_time=self._last_timestamp.diff(
-                               self._actual_timestamp),
-                           running_time=self._started_timestamp.diff(
-                               self._actual_timestamp),
+                           step_time=(None
+                                      if not self._last_timestamp
+                                      else self._last_timestamp.diff(
+                                          self._actual_timestamp)),
+                           running_time=(None
+                                         if not self._started_timestamp
+                                         else self._started_timestamp.diff(
+                                             self._actual_timestamp)),
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
