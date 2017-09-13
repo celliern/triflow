@@ -102,7 +102,7 @@ class BaseFields(Dataset):
         Field = BaseFields.factory(self._coords,
                                    self._dependent_variables_info,
                                    self._helper_functions_info)
-        new_array = Field(**{key: self[key].values
+        new_array = Field(**{key: self[key].values.copy()
                              for key
                              in (self._keys + self._coords)})
         return new_array
