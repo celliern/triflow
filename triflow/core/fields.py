@@ -50,8 +50,8 @@ class BaseFields(Dataset):
           """
         Field = BaseFields
         Field._coords = coords
-        Field._dependent_variables_info = dependent_variables
-        Field._helper_functions_info = helper_functions
+        Field.dependent_variables_info = dependent_variables
+        Field.helper_functions_info = helper_functions
         return Field
 
     @staticmethod
@@ -83,14 +83,14 @@ class BaseFields(Dataset):
                                    in helper_functions],)
 
     def __init__(self, **inputs):
-        self._var_info = [*list(self._dependent_variables_info),
-                          *list(self._helper_functions_info)]
-        self._dependent_variables = [dep[0]
-                                     for dep
-                                     in self._dependent_variables_info]
-        self._helper_functions = [dep[0]
-                                  for dep
-                                  in self._helper_functions_info]
+        self._var_info = [*list(self.dependent_variables_info),
+                          *list(self.helper_functions_info)]
+        self.dependent_variables = [dep[0]
+                                    for dep
+                                    in self.dependent_variables_info]
+        self.helper_functions = [dep[0]
+                                 for dep
+                                 in self.helper_functions_info]
         self._keys, self._coords_info = zip(*self._var_info)
 
         super().__init__(data_vars={key: (coords, inputs[key])
@@ -100,8 +100,8 @@ class BaseFields(Dataset):
 
     def copy(self):
         Field = BaseFields.factory(self._coords,
-                                   self._dependent_variables_info,
-                                   self._helper_functions_info)
+                                   self.dependent_variables_info,
+                                   self.helper_functions_info)
         new_array = Field(**{key: self[key].values.copy()
                              for key
                              in (self._keys + self._coords)})
@@ -117,7 +117,7 @@ class BaseFields(Dataset):
     def uarray(self):
         """numpy.ndarray.view: view of the dependent variables of the main numpy array
         """  # noqa
-        return self[self._dependent_variables]
+        return self[self.dependent_variables]
 
     @property
     def uflat(self):
@@ -131,7 +131,7 @@ class BaseFields(Dataset):
                                              if c in coords
                                              else None)
                                             for c in self._coords]]
-                          for key, coords in self._dependent_variables_info]
+                          for key, coords in self.dependent_variables_info]
         return np.vstack(aligned_arrays).flatten("F")
 
     def keys(self):
@@ -149,7 +149,7 @@ class BaseFields(Dataset):
     def fill(self, uflat):
         rarray = uflat.reshape((self.coords["x"].size, -1))
         ptr = 0
-        for var, coords in self._dependent_variables_info:
+        for var, coords in self.dependent_variables_info:
             coords = list(coords)
             coords.remove(self._coords[0])
             next_ptr = ptr + sum([self.coords[key].size for key in coords])
