@@ -10,18 +10,16 @@ from pprint import pformat
 
 import numpy as np
 from sympy import (Derivative, Function, Symbol,
-                   SympifyError, symbols, sympify, lambdify)
-from theano import tensor as T
-from theano.ifelse import ifelse
-import theano.sparse as ths
-from theano import function
+                   SympifyError, symbols, sympify)
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
+from triflow.core.compilers import theano_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 sys.setrecursionlimit(40000)
+EPS = 1E-6
 
 
 def _generate_sympify_namespace(independent_variables,
@@ -138,6 +136,9 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
+                 compiler=theano_compiler,
+                 simplify=False,
+                 fdiff_jac=False,
                  double=True):
         logging.debug('enter __init__ Model')
         self._double = double
@@ -236,13 +237,26 @@ class Model:
         # We expose a numpy.ndarray filled with the rhs of our approximated
         # dynamical system
         self.F_array = np.array(approximated_diff_eqs)
-
+        if simplify:
+            self.F_array = np.array([eq.simplify()
+                                     for eq
+                                     in self.F_array.tolist()])
         # We compute the jacobian as the partial derivative of all equation of
         # our system according to all the discrete variable in U.
-        self.J_array = np.array([
-            [diff_eq.diff(u).expand()
-             for u in U]
-            for diff_eq in approximated_diff_eqs]).flatten('F')
+        if fdiff_jac:
+            self.J_array = np.array([
+                [(diff_eq.subs(u, u + EPS) - diff_eq) / EPS
+                 for u in U]
+                for diff_eq in approximated_diff_eqs]).flatten('F')
+        else:
+            self.J_array = np.array([
+                [diff_eq.diff(u)
+                 for u in U]
+                for diff_eq in approximated_diff_eqs]).flatten('F')
+        if simplify:
+            self.J_array = np.array([eq.expand().simplify()
+                                     for eq
+                                     in self.J_array.tolist()])
 
         # We flag and store the null entry of the Jacobian matrix
         self._sparse_indices = np.where(self.J_array != 0)
@@ -250,147 +264,11 @@ class Model:
         # a sparse matrix storage for memory saving and efficient linalg ops.
         self._J_sparse_array = self.J_array[self._sparse_indices]
 
-        # We convert the sympy description of the system into a theano
-        # graph compilation
-        F, J, args, self._map_extended = self._theano_convert(
-            self.F_array,
-            self._J_sparse_array,
-            self._dbdcs)
-        self._th_args = args
-        self._th_vectors = [F, J]
-        # We compile the previous graphs and obtain optimized C based
-        # routines
-        logging.debug(args)
-        logging.debug(list(map(type, args)))
-        F_theano_function = function(inputs=args,
-                                     outputs=F,
-                                     on_unused_input='ignore',
-                                     allow_input_downcast=True)
-        J_theano_function = function(inputs=args,
-                                     outputs=J,
-                                     on_unused_input='ignore',
-                                     allow_input_downcast=True)
-        self._theano_routines = [F_theano_function, J_theano_function]
-        self._compile(self.F_array, self._J_sparse_array,
-                      F_theano_function, J_theano_function)
+        # We compile the math with a theano based compiler (default)
+        self._compile(self.F_array, self._J_sparse_array, compiler)
 
-    def _theano_convert(self, F_array, J_array, bdc):
-
-        mapargs = {arg: T.vector(arg)
-                   for arg, sarg
-                   in zip(self._args, self._symbolic_args)}
-
-        to_feed = mapargs.copy()
-
-        x_th = mapargs['x']
-        N = x_th.size
-        L = x_th[-1] - x_th[0]
-        dx = L / (N - 1)
-        to_feed['dx'] = dx
-
-        periodic = T.scalar("periodic", dtype="int32")
-
-        middle_point = int((self._window_range - 1) / 2)
-
-        th_args = [mapargs[key]
-                   for key
-                   in [*self._indep_vars,
-                       *self._dep_vars,
-                       *self._help_funcs,
-                       *self._pars]] + [periodic]
-
-        map_extended = {}
-
-        for (varname, discretisation_tree) in \
-                self._symb_vars_with_spatial_diff_order.items():
-            pad_left, pad_right = self._bounds
-
-            th_arg = mapargs[varname]
-
-            per_extended_var = T.concatenate([th_arg[pad_left:],
-                                              th_arg,
-                                              th_arg[:pad_right]])
-            edge_extended_var = T.concatenate([[th_arg[0]] * middle_point,
-                                               th_arg,
-                                               [th_arg[-1]] * middle_point])
-
-            extended_var = ifelse(periodic,
-                                  per_extended_var,
-                                  edge_extended_var)
-
-            map_extended[varname] = extended_var
-            for order in range(pad_left, pad_right + 1):
-                if order != 0:
-                    var = (f"{varname}_{'m' if order < 0 else 'p'}"
-                           f"{np.abs(order)}")
-                else:
-                    var = varname
-                new_var = extended_var[order - pad_left:
-                                       extended_var.size +
-                                       order - pad_right]
-                to_feed[var] = new_var
-
-        F = lambdify((self._symbolic_args),
-                     expr=self.F_array.tolist(),
-                     modules=T)(*[to_feed[key]
-                                  for key
-                                  in self._args])
-        F = T.concatenate(F, axis=0).reshape((self._nvar, N)).T
-        F = T.stack(F).flatten()
-
-        J = lambdify((self._symbolic_args),
-                     expr=self.J_array.tolist(),
-                     modules=T)(*[to_feed[key]
-                                  for key
-                                  in self._args])
-
-        J = [j if j != 0 else T.constant(0.) for j in J]
-        J = T.stack([T.repeat(j, N) if j.ndim == 0 else j for j in J])
-        J = J[self._sparse_indices[0]].T.squeeze()
-
-        i = T.arange(N).dimshuffle([0, 'x'])
-        idx = T.arange(N * self._nvar).reshape((N, self._nvar)).T
-        edge_extended_idx = T.concatenate([T.repeat(idx[:, :1],
-                                                    middle_point,
-                                                    axis=1),
-                                           idx,
-                                           T.repeat(idx[:, -1:],
-                                                    middle_point,
-                                                    axis=1)],
-                                          axis=1).T.flatten()
-        per_extended_idx = T.concatenate([idx[:, -middle_point:],
-                                          idx,
-                                          idx[:, :middle_point]],
-                                         axis=1).T.flatten()
-        extended_idx = ifelse(periodic,
-                              per_extended_idx,
-                              edge_extended_idx)
-
-        rows = T.tile(T.arange(self._nvar),
-                      self._window_range * self._nvar) + i * self._nvar
-        cols = T.repeat(T.arange(self._window_range * self._nvar),
-                        self._nvar) + i * self._nvar
-        rows = rows[:, self._sparse_indices].reshape(J.shape).flatten()
-        cols = extended_idx[cols][:, self._sparse_indices] \
-            .reshape(J.shape).flatten()
-
-        permutation = T.argsort(cols)
-
-        J = J.flatten()[permutation]
-        rows = rows[permutation]
-        cols = cols[permutation]
-        count = T.zeros((N * self._nvar + 1,), dtype=int)
-        uq, cnt = T.extra_ops.Unique(False, False, True)(cols)
-        count = T.set_subtensor(count[uq + 1], cnt)
-
-        indptr = T.cumsum(count)
-        shape = T.stack([N * self._nvar, N * self._nvar])
-        sparse_J = ths.CSC(J, rows, indptr, shape)
-
-        return F, sparse_J, th_args, map_extended
-
-    def _compile(self, F_array, J_array,
-                 F_function, J_function):
+    def _compile(self, F_array, J_array, compiler):
+        F_function, J_function = compiler(self)
         logging.debug('compile F')
         self.F = F_Routine(F_array,
                            (self._dep_vars +
