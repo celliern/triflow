@@ -218,9 +218,13 @@ Hook function
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
-                                         .to_cookie_string()),
+                                         .to_cookie_string()
+                                         if self._started_timestamp
+                                         else "None"),
                            last_date=(self._last_timestamp
-                                      .to_cookie_string()))
+                                      .to_cookie_string()
+                                      if self._last_timestamp
+                                      else "None"))
         return repr
 
     def add_display(self, display, *display_args, **display_kwargs):
