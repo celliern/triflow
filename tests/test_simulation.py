@@ -31,7 +31,7 @@ def test_simul_heat_eq(heat_model, scheme):
                                                dt=1, tmax=100, tol=1E-1)):
         continue
     assert t == 100
-    assert np.isclose(fields.T.mean(), 0)
+    assert np.isclose(fields["T"].values.mean(), 0)
 
 
 @pytest.mark.parametrize("scheme",
@@ -44,8 +44,8 @@ def test_simul_heat_eq_dirichlet(heat_model, scheme):
     t0 = 0
 
     def dirichlet_bdc(t, fields, parameters):
-        fields.T[0] = 1
-        fields.T[-1] = 1
+        fields["T"][0] = 1
+        fields["T"][-1] = 1
         return fields, parameters
 
     simul = Simulation(heat_model, t0, initial_fields,
@@ -56,7 +56,7 @@ def test_simul_heat_eq_dirichlet(heat_model, scheme):
     for i, (t, fields) in enumerate(simul):
         pass
     assert np.isclose(t, 100)
-    assert np.isclose(fields.T, 1, atol=1E-1).all()
+    assert np.isclose(fields["T"], 1, atol=1E-1).all()
 
 
 def test_simulation_api(heat_model):

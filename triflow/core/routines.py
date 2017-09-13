@@ -45,20 +45,18 @@ class F_Routine(ModelRoutine):
         return F
 
     def diff_approx(self, fields, pars, eps=1E-8):
-        nvar, N = len(fields.dependent_variables), fields.size
         fpars = {key: pars[key] for key in self.pars}
         fpars['dx'] = (fields['x'][-1] - fields['x'][0]) / fields['x'].size
-        J = np.zeros((N * nvar, N * nvar))
-        indices = np.indices(fields.uarray.shape)
-        for i, (var_index, node_index) in enumerate(zip(*map(np.ravel,
-                                                             indices))):
+        U = fields.uflat
+        J = np.zeros((U.size, U.size))
+        F = self(fields, pars)
+        for i, u in enumerate(U):
             fields_plus = fields.copy()
-            fields_plus.uarray[var_index, node_index] += eps
-            fields_moins = fields.copy()
-            fields_moins.uarray[var_index, node_index] -= eps
+            Up = fields_plus.uflat
+            Up[i] += eps
+            fields_plus.fill(Up)
             Fplus = self(fields_plus, pars)
-            Fmoins = self(fields_moins, pars)
-            J[i] = (Fplus - Fmoins) / (2 * eps)
+            J[i] = (Fplus - F) / (eps)
 
         return J.T
 
