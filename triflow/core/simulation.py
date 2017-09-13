@@ -9,6 +9,8 @@ import pendulum
 from coolname import generate_slug
 from path import Path
 from triflow.plugins import container, schemes
+from triflow.core.fields import BaseFields
+
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -29,8 +31,8 @@ class Simulation(object):
           Contain finite difference approximation and routine of the dynamical system
       t : float
           initial time
-      fields : triflow.Fields
-          triflow container filled with initial conditions
+      fields : triflow.BaseFields or dict (any mappable)
+          triflow container or mappable filled with initial conditions
       physical_parameters : dict
           physical parameters of the simulation
       id : None, optional
@@ -102,7 +104,8 @@ class Simulation(object):
         self.id = generate_slug(2) if not id else id
         self.model = model
         self.physical_parameters = physical_parameters
-
+        if not isinstance(fields, BaseFields):
+            fields = model.fields_template(**fields)
         self.fields = fields
         self.t = t
         self.dt = dt
