@@ -60,7 +60,7 @@ class bokeh_fields_update():
         self._datasource = ColumnDataSource({key:
                                              func(simul.t,
                                                   simul.fields,
-                                                  key)
+                                                  key).values
                                              for (key, func)
                                              in self._datafunc.items()})
         self.keys = list(self._datafunc.keys())
@@ -94,7 +94,7 @@ class bokeh_fields_update():
 
     def __call__(self, t, fields):
         for key, func in self._datafunc.items():
-            self._datasource.data[key] = func(t, fields, key)
+            self._datasource.data[key] = func(t, fields, key).values
         self._push(handle=self._handler)
 
 
@@ -129,10 +129,12 @@ class bokeh_probes_update():
 
         setattr(self, '_push', push_notebook)
         self._datasource = ColumnDataSource(dict(t=[simul.t],
-                                                 **{name: [probe(simul.t,
-                                                                 simul.fields)]
-                                                    for name, probe
-                                                    in probes.items()}))
+                                                 **{
+            name:
+            [probe(simul.t,
+                   simul.fields).values]
+            for name, probe
+            in probes.items()}))
         figs = {}
         for name, probe in probes.items():
             fig_config = default_fig_kwargs.copy()
@@ -149,5 +151,5 @@ class bokeh_probes_update():
     def __call__(self, t, fields):
         self._datasource.data['t'].append(t)
         for name, probe in self._probes.items():
-            self._datasource.data[name].append(probe(t, fields))
+            self._datasource.data[name].append(probe(t, fields).values)
         self._push(handle=self._handler)
