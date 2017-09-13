@@ -132,7 +132,7 @@ class BaseFields(Dataset):
                                              else None)
                                             for c in self._coords]]
                           for key, coords in self._dependent_variables_info]
-        return np.hstack(aligned_arrays).flatten("F")
+        return np.vstack(aligned_arrays).flatten("F")
 
     def keys(self):
         return self._keys
