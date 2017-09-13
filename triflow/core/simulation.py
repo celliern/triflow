@@ -148,8 +148,9 @@ class Simulation(object):
         try:
             while True:
                 fields, pars = self._hook(t, fields, pars)
-                if self.tmax and (t + self.dt >= self.tmax):
-                    self.dt = self.tmax - t
+                self.dt = (self.tmax - t
+                           if self.tmax and (t + self.dt >= self.tmax)
+                           else self.dt)
                 t, fields = self._scheme(t, fields, self.dt,
                                          pars, hook=self._hook)
                 self.fields = fields
@@ -164,16 +165,19 @@ class Simulation(object):
                     self._container.append(t, fields)
                 yield self.t, self.fields
                 if self.tmax and (self.t >= self.tmax):
-                    if self._container:
-                        self._container.treant.categories["status"] =\
-                            "finished"
-                        self._container.close()
+                    self._end_simul()
                     return
         except RuntimeError:
             self.status = 'failed'
             if self._container:
                 self._container.treant.categories["status"] = "failed"
             raise
+
+    def _end_simul(self):
+        if self._container:
+            self._container.treant.categories["status"] =\
+                "finished"
+            self._container.close()
 
     def __repr__(self):
         repr = """
