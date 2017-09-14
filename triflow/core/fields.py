@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 from xarray import Dataset
+from copy import copy, deepcopy
 
 
 class BaseFields(Dataset):
@@ -99,7 +100,11 @@ class BaseFields(Dataset):
 
     def copy(self, deep=True):
         new_dataset = super().copy(deep)
-        new_dataset.__dict__.update(self.__dict__)
+        new_dataset.__dict__.update({key: (deepcopy(value)
+                                           if deep
+                                           else copy(value))
+                                     for key, value
+                                     in self.__dict__.items()})
         return new_dataset
 
     def __copy__(self, deep=True):
