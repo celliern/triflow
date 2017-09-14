@@ -52,6 +52,15 @@ class BaseFields(Dataset):
         Field._coords = coords
         Field.dependent_variables_info = dependent_variables
         Field.helper_functions_info = helper_functions
+        Field._var_info = [*list(Field.dependent_variables_info),
+                           *list(Field.helper_functions_info)]
+        Field.dependent_variables = [dep[0]
+                                     for dep
+                                     in Field.dependent_variables_info]
+        Field.helper_functions = [dep[0]
+                                  for dep
+                                  in Field.helper_functions_info]
+        Field._keys, Field._coords_info = zip(*Field._var_info)
         return Field
 
     @staticmethod
@@ -83,29 +92,18 @@ class BaseFields(Dataset):
                                    in helper_functions],)
 
     def __init__(self, **inputs):
-        self._var_info = [*list(self.dependent_variables_info),
-                          *list(self.helper_functions_info)]
-        self.dependent_variables = [dep[0]
-                                    for dep
-                                    in self.dependent_variables_info]
-        self.helper_functions = [dep[0]
-                                 for dep
-                                 in self.helper_functions_info]
-        self._keys, self._coords_info = zip(*self._var_info)
-
         super().__init__(data_vars={key: (coords, inputs[key])
                                     for key, coords in self._var_info},
                          coords={coord: inputs[coord]
                                  for coord in self._coords})
 
-    def copy(self):
-        Field = BaseFields.factory(self._coords,
-                                   self.dependent_variables_info,
-                                   self.helper_functions_info)
-        new_array = Field(**{key: self[key].values.copy()
-                             for key
-                             in (self._keys + self._coords)})
-        return new_array
+    def copy(self, deep=True):
+        new_dataset = super().copy(deep)
+        new_dataset.__dict__.update(self.__dict__)
+        return new_dataset
+
+    def __copy__(self, deep=True):
+        return self.copy(deep)
 
     @property
     def size(self):
