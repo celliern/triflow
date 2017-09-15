@@ -170,13 +170,12 @@ class Simulation(object):
         except RuntimeError:
             self.status = 'failed'
             if self._container:
-                self._container.treant.categories["status"] = "failed"
+                self._container.metadata["status"] = "failed"
             raise
 
     def _end_simul(self):
         if self._container:
-            self._container.treant.categories["status"] =\
-                "finished"
+            self._container.metadata["status"] = "finished"
             self._container.close()
 
     def __repr__(self):
@@ -192,6 +191,8 @@ iteration:    {iter:g}
 
 last step:    {step_time}
 total time:   {running_time}
+
+container:    {container}
 
 Physical parameters
 -------------------
@@ -223,6 +224,7 @@ Hook function
                                          if not self._started_timestamp
                                          else self._started_timestamp.diff(
                                              self._actual_timestamp)),
+                           container=(self._container.path),
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
@@ -250,8 +252,8 @@ Hook function
         self._displays.append(display(self, *display_args, **display_kwargs))
 
     def attach_container(self, path="output/", mode="w",
-                         nbuffer=50, timeout=180):
-        """add a TreantContainer to the simulation which allows some
+                         nbuffer=50, timeout=180, force=False):
+        """add a Container to the simulation which allows some
         persistance to the simulation.
 
         Parameters
@@ -266,10 +268,11 @@ Hook function
             wait until timeout since last flush before save on disk.
         """
         container_path = Path(path) / self.id
-        self._container = container.TreantContainer(
+        self._container = container.Container(
             container_path,
             t0=self.t,
             initial_fields=self.fields,
+            force=force,
             metadata=dict(id=self.id, dt=self.dt, tmax=self.tmax,
                           timestamp="{:%Y-%m-%d %H:%M:%S}"
                           .format(self._created_timestamp),
@@ -280,7 +283,11 @@ Hook function
             timeout=timeout)
         logging.info("Persistent container attached (%s)"
                      % container_path.abspath())
-        self._container.treant.categories["status"] = "created"
+        self._container.metadata["status"] = "created"
+
+    @property
+    def container(self):
+        return self._container
 
     def __iter__(self):
         return self.compute()

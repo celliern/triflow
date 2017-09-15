@@ -6,10 +6,9 @@ import logging
 import time
 
 import datreant.core as dtr
-import numpy as np
-from datreant.data import attach  # noqa: used when imported
 from path import Path
 from queue import Queue
+from xarray import open_dataset, merge
 
 log = logging.getLogger(__name__)
 log.handlers = []
@@ -24,41 +23,45 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-class TreantContainer(object):
-
+class Container(object):
     def __init__(self, path, mode='a', *,
                  t0=0, initial_fields=None, metadata={},
+                 force=False,
                  nbuffer=50, timeout=180):
         self._nbuffer = nbuffer
         self._timeout = timeout
-        self.keys = None
         self._mode = mode
         self._writing_queue = None
+        self._dataset = None
 
-        path = Path(path)
+        path = Path(path).abspath()
 
-        if self._mode == "w":
-            Path(path).rmtree_p()
+        if self._mode == "w" and force:
+            path.rmtree_p()
 
-        if self._mode == "r":
-            if not path.exists():
-                raise IOError("Container not found.")
+        if self._mode == "w" and not force and path.exists():
+            raise IOError("Directory %s exists" % path)
+
+        if self._mode == "r" and not path.exists():
+            raise IOError("Container not found.")
 
         self.treant = dtr.Treant(path)
+        self.path = Path(self.treant.abspath)
+        self.path_data = self.path / "data.nc"
 
         for key, value in metadata.items():
             self.treant.categories[key] = value
-        initial_keys = self.treant.data.keys()
 
-        if self._mode == "a" and len(initial_keys) != 0:
-            self.keys = initial_keys
-            self.keys.remove('x')
-            self.keys.remove('t')
+        if self._mode in ["a", "r"]:
+            try:
+                self._dataset = open_dataset(self.path_data)
+            except IOError:
+                pass
 
-        if initial_fields:
-            if len(initial_keys) == 0:
-                self._init_data(t0, initial_fields)
-                return
+        if initial_fields and not self._dataset:
+            self._init_data(t0, initial_fields)
+            return
+        else:
             raise ValueError("Trying to initialize with fields"
                              " and non-empty datasets")
 
@@ -66,23 +69,19 @@ class TreantContainer(object):
         if self._mode == "r":
             return
         logging.debug('init data')
-        self.keys = list(initial_fields.keys()).copy()
-        self.keys.remove('x')
-        self.treant.data.add('x', initial_fields["x"])
-        try:
-            self.keys.remove('y')
-            self.treant.data.add('y', initial_fields["y"])
-        except ValueError:
-            pass
-
-        for key in self.keys:
-            self.treant.data.add(key,
-                                 initial_fields[key]
-                                 .reshape((1,
-                                           *initial_fields[key].shape)))
-        self.treant.data.add('t', np.array(t0))
+        self._dataset = initial_fields.expand_dims("t").assign_coords(t=[t0])
+        self._dataset.attrs.update(self.metadata)
+        self._dataset.to_netcdf(self.path_data)
         self._writing_queue = Queue(self._nbuffer)
         self._time_last_flush = time.time()
+
+    def __repr__(self):
+        repr = """
+path:   {path}
+
+{data}
+""".format(path=self.path, data=self.data)
+        return repr
 
     def __enter__(self):
         return self
@@ -92,6 +91,11 @@ class TreantContainer(object):
             return
         self.flush()
         self.close()
+
+    def keys(self):
+        if self._dataset:
+            return self._dataset.keys()
+        return
 
     def close(self):
         if self.keys:
@@ -109,34 +113,23 @@ class TreantContainer(object):
         except AttributeError:
             return
         log.debug("Flushing queue.")
-        full_t = []
-        full_fields = {key: [] for key in self.keys}
-        while not self._writing_queue.empty():
-            t, fields = self._writing_queue.get()
-            logging.debug('get')
-            full_t.append(t)
-            for key in self.keys:
-                full_fields[key].append(fields[key]
-                                        .reshape((1,
-                                                  *fields[key].shape)))
-        full_fields = {key: np.vstack(value)
-                       for key, value
-                       in full_fields.items()}
-        self.treant.data['t'] = np.append(self.treant.data['t'],
-                                          np.array(full_t))
 
-        for key in self.keys:
-            self.treant.data[key] = np.append(
-                self.treant.data[key],
-                full_fields[key],
-                axis=0
-            )
+        def yield_fields():
+            while not self._writing_queue.empty():
+                t, fields = self._writing_queue.get()
+                fields = fields.expand_dims("t").assign_coords(t=[t])
+                yield fields
+        self._dataset = merge([self._dataset, *yield_fields()])
+        self._dataset.attrs.update(self.metadata)
         log.debug("Queue empty.")
+        log.debug("Writing.")
+        self._dataset.to_netcdf(self.path_data)
+        self._dataset = open_dataset(self.path_data)
 
     def append(self, t, fields):
         if self._mode == "r":
             return
-        if not self.keys:
+        if not self.keys():
             self._init_data(t, fields)
             return
         self._writing_queue.put((t, fields))
@@ -147,16 +140,22 @@ class TreantContainer(object):
             self.flush()
             self._time_last_flush = time.time()
 
-    def set(self, t, fields):
-        self._init_data(t, fields)
+    def set(self, t, fields, force=False):
+        if self._datasets and not force:
+            raise IOError("container not empty, "
+                          "set force=True to override actual data")
+        else:
+            log.warning("container not empty, "
+                        "erasing...")
+            self._init_data(t, fields)
 
     @property
     def data(self):
-        return self.treant.data
+        return self._dataset
 
     @property
     def metadata(self):
-        return self.treant.categories
+        return dict(**self.treant.categories)
 
     @metadata.setter
     def metadata(self, parameters):
@@ -167,11 +166,11 @@ class TreantContainer(object):
 
     def __getitem__(self, key):
         try:
-            data = self.treant.data[key]
+            data = self._dataset[key]
             if self._mode == 'r':
                 data.setflags(write=False)
             return data
-        except KeyError:
+        except (KeyError, TypeError):
             return self.metadata[key]
 
     def __getattr__(self, key):
@@ -182,16 +181,12 @@ class TreantContainer(object):
 
     @staticmethod
     def get_all(path):
-        with TreantContainer(path, "r") as container:
-            return FieldsData(data=AttrDict(**container.data),
+        with Container(path, "r") as container:
+            return FieldsData(data=container.data,
                               metadata=AttrDict(**container.metadata))
 
     @staticmethod
     def get_last(path):
-        with TreantContainer(path, "r") as container:
-            return FieldsData(data=AttrDict(**{key: value[-1]
-                                               for key, value
-                                               in dict(container.data).items()
-                                               if key != "x"},
-                                            x=container.data["x"]),
+        with Container(path, "r") as container:
+            return FieldsData(data=container.data.isel(t=[-1]),
                               metadata=AttrDict(**container.metadata))
