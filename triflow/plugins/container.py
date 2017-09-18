@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from collections import namedtuple
 import logging
 import time
+from collections import namedtuple
 
 import datreant.core as dtr
+import numpy as np
 from path import Path
 from queue import Queue
-from xarray import open_dataset, merge
+from xarray import DataArray, merge, open_dataset, concat
 
 log = logging.getLogger(__name__)
 log.handlers = []
@@ -25,7 +26,8 @@ class AttrDict(dict):
 
 class Container(object):
     def __init__(self, path, mode='a', *,
-                 t0=0, initial_fields=None, metadata={},
+                 t0=0, initial_fields=None,
+                 metadata={}, probes=None,
                  force=False,
                  nbuffer=50, timeout=180):
         self._nbuffer = nbuffer
@@ -57,22 +59,26 @@ class Container(object):
                 self._dataset = open_dataset(self.path_data)
                 return
             except IOError:
-                pass
+                raise IOError("Directory not found")
 
         if initial_fields and not self._dataset:
-            self._init_data(t0, initial_fields)
+            self._init_data(t0, initial_fields, probes=probes)
             return
         else:
             raise ValueError("Trying to initialize with fields"
                              " and non-empty datasets")
 
-    def _init_data(self, t0, initial_fields):
+    def _init_data(self, t0, initial_fields, probes=None):
         if self._mode == "r":
             return
         logging.debug('init data')
         self._dataset = initial_fields.expand_dims("t").assign_coords(t=[t0])
-        self._dataset.attrs.update(self.metadata)
-        self._dataset.to_netcdf(self.path_data)
+        self._dataset = merge([self._dataset, probes])
+        for key, value in self.metadata.items():
+            if isinstance(value, bool):
+                value = int(value)
+            self._dataset.attrs[key] = value
+        self._dataset.to_netcdf(self.path_data, unlimited_dims="t")
         self._writing_queue = Queue(self._nbuffer)
         self._time_last_flush = time.time()
 
@@ -101,6 +107,7 @@ path:   {path}
     def close(self):
         if self.keys:
             self.flush()
+            self._dataset.close()
 
     def flush(self):
         if self._mode == "r":
@@ -117,45 +124,52 @@ path:   {path}
 
         def yield_fields():
             while not self._writing_queue.empty():
-                t, fields = self._writing_queue.get()
-                fields = fields.expand_dims("t").assign_coords(t=[t])
+                fields = self._writing_queue.get()
                 yield fields
-        self._dataset = merge([self._dataset, *yield_fields()])
-        self._dataset.attrs.update(self.metadata)
+
+        self._dataset = concat([self._dataset, *yield_fields()], "t")
+        for key, value in self.metadata.items():
+            if isinstance(value, bool):
+                value = int(value)
+            self._dataset.attrs[key] = value
         log.debug("Queue empty.")
         log.debug("Writing.")
-        self._dataset.to_netcdf(self.path_data)
+        self._dataset.to_netcdf(self.path_data, unlimited_dims="t")
+        self._dataset.close()
         self._dataset = open_dataset(self.path_data)
 
-    def append(self, t, fields):
+    def append(self, t, fields, probes=None):
         if self._mode == "r":
             return
         if not self.keys():
             self._init_data(t, fields)
             return
-        self._writing_queue.put((t, fields))
-        # time.sleep(0.01)
+        fields = fields.expand_dims("t").assign_coords(t=[t])
+        fields = merge([fields, probes])
+        self._writing_queue.put(fields)
         if (self._writing_queue.full() or
                 (time.time() - self._time_last_flush > self._timeout)):
-            logging.debug('Flushing')
+            logging.debug('flushing')
             self.flush()
             self._time_last_flush = time.time()
 
-    def set(self, t, fields, force=False):
+    def set(self, t, fields, probes=None, force=False):
         if self._datasets and not force:
             raise IOError("container not empty, "
                           "set force=True to override actual data")
         else:
             log.warning("container not empty, "
                         "erasing...")
-            self._init_data(t, fields)
+            self._init_data(t, fields, probes=probes)
 
     @property
     def data(self):
+        self.flush()
         return self._dataset
 
     @property
     def metadata(self):
+        self.flush()
         return dict(**self.treant.categories)
 
     @metadata.setter

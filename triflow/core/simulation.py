@@ -5,15 +5,36 @@ import inspect
 import logging
 import pprint
 
+import time
 import pendulum
 from coolname import generate_slug
 from path import Path
 from triflow.plugins import container, schemes
-from triflow.core.fields import BaseFields
+from xarray import Dataset, merge
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+
+class Timer:
+    def __init__(self, last, total):
+        self.last = last
+        self.total = total
+
+    def __repr__(self):
+        repr = """
+last:   {last}
+total:  {total}
+"""
+        return repr.format(last=(pendulum.now()
+                                 .subtract(
+            seconds=self.last)
+            .diff()),
+            total=(pendulum.now()
+                   .subtract(
+                seconds=self.total)
+            .diff()))
 
 
 def null_hook(t, fields, pars):
@@ -115,6 +136,8 @@ class Simulation(object):
                                                            scheme.__init__))
         self.status = 'created'
 
+        self._total_running = 0
+        self._last_running = 0
         self._created_timestamp = pendulum.now()
         self._started_timestamp = None
         self._last_timestamp = None
@@ -122,13 +145,9 @@ class Simulation(object):
         self._hook = hook
         self._container = None
         self._displays = []
+        self._probes_info = {}
+        self._probes = None
         self._iterator = self.compute()
-
-    # @staticmethod
-    # def restart_simulation(model, path, id):
-    #     old_container = container.TreantContainer(Path(path) / id, mode="r")
-    #     fields = old_container.data
-    #     return Simulation(model, )
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -150,18 +169,24 @@ class Simulation(object):
                 self.dt = (self.tmax - t
                            if self.tmax and (t + self.dt >= self.tmax)
                            else self.dt)
+                before_compute = time.clock()
                 t, fields = self._scheme(t, fields, self.dt,
                                          pars, hook=self._hook)
+                after_compute = time.clock()
+                self._last_running = after_compute - before_compute
+                self._total_running += self._last_running
                 self.fields = fields
                 self.t = t
                 self.i += 1
                 self.physical_parameters = pars
                 self._last_timestamp = self._actual_timestamp
                 self._actual_timestamp = pendulum.now()
+                self._compute_probes()
+                if self._container:
+                    self._container.append(t, fields, probes=self._probes)
                 for display in self._displays:
                     display(self.t, self.fields)
-                if self._container:
-                    self._container.append(t, fields)
+
                 yield self.t, self.fields
                 if self.tmax and (self.t >= self.tmax):
                     self._end_simul()
@@ -215,15 +240,18 @@ Hook function
                            iter=self.i,
                            model_repr=self.model,
                            hook_source=inspect.getsource(self._hook),
-                           step_time=(None
-                                      if not self._last_timestamp
-                                      else self._last_timestamp.diff(
-                                          self._actual_timestamp)),
-                           running_time=(None
-                                         if not self._started_timestamp
-                                         else self._started_timestamp.diff(
-                                             self._actual_timestamp)),
-                           container=(self._container.path),
+                           step_time=(None if not self._last_running else
+                                      pendulum.now()
+                                      .subtract(
+                                          seconds=self._last_running)
+                                      .diff()),
+                           running_time=(pendulum.now()
+                                         .subtract(
+                               seconds=self._total_running)
+                               .diff()),
+                           container=(None if not
+                                      self._container
+                                      else self._container.path),
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
@@ -266,6 +294,7 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
+        self._compute_probes()
         container_path = Path(path) / self.id
         self._container = container.Container(
             container_path,
@@ -277,6 +306,7 @@ Hook function
                           .format(self._created_timestamp),
                           hook=inspect.getsource(self._hook),
                           **self.physical_parameters),
+            probes=self._probes,
             mode=mode,
             nbuffer=nbuffer,
             timeout=timeout)
@@ -288,8 +318,31 @@ Hook function
     def container(self):
         return self._container
 
+    @property
+    def probes(self):
+        return self._probes
+
+    @property
+    def timer(self):
+        return Timer(self._last_running, self._total_running)
+
     def __iter__(self):
         return self.compute()
 
     def __next__(self):
         return next(self._iterator)
+
+    def add_probe(self, name, dims, probe):
+        self._probes_info[name] = (dims, probe)
+
+    def _compute_probes(self):
+        self._probes = Dataset(data_vars={name: (dims, probe(self))
+                                          for name, (dims, probe)
+                                          in self._probes_info.items()},
+                               coords={"t": [self.t],
+                                       **{coord: self.fields[coord]
+                                          for coord
+                                          in self.model._indep_vars}})
+
+    def timer_probe(self):
+        return self._last_running
