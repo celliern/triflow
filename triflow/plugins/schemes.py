@@ -53,6 +53,7 @@ class ROW_general:
         self._b_pred = b_pred
         self._s = len(b)
         self._time_control = time_stepping
+        self._internal_iter = None
         self._tol = tol
         self._safety_factor = safety_factor
         self._max_iter = max_iter
