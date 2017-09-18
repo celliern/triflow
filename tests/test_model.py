@@ -7,6 +7,7 @@ import pytest
 from path import tempdir
 
 from triflow import Model
+from triflow.core.compilers import theano_compiler, numpy_compiler
 
 
 @pytest.fixture
@@ -26,8 +27,9 @@ def heat_model():
 @pytest.mark.parametrize("var", [func("U") for func in (str, tuple, list)])
 @pytest.mark.parametrize("par", [func("k") for func in (str, tuple, list)])
 @pytest.mark.parametrize("k", [1, np.ones((100,))])
-def test_model_monovariate(func, var, par, k):
-    model = Model(func, var, par)
+@pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
+def test_model_monovariate(func, var, par, k, compiler):
+    model = Model(func, var, par, compiler=compiler)
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
     U = np.cos(x * 2 * np.pi / 10)
     fields = model.fields_template(x=x, U=U)
@@ -94,10 +96,13 @@ def test_finite_diff(args):
                        rtol=1E-4, atol=1E-4).all())
 
 
-def test_model_api():
+@pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
+@pytest.mark.parametrize("periodic", [True, False])
+def test_model_api(compiler, periodic):
     model = Model(differential_equations=["k * dxxU + s"],
                   dependent_variables="U",
-                  parameters='k', help_functions='s')
+                  parameters='k', help_functions='s',
+                  compiler=compiler)
     assert set(model._args) == set(['x', 'U_m1', 'U', 'U_p1',
                                     's_m1', 's', 's_p1',
                                     'k', 'dx'])
@@ -109,7 +114,7 @@ def test_model_api():
     U = np.cos(x * 2 * np.pi / 10)
     s = np.zeros_like(x)
     fields = model.fields_template(x=x, U=U, s=s)
-    parameters = dict(periodic=True, k=1)
+    parameters = dict(periodic=periodic, k=1)
     model.F(fields, parameters)
     model.J(fields, parameters)
 

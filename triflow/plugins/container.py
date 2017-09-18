@@ -55,6 +55,7 @@ class Container(object):
         if self._mode in ["a", "r"]:
             try:
                 self._dataset = open_dataset(self.path_data)
+                return
             except IOError:
                 pass
 

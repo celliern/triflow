@@ -49,7 +49,8 @@ class BaseFields(Dataset):
               Specialized container which expose the data as a structured
               numpy array
           """
-        Field = BaseFields
+        Field = type('Field', BaseFields.__bases__,
+                     dict(BaseFields.__dict__))
         Field._coords = coords
         Field.dependent_variables_info = dependent_variables
         Field.helper_functions_info = helper_functions
@@ -93,13 +94,14 @@ class BaseFields(Dataset):
                                    in helper_functions],)
 
     def __init__(self, **inputs):
-        super().__init__(data_vars={key: (coords, inputs[key])
+        Dataset.__init__(self,
+                         data_vars={key: (coords, inputs[key])
                                     for key, coords in self._var_info},
                          coords={coord: inputs[coord]
                                  for coord in self._coords})
 
     def copy(self, deep=True):
-        new_dataset = super().copy(deep)
+        new_dataset = Dataset.copy(self, deep)
         new_dataset.__dict__.update({key: (deepcopy(value)
                                            if deep
                                            else copy(value))
@@ -133,21 +135,21 @@ class BaseFields(Dataset):
         aligned_arrays = [self[key].values[[(slice(None)
                                              if c in coords
                                              else None)
-                                            for c in self._coords]]
+                                            for c in self._coords]].T
                           for key, coords in self.dependent_variables_info]
         return np.vstack(aligned_arrays).flatten("F")
 
     def keys(self):
-        return self._keys
+        return [*self._coords, *self._keys]
 
-    def to_df(self):
-        if len(self.coords) > 1:
-            raise ValueError("CSV files only available for 1D arrays")
-        data = {key: self.to_dict()['data_vars'][key]['data']
-                for key
-                in self.keys()}
-        df = pd.DataFrame(dict(x=self.x, **data))
-        return df
+    # def to_df(self):
+    #     if len(self.coords) > 1:
+    #         raise ValueError("CSV files only available for 1D arrays")
+    #     data = {key: self.to_dict()['data_vars'][key]['data']
+    #             for key
+    #             in self.keys()}
+    #     df = pd.DataFrame(dict(**data))
+    #     return df
 
     def fill(self, uflat):
         rarray = uflat.reshape((self.coords["x"].size, -1))

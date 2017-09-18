@@ -104,8 +104,7 @@ class Simulation(object):
         self.id = generate_slug(2) if not id else id
         self.model = model
         self.physical_parameters = physical_parameters
-        if not isinstance(fields, BaseFields):
-            fields = model.fields_template(**fields)
+        self.fields = model.fields_template(**fields)
         self.fields = fields
         self.t = t
         self.dt = dt
