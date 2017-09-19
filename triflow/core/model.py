@@ -13,7 +13,7 @@ from sympy import (Derivative, Function, Symbol,
                    SympifyError, symbols, sympify)
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
-from triflow.core.compilers import theano_compiler
+from triflow.core.compilers import theano_compiler, numpy_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -44,7 +44,6 @@ def _generate_sympify_namespace(independent_variables,
       """  # noqa
 
     independent_variable = independent_variables[0]  # TEMP FIX BEFORE REAL ND
-
     symbolic_independent_variable = Symbol(independent_variable)
 
     def partial_derivative(symbolic_independent_variable,
@@ -136,10 +135,16 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
-                 compiler=theano_compiler,
+                 compiler="theano",
                  simplify=False,
                  fdiff_jac=False,
                  double=True):
+
+        if compiler == "theano":
+            compiler = theano_compiler
+        if compiler == "numpy":
+            compiler = numpy_compiler
+
         logging.debug('enter __init__ Model')
         self._double = double
         self._symb_t = Symbol("t")
