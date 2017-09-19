@@ -10,7 +10,7 @@ import pendulum
 from coolname import generate_slug
 from path import Path
 from triflow.plugins import container, schemes
-from xarray import Dataset, merge
+from xarray import Dataset
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -145,8 +145,11 @@ class Simulation(object):
         self._hook = hook
         self._container = None
         self._displays = []
+        self._handler = []
+        self._bokeh_layout = []
         self._probes_info = {}
         self._probes = None
+        self._init_bokeh = False
         self._iterator = self.compute()
 
     def compute(self):
@@ -161,8 +164,15 @@ class Simulation(object):
         t = self.t
         pars = self.physical_parameters
         self._started_timestamp = pendulum.now()
-        for display in self._displays:
-            display(t, fields)
+        if self._displays:
+            from bokeh.io import push_notebook, show
+            from bokeh.plotting import Column
+            self._handler = show(Column(*self._bokeh_layout),
+                                 notebook_handle=True)
+            for display in self._displays:
+                display(t, fields, probes=self.probes)
+            push_notebook(handle=self._handler)
+
         try:
             while True:
                 fields, pars = self._hook(t, fields, pars)
@@ -183,9 +193,11 @@ class Simulation(object):
                 self._actual_timestamp = pendulum.now()
                 self._compute_probes()
                 if self._container:
-                    self._container.append(t, fields, probes=self._probes)
-                for display in self._displays:
-                    display(self.t, self.fields)
+                    self._container.append(t, fields, probes=self.probes)
+                if self._displays:
+                    for display in self._displays:
+                        display(t, fields, probes=self.probes)
+                    push_notebook(handle=self._handler)
 
                 yield self.t, self.fields
                 if self.tmax and (self.t >= self.tmax):
@@ -276,7 +288,15 @@ Hook function
         **display_kwargs
             named arguments for the display function
         """  # noqa
-        self._displays.append(display(self, *display_args, **display_kwargs))
+        if not self._init_bokeh:
+            from bokeh.io import output_notebook
+            output_notebook()
+            self._init_bokeh = True
+        display = display(self,
+                          *display_args,
+                          **display_kwargs)
+        self._displays.append(display)
+        self._bokeh_layout += display.figs
 
     def attach_container(self, path="output/", mode="w",
                          nbuffer=50, timeout=180, force=False):

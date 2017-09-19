@@ -6,7 +6,7 @@ in order to give extra informationto the user during the simulation
 """
 
 
-class bokeh_fields_update():
+class display_1D():
     """Display fields data in a interactive Bokeh plot displayed in
     a jupyter notebook.
 
@@ -35,16 +35,12 @@ class bokeh_fields_update():
     def __init__(self, simul, keys=None,
                  line_kwargs={},
                  fig_kwargs={},
-                 default_fig_kwargs={"width": 600, "height": 400},
+                 default_fig_kwargs={"width": 600, "height": 250},
                  default_line_kwargs={},
                  notebook=True,
                  stack=False):
-        from bokeh.io import push_notebook, output_notebook
-        from bokeh.plotting import figure, show, ColumnDataSource
-        from bokeh.layouts import Column
-
-        if notebook:
-            output_notebook()
+        from bokeh.io import push_notebook
+        from bokeh.plotting import figure, ColumnDataSource
 
         setattr(self, '_push', push_notebook)
 
@@ -73,8 +69,7 @@ class bokeh_fields_update():
                 line_config.update(line_kwargs.get(key, {}))
                 fig.line('x', key, source=self._datasource,
                          **line_kwargs.get(key, {}))
-            self._handler = show(fig, notebook_handle=True)
-            return
+            self.figs = [fig]
         else:
             figs = {}
             for key in self.keys:
@@ -86,19 +81,16 @@ class bokeh_fields_update():
                 figs[key].line('x', key, source=self._datasource,
                                **line_config)
 
-            self._handler = show(Column(*[figs[key]
-                                          for key
-                                          in self._datafunc.keys()
-                                          if key != 'x']),
-                                 notebook_handle=True)
+            self.figs = [figs[key]
+                         for key in self._datafunc.keys()
+                         if key != 'x']
 
-    def __call__(self, t, fields):
+    def __call__(self, t, fields, probes):
         for key, func in self._datafunc.items():
             self._datasource.data[key] = func(t, fields, key).values
-        self._push(handle=self._handler)
 
 
-class bokeh_probes_update():
+class display_0D():
     """Display custom probes in a interactive Bokeh plot displayed in a jupyter notebook.
 
     Parameters
@@ -113,43 +105,62 @@ class bokeh_probes_update():
         if True, initialize the javascript component needed for bokeh.
     """  # noqa
 
-    def __init__(self, simul, probes,
+    def __init__(self, simul, keys=None,
                  line_kwargs={},
+                 scatter_kwargs={},
                  fig_kwargs={},
-                 default_fig_kwargs={"width": 600, "height": 400},
+                 default_fig_kwargs={"width": 600, "height": 250},
                  default_line_kwargs={},
-                 notebook=True):
-
-        from bokeh.io import push_notebook, output_notebook
-        from bokeh.plotting import figure, show, ColumnDataSource
-        from bokeh.layouts import Column
-
-        if notebook:
-            output_notebook()
+                 default_scatter_kwargs={},
+                 notebook=True,
+                 stack=False):
+        from bokeh.io import push_notebook
+        from bokeh.plotting import figure, ColumnDataSource
 
         setattr(self, '_push', push_notebook)
-        self._datasource = ColumnDataSource(dict(t=[simul.t],
-                                                 **{
-            name:
-            [probe(simul.t,
-                   simul.fields).values]
-            for name, probe
-            in probes.items()}))
-        figs = {}
-        for name, probe in probes.items():
-            fig_config = default_fig_kwargs.copy()
-            fig_config.update(fig_kwargs.get(name, {}))
-            line_config = default_line_kwargs.copy()
-            line_config.update(line_kwargs.get(name, {}))
-            figs[name] = figure(**fig_config, title=name)
-            figs[name].line('t', name, source=self._datasource,
-                            **line_config)
-        self._handler = show(Column(*[figs[name] for name in probes]),
-                             notebook_handle=True)
-        self._probes = probes
 
-    def __call__(self, t, fields):
-        self._datasource.data['t'].append(t)
-        for name, probe in self._probes.items():
-            self._datasource.data[name].append(probe(t, fields).values)
-        self._push(handle=self._handler)
+        keys = keys if keys else [
+            key for key in simul.probes.keys() if key != 't']
+
+        self._datafunc = {'t': lambda t, probes, key: [t]}
+        for key in keys:
+            if isinstance(key, str):
+                self._datafunc[key] = \
+                    lambda t, probes, key: probes[key].values.tolist()
+            if isinstance(key, (tuple, list)):
+                self._datafunc[key[0]] = key[1]
+        self._datasource = ColumnDataSource({key:
+                                             func(simul.t,
+                                                  simul.probes,
+                                                  key)
+                                             for (key, func)
+                                             in self._datafunc.items()})
+        self.keys = list(self._datafunc.keys())
+        self.keys.remove("t")
+
+        if stack:
+            fig = figure(**default_fig_kwargs)
+            for key in self.keys:
+                line_config = default_line_kwargs.copy()
+                line_config.update(line_kwargs.get(key, {}))
+                fig.line('t', key, source=self._datasource,
+                         **line_kwargs.get(key, {}))
+            self.figs = [fig]
+        else:
+            figs = {}
+            for key in self.keys:
+                fig_config = default_fig_kwargs.copy()
+                fig_config.update(fig_kwargs.get(key, {}))
+                line_config = default_line_kwargs.copy()
+                line_config.update(line_kwargs.get(key, {}))
+                figs[key] = figure(**fig_config, title=key)
+                figs[key].line('t', key, source=self._datasource,
+                               **line_config)
+                figs[key].scatter('t', key, source=self._datasource)
+            self.figs = [figs[key]
+                         for key in self._datafunc.keys()
+                         if key != 't']
+
+    def __call__(self, t, fields, probes):
+        for key, func in self._datafunc.items():
+            self._datasource.data[key].append(func(t, probes, key)[0])
