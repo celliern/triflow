@@ -7,6 +7,16 @@ from xarray import Dataset
 from copy import copy, deepcopy
 
 
+def reduce_fields(coords,
+                  dependent_variables,
+                  helper_functions,
+                  data):
+    Field = BaseFields.factory(coords,
+                               dependent_variables,
+                               helper_functions)
+    return Field(**data)
+
+
 class BaseFields(Dataset):
     """Specialized container which expose the data as a structured numpy array,
       give access to the dependants variables and the herlpers function as
@@ -100,6 +110,14 @@ class BaseFields(Dataset):
                          coords={coord: inputs[coord]
                                  for coord in self._coords})
 
+    def __reduce__(self):
+        return (reduce_fields,
+                (self._coords,
+                 self.dependent_variables_info,
+                 self.helper_functions_info,
+                 {key: self[key]
+                  for key in self.keys()}))
+
     def copy(self, deep=True):
         new_dataset = Dataset.copy(self, deep)
         new_dataset.__dict__.update({key: (deepcopy(value)
@@ -142,17 +160,18 @@ class BaseFields(Dataset):
     def keys(self):
         return [*self._coords, *self._keys]
 
-    # def to_df(self):
-    #     if len(self.coords) > 1:
-    #         raise ValueError("CSV files only available for 1D arrays")
-    #     data = {key: self.to_dict()['data_vars'][key]['data']
-    #             for key
-    #             in self.keys()}
-    #     df = pd.DataFrame(dict(**data))
-    #     return df
+    def to_df(self):
+        if len(self.coords) > 1:
+            raise ValueError("CSV files only available for 1D arrays")
+        data = {key: self[key]
+                for key
+                in self._keys}
+        df = pd.DataFrame(dict(**data), index=self[self._coords[0]])
+        return df
 
     def fill(self, uflat):
-        rarray = uflat.reshape((self.coords["x"].size, -1))
+        rarray = uflat.reshape((self[self._coords[0]].size,
+                                -1))
         ptr = 0
         for var, coords in self.dependent_variables_info:
             coords = list(coords)
