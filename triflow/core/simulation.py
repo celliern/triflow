@@ -112,6 +112,8 @@ class Simulation(object):
     def __init__(self, model, t, fields, physical_parameters, dt,
                  id=None, hook=null_hook,
                  scheme=schemes.RODASPR,
+                 time_stepping=True,
+                 init_bokeh=True,
                  tmax=None, **kwargs):
 
         def intersection_kwargs(kwargs, function):
@@ -121,7 +123,7 @@ class Simulation(object):
                       for key, value
                       in kwargs.items() if key in func_parameters}
             return kwargs
-
+        kwargs["time_stepping"] = time_stepping
         self.id = generate_slug(2) if not id else id
         self.model = model
         self.physical_parameters = physical_parameters
@@ -132,8 +134,17 @@ class Simulation(object):
         self.tmax = tmax
         self.i = 0
 
-        self._scheme = scheme(model, **intersection_kwargs(kwargs,
-                                                           scheme.__init__))
+        self._scheme = scheme(model,
+                              **intersection_kwargs(kwargs,
+                                                    scheme.__init__))
+        if (time_stepping and
+            self._scheme not in [schemes.RODASPR,
+                                 schemes.ROS3PRL,
+                                 schemes.ROS3PRw]):
+            self._scheme = schemes.time_stepping(
+                self._scheme,
+                **intersection_kwargs(kwargs,
+                                      schemes.time_stepping))
         self.status = 'created'
 
         self._total_running = 0
@@ -149,8 +160,10 @@ class Simulation(object):
         self._bokeh_layout = []
         self._probes_info = {}
         self._probes = None
-        self._init_bokeh = False
+        self._init_bokeh = init_bokeh
         self._iterator = self.compute()
+        self.add_probe("ctime", "t", lambda simul: simul.timer.last)
+        self.add_probe("full_ctime", "t", lambda simul: simul.timer.total)
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -288,10 +301,10 @@ Hook function
         **display_kwargs
             named arguments for the display function
         """  # noqa
-        if not self._init_bokeh:
+        if self._init_bokeh:
             from bokeh.io import output_notebook
             output_notebook()
-            self._init_bokeh = True
+            self._init_bokeh = False
         display = display(self,
                           *display_args,
                           **display_kwargs)
@@ -356,7 +369,7 @@ Hook function
         self._probes_info[name] = (dims, probe)
 
     def _compute_probes(self):
-        self._probes = Dataset(data_vars={name: (dims, probe(self))
+        self._probes = Dataset(data_vars={name: (dims, [probe(self)])
                                           for name, (dims, probe)
                                           in self._probes_info.items()},
                                coords={"t": [self.t],

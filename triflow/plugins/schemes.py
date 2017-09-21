@@ -13,11 +13,12 @@ The following solvers are implemented:
 """
 
 import logging
+from functools import wraps
 
 import numpy as np
 import scipy.sparse as sps
-from scipy.interpolate import interp1d
 from scipy.integrate import ode
+from scipy.interpolate import interp1d
 from scipy.linalg import norm
 from toolz import memoize
 
@@ -27,6 +28,42 @@ logging = logging.getLogger(__name__)
 
 def null_hook(t, fields, pars):
     return fields, pars
+
+
+def time_stepping(scheme, tol=1E-2, ord=2, m=10, reject_factor=2):
+    internal_dt = None
+
+    def one_step(t, fields, dt, pars, hook):
+        dt_ = dt
+        while True:
+            t_, fields_ = scheme(t, fields, m * dt_, pars, hook)
+            for i in range(10):
+                t, fields = scheme(t, fields, dt_, pars, hook)
+            errs = [np.linalg.norm(fields_[key] - fields[key], ord) /
+                    (m**2 - 1)
+                    for key in fields.dependent_variables]
+            err = max(errs)
+            dt_ = np.sqrt(dt ** 2 * tol / err)
+            if dt_ < dt / reject_factor:
+                continue
+            break
+        return t, fields, dt_
+
+    @wraps(scheme)
+    def adaptatif_scheme(t, fields, dt, pars, hook=null_hook):
+        nonlocal internal_dt
+        next_step = t + dt
+        internal_dt = internal_dt if internal_dt else dt
+        while t + internal_dt <= next_step:
+            t, fields, internal_dt = one_step(t, fields,
+                                              internal_dt / m,
+                                              pars, hook)
+        if t < next_step:
+            t, fields = scheme(t, fields,
+                               next_step - t,
+                               pars, hook)
+        return t, fields
+    return adaptatif_scheme
 
 
 class ROW_general:

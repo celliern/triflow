@@ -9,7 +9,7 @@ import datreant.core as dtr
 import numpy as np
 from path import Path
 from queue import Queue
-from xarray import DataArray, merge, open_dataset, concat
+from xarray import merge, open_dataset, concat
 
 log = logging.getLogger(__name__)
 log.handlers = []
@@ -78,7 +78,7 @@ class Container(object):
             if isinstance(value, bool):
                 value = int(value)
             self._dataset.attrs[key] = value
-        self._dataset.to_netcdf(self.path_data, unlimited_dims="t")
+        self._dataset.to_netcdf(self.path_data)
         self._writing_queue = Queue(self._nbuffer)
         self._time_last_flush = time.time()
 
@@ -134,8 +134,7 @@ path:   {path}
             self._dataset.attrs[key] = value
         log.debug("Queue empty.")
         log.debug("Writing.")
-        self._dataset.to_netcdf(self.path_data, unlimited_dims="t")
-        self._dataset.close()
+        self._dataset.to_netcdf(self.path_data)
         self._dataset = open_dataset(self.path_data)
 
     def append(self, t, fields, probes=None):
