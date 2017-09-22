@@ -10,7 +10,7 @@ from pprint import pformat
 
 import numpy as np
 from sympy import (Derivative, Function, Symbol,
-                   SympifyError, symbols, sympify)
+                   SympifyError, symbols, sympify, Max, Min)
 from triflow.core.fields import BaseFields
 from triflow.core.routines import F_Routine, J_Routine
 from triflow.core.compilers import theano_compiler, numpy_compiler
@@ -138,7 +138,8 @@ class Model:
                  compiler="theano",
                  simplify=False,
                  fdiff_jac=False,
-                 double=True):
+                 double=True,
+                 hold_compilation=False):
 
         if compiler == "theano":
             compiler = theano_compiler
@@ -269,18 +270,21 @@ class Model:
         # a sparse matrix storage for memory saving and efficient linalg ops.
         self._J_sparse_array = self.J_array[self._sparse_indices]
 
-        # We compile the math with a theano based compiler (default)
-        self._compile(self.F_array, self._J_sparse_array, compiler)
+        if hold_compilation:
+            return
 
-    def _compile(self, F_array, J_array, compiler):
+        # We compile the math with a theano based compiler (default)
+        self.compile(compiler)
+
+    def compile(self, compiler):
         F_function, J_function = compiler(self)
         logging.debug('compile F')
-        self.F = F_Routine(F_array,
+        self.F = F_Routine(self.F_array,
                            (self._dep_vars +
                             self._help_funcs),
                            self._pars, F_function)
         logging.debug('compile J')
-        self.J = J_Routine(J_array,
+        self.J = J_Routine(self._J_sparse_array,
                            (self._dep_vars +
                             self._help_funcs),
                            self._pars, J_function)
@@ -416,6 +420,46 @@ parameters:     {pars}"""
         raise NotImplementedError('Finite difference up '
                                   'to 5th order not implemented yet')
 
+    def _upwind_scheme(self, a, U, accuracy):
+        dx = Symbol('dx')
+        var_label = str(U)
+        ap = Max(a, 0)
+        am = Min(a, 0)
+        if accuracy == 1:
+            Um1 = Symbol('%s_m1' % var_label)
+            Up1 = Symbol('%s_p1' % var_label)
+            self._symb_vars_with_spatial_diff_order[var_label].add((Um1, -1))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Up1, 1))
+            Um = (U - Um1) / dx
+            Up = (Up1 - U) / dx
+            return ap * Um + am * Up
+        elif accuracy == 2:
+            Um1 = Symbol('%s_m1' % var_label)
+            Up1 = Symbol('%s_p1' % var_label)
+            Um2 = Symbol('%s_m2' % var_label)
+            Up2 = Symbol('%s_p2' % var_label)
+            self._symb_vars_with_spatial_diff_order[var_label].add((Um1, -1))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Up1, 1))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Um2, -2))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Up2, 2))
+            Um = (3 * U - 4 * Um1 + Um2) / (2 * dx)
+            Up = (-3 * U + 4 * Up1 - Up2) / (2 * dx)
+            return ap * Um + am * Up
+        elif accuracy == 3:
+            Um1 = Symbol('%s_m1' % var_label)
+            Up1 = Symbol('%s_p1' % var_label)
+            Um2 = Symbol('%s_m2' % var_label)
+            Up2 = Symbol('%s_p2' % var_label)
+            self._symb_vars_with_spatial_diff_order[var_label].add((Um1, -1))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Up1, 1))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Um2, -2))
+            self._symb_vars_with_spatial_diff_order[var_label].add((Up2, 2))
+            Um = (2 * Up1 + 3 * U - 6 * Um1 + Um2) / (6 * dx)
+            Up = (-2 * Um1 - 3 * U + 6 * Up1 - Up2) / (6 * dx)
+            return ap * Um + am * Up
+        raise NotImplementedError('Upwind up '
+                                  'to 2nd order not implemented yet')
+
     def _sympify_model(self,
                        diff_eqs,
                        indep_vars,
@@ -484,7 +528,9 @@ parameters:     {pars}"""
             afunc = afunc.subs([(var, Symbol(str(var.func)))
                                 for var in symbolic_dep_vars +
                                 symbolic_fields])
+            afunc = afunc.replace(Function("upwind"), self._upwind_scheme)
             approximated_diff_eqs.append(afunc.expand())
+
         return tuple(approximated_diff_eqs)
 
     def __reduce__(self):

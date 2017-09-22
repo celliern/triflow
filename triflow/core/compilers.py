@@ -11,6 +11,21 @@ def theano_compiler(model):
     import theano.sparse as ths
     from theano import function
 
+    def th_Min(a, b):
+        if isinstance(a, T.TensorVariable) or isinstance(b, T.TensorVariable):
+            return T.where(a < b, a, b)
+        return min(a, b)
+
+    def th_Max(a, b):
+        if isinstance(a, T.TensorVariable) or isinstance(b, T.TensorVariable):
+            return T.where(a < b, b, a)
+        return max(a, b)
+
+    def th_Heaviside(a):
+        if isinstance(a, T.TensorVariable):
+            return T.where(a < 0, 1, 1)
+        return 0 if a < 0 else 1
+
     mapargs = {arg: T.vector(arg)
                for arg, sarg
                in zip(model._args, model._symbolic_args)}
@@ -67,17 +82,26 @@ def theano_compiler(model):
 
     F = lambdify((model._symbolic_args),
                  expr=model.F_array.tolist(),
-                 modules=T)(*[to_feed[key]
-                              for key
-                              in model._args])
+                 modules=[T, {"Max": th_Max,
+                              "Min": th_Min,
+                              "Heaviside": th_Heaviside}])(
+        *[to_feed[key]
+          for key
+          in model._args]
+    )
+
     F = T.concatenate(F, axis=0).reshape((model._nvar, N)).T
     F = T.stack(F).flatten()
 
     J = lambdify((model._symbolic_args),
                  expr=model.J_array.tolist(),
-                 modules=T)(*[to_feed[key]
-                              for key
-                              in model._args])
+                 modules=[T, {"Max": th_Max,
+                              "Min": th_Min,
+                              "Heaviside": th_Heaviside}])(
+        *[to_feed[key]
+          for key
+          in model._args]
+    )
 
     J = [j if j != 0 else T.constant(0.) for j in J]
     J = T.stack([T.repeat(j, N) if j.ndim == 0 else j for j in J])
@@ -136,13 +160,26 @@ def theano_compiler(model):
 def numpy_compiler(model):
     from scipy.sparse import csc_matrix
 
+    def np_Min(a, b):
+        return np.where(a < b, a, b)
+
+    def np_Max(a, b):
+        return np.where(a < b, b, a)
+
+    def np_Heaviside(a):
+        return np.where(a < 0, 1, 1)
+
     f_func = lambdify((model._symbolic_args),
                       expr=model.F_array.tolist(),
-                      modules="numpy")
+                      modules=["math", {"Max": np_Max,
+                                        "Min": np_Min,
+                                        "Heaviside": np_Heaviside}])
 
     j_func = lambdify((model._symbolic_args),
                       expr=model._J_sparse_array.tolist(),
-                      modules="numpy")
+                      modules=["math", {"Max": np_Max,
+                                        "Min": np_Min,
+                                        "Heaviside": np_Heaviside}])
 
     def init_computation(*input_args):
         mapargs = {key: input_args[i]
