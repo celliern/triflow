@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.core package &mdash; triflow 0.4.3 documentation</title>
+  <title>triflow.core package &mdash; triflow 0.4.12 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="triflow 0.4.3 documentation" href="index.html"/>
+    <link rel="top" title="triflow 0.4.12 documentation" href="index.html"/>
         <link rel="up" title="triflow package" href="triflow.html"/>
         <link rel="next" title="triflow.plugins package" href="triflow.plugins.html"/>
         <link rel="prev" title="triflow package" href="triflow.html"/> 
@@ -225,7 +225,7 @@
 <dl class="class">
 <dt id="triflow.core.fields.BaseFields">
 <em class="property">class </em><code class="descclassname">triflow.core.fields.</code><code class="descname">BaseFields</code><span class="sig-paren">(</span><em>**inputs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">xarray.core.dataset.Dataset</span></code></p>
 <p>Specialized container which expose the data as a structured numpy array,
 give access to the dependants variables and the herlpers function as
 attributes (as a numpy rec array) and is able to give access to a flat
@@ -235,48 +235,73 @@ solvers for all the linear algebra manipulation).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**inputs</strong> (<em>numpy.array</em>) &#8211; named argument providing x, the dependent variables and the helper functions. All of these are mendatory and a KeyError will be raised if a data is missing.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**inputs</strong> (<em>numpy.array</em>) -- named argument providing x, the dependent variables and the helper functions. All of these are mendatory and a KeyError will be raised if a data is missing.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.array">
 <code class="descname">array</code><a class="headerlink" href="#triflow.core.fields.BaseFields.array" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.array</em> &#8211; vanilla numpy array containing the data</p>
+<dd><p><em>numpy.array</em> -- vanilla numpy array containing the data</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.size">
 <code class="descname">size</code><a class="headerlink" href="#triflow.core.fields.BaseFields.size" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> &#8211; Number of discretisation nodes</p>
+<dd><p><em>int</em> -- Number of discretisation nodes</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="triflow.core.fields.BaseFields.copy">
-<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.copy" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.dependent_variables">
-<code class="descname">dependent_variables</code><em class="property"> = ('U',)</em><a class="headerlink" href="#triflow.core.fields.BaseFields.dependent_variables" title="Permalink to this definition">¶</a></dt>
+<code class="descname">copy</code><span class="sig-paren">(</span><em>deep=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.copy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="staticmethod">
 <dt id="triflow.core.fields.BaseFields.factory">
-<em class="property">static </em><code class="descname">factory</code><span class="sig-paren">(</span><em>dependent_variables</em>, <em>helper_functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.factory" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">factory</code><span class="sig-paren">(</span><em>coords</em>, <em>dependent_variables</em>, <em>helper_functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.factory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fields factory generating specialized container build around a
-triflow Model.</p>
+triflow Model and xarray.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dependent_variables</strong> (<em>iterable of str</em>) &#8211; name of the dependent variables</li>
-<li><strong>helper_functions</strong> (<em>iterable of str</em>) &#8211; name of the helper functions</li>
+<li><strong>coords</strong> (<em>iterable of str:</em>) -- coordinates name. First coordinate have to be shared with all
+variables</li>
+<li><strong>dependent_variables</strong> (<em>iterable tuple</em><em> (</em><em>name</em><em>, </em><em>coords</em><em>)</em>) -- coordinates and name of the dependent variables</li>
+<li><strong>helper_functions</strong> (<em>iterable tuple</em><em> (</em><em>name</em><em>, </em><em>coords</em><em>)</em>) -- coordinates and name of the helpers functions</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Specialized container which expose the data as a structured numpy array</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Specialized container which expose the data as a structured
+numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">triflow.BaseFields</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="triflow.core.fields.BaseFields.factory1D">
+<em class="property">static </em><code class="descname">factory1D</code><span class="sig-paren">(</span><em>dependent_variables</em>, <em>helper_functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.factory1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.factory1D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fields factory generating specialized container build around a
+triflow Model and xarray.
+Wrapper for 1D data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dependent_variables</strong> (<em>iterable for str</em>) -- name of the dependent variables</li>
+<li><strong>helper_functions</strong> (<em>iterable of str</em>) -- name of the helpers functions</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Specialized container which expose the data as a structured
+numpy array</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">triflow.BaseFields</p>
@@ -288,40 +313,39 @@ triflow Model.</p>
 
 <dl class="method">
 <dt id="triflow.core.fields.BaseFields.fill">
-<code class="descname">fill</code><span class="sig-paren">(</span><em>flat_array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.fill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.fill" title="Permalink to this definition">¶</a></dt>
-<dd><p>take a flat numpy array and update inplace the dependent
-variables of the container</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flat_array</strong> (<em>numpy.ndarray</em>) &#8211; flat array which will be put in the dependant variable flat array.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<code class="descname">fill</code><span class="sig-paren">(</span><em>uflat</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.fill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.fill" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.flat">
-<code class="descname">flat</code><a class="headerlink" href="#triflow.core.fields.BaseFields.flat" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray.view</em> &#8211; flat view of the main numpy array</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.helper_functions">
-<code class="descname">helper_functions</code><em class="property"> = ()</em><a class="headerlink" href="#triflow.core.fields.BaseFields.helper_functions" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="triflow.core.fields.BaseFields.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.keys" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="triflow.core.fields.BaseFields.structured">
-<code class="descname">structured</code><a class="headerlink" href="#triflow.core.fields.BaseFields.structured" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray.view</em> &#8211; structured view of the main numpy array</p>
+<dt>
+<code class="descname">size</code></dt>
+<dd><p><em>numpy.ndarray.view</em> -- view of the dependent variables of the main numpy array</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.fields.BaseFields.to_clipboard">
+<code class="descname">to_clipboard</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.to_clipboard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.to_clipboard" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.fields.BaseFields.to_csv">
+<code class="descname">to_csv</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.to_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.to_csv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.fields.BaseFields.to_df">
+<code class="descname">to_df</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#BaseFields.to_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.BaseFields.to_df" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.fields.BaseFields.uarray">
 <code class="descname">uarray</code><a class="headerlink" href="#triflow.core.fields.BaseFields.uarray" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray.view</em> &#8211; view of the dependent variables of the main numpy array</p>
+<dd><p><em>numpy.ndarray.view</em> -- view of the dependent variables of the main numpy array</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -335,12 +359,17 @@ the main array!</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="triflow.core.fields.reduce_fields">
+<code class="descclassname">triflow.core.fields.</code><code class="descname">reduce_fields</code><span class="sig-paren">(</span><em>coords</em>, <em>dependent_variables</em>, <em>helper_functions</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/fields.html#reduce_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.fields.reduce_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="module-triflow.core.model">
 <span id="triflow-core-model-module"></span><h2>triflow.core.model module<a class="headerlink" href="#module-triflow.core.model" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="triflow.core.model.Model">
-<em class="property">class </em><code class="descclassname">triflow.core.model.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>differential_equations</em>, <em>dependent_variables</em>, <em>parameters=None</em>, <em>help_functions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.Model" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.core.model.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>differential_equations</em>, <em>dependent_variables</em>, <em>parameters=None</em>, <em>help_functions=None</em>, <em>bdc_conditions=None</em>, <em>compiler='theano'</em>, <em>simplify=False</em>, <em>fdiff_jac=False</em>, <em>double=True</em>, <em>hold_compilation=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.Model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Contain finite difference approximation and routine of the dynamical system</p>
 <p>Take a mathematical form as input, use Sympy to transform it as a symbolic
@@ -352,10 +381,11 @@ Jacobian matrix approximation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>differential_equations</strong> (<em>iterable of str</em><em> or </em><em>str</em>) &#8211; the right hand sides of the partial differential equations written as <span class="math">\(\frac{\partial U}{\partial t} = F(U)\)</span>, where the spatial derivative can be written as <cite>dxxU</cite> or <cite>dx(U, 2)</cite> or with the sympy notation <cite>Derivative(U, x, x)</cite></li>
-<li><strong>dependent_variables</strong> (<em>iterable of str</em><em> or </em><em>str</em>) &#8211; the dependent variables with the same order as the temporal derivative of the previous arg.</li>
-<li><strong>parameters</strong> (<em>iterable of str</em><em> or </em><em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; list of the parameters. Can be feed with a scalar of an array with the same size</li>
-<li><strong>help_functions</strong> (<em>None</em><em>, </em><em>optional</em>) &#8211; All fields which have not to be solved with the time derivative but will be derived in space.</li>
+<li><strong>differential_equations</strong> (<em>iterable of str</em><em> or </em><em>str</em>) -- the right hand sides of the partial differential equations written as <span class="math">\(\frac{\partial U}{\partial t} = F(U)\)</span>, where the spatial derivative can be written as <cite>dxxU</cite> or <cite>dx(U, 2)</cite> or with the sympy notation <cite>Derivative(U, x, x)</cite></li>
+<li><strong>dependent_variables</strong> (<em>iterable of str</em><em> or </em><em>str</em>) -- the dependent variables with the same order as the temporal derivative of the previous arg.</li>
+<li><strong>parameters</strong> (<em>iterable of str</em><em> or </em><em>str</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- list of the parameters. Can be feed with a scalar of an array with the same size</li>
+<li><strong>help_functions</strong> (<em>None</em><em>, </em><em>optional</em>) -- All fields which have not to be solved with the time derivative but will be derived in space.</li>
+<li><strong>double</strong> (<em>bool</em><em>, </em><em>optional</em>) -- Choose if the dtypes are float64 (the default) or float32</li>
 </ul>
 </td>
 </tr>
@@ -364,25 +394,25 @@ Jacobian matrix approximation.</p>
 <dl class="attribute">
 <dt id="triflow.core.model.Model.F">
 <code class="descname">F</code><a class="headerlink" href="#triflow.core.model.Model.F" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>triflow.F_Routine</em> &#8211; Callable used to compute the right hand side of the dynamical system</p>
+<dd><p><em>triflow.F_Routine</em> -- Callable used to compute the right hand side of the dynamical system</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.model.Model.F_array">
 <code class="descname">F_array</code><a class="headerlink" href="#triflow.core.model.Model.F_array" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray of sympy.Expr</em> &#8211; Symbolic expressions of the right hand side of the dynamical system</p>
+<dd><p><em>numpy.ndarray of sympy.Expr</em> -- Symbolic expressions of the right hand side of the dynamical system</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.model.Model.J">
 <code class="descname">J</code><a class="headerlink" href="#triflow.core.model.Model.J" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>triflow.J_Routine</em> &#8211; Callable used to compute the Jacobian of the dynamical system</p>
+<dd><p><em>triflow.J_Routine</em> -- Callable used to compute the Jacobian of the dynamical system</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.model.Model.J_array">
 <code class="descname">J_array</code><a class="headerlink" href="#triflow.core.model.Model.J_array" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray of sympy.Expr</em> &#8211; Symbolic expressions of the Jacobian side of the dynamical system</p>
+<dd><p><em>numpy.ndarray of sympy.Expr</em> -- Symbolic expressions of the Jacobian side of the dynamical system</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -419,6 +449,11 @@ Jacobian matrix approximation.</p>
 <span class="gp">... </span>               <span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;k1&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">,</span> <span class="s2">&quot;c1&quot;</span><span class="p">,</span> <span class="s2">&quot;c2&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
+<dl class="method">
+<dt id="triflow.core.model.Model.compile">
+<code class="descname">compile</code><span class="sig-paren">(</span><em>compiler</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/model.html#Model.compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.model.Model.compile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt>
 <code class="descname">fields_template</code></dt>
@@ -434,7 +469,7 @@ loaded on the system.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; path of the pre-compiled model</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) -- path of the pre-compiled model</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">triflow pre-compiled model</td>
 </tr>
@@ -452,7 +487,7 @@ loaded on the system.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; name of the file where the model is saved.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) -- name of the file where the model is saved.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -478,8 +513,8 @@ loaded on the system.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
-<li><strong>pars</strong> (<em>dict</em>) &#8211; dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) -- triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
+<li><strong>pars</strong> (<em>dict</em>) -- dictionnary with the different physical parameters of the model and the 'periodic' key.</li>
 </ul>
 </td>
 </tr>
@@ -509,9 +544,9 @@ loaded on the system.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
-<li><strong>pars</strong> (<em>dict</em>) &#8211; dictionnary with the different physical parameters of the model and the &#8216;periodic&#8217; key.</li>
-<li><strong>sparse</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; whether should the matrix returned as dense or sparse form.</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) -- triflow fields container generated by a triflow.Model containing the actual state of the dependent variables and helper functions.</li>
+<li><strong>pars</strong> (<em>dict</em>) -- dictionnary with the different physical parameters of the model and the 'periodic' key.</li>
+<li><strong>sparse</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) -- whether should the matrix returned as dense or sparse form.</li>
 </ul>
 </td>
 </tr>
@@ -536,26 +571,26 @@ loaded on the system.</p>
 <span id="triflow-core-simulation-module"></span><h2>triflow.core.simulation module<a class="headerlink" href="#module-triflow.core.simulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="triflow.core.simulation.Simulation">
-<em class="property">class </em><code class="descclassname">triflow.core.simulation.</code><code class="descname">Simulation</code><span class="sig-paren">(</span><em>model</em>, <em>t</em>, <em>fields</em>, <em>physical_parameters</em>, <em>dt</em>, <em>id=None</em>, <em>hook=&lt;function Simulation.&lt;lambda&gt;&gt;</em>, <em>scheme=&lt;class 'triflow.plugins.schemes.RODASPR'&gt;</em>, <em>tmax=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.core.simulation.</code><code class="descname">Simulation</code><span class="sig-paren">(</span><em>model</em>, <em>t</em>, <em>fields</em>, <em>physical_parameters</em>, <em>dt</em>, <em>id=None</em>, <em>hook=&lt;function null_hook&gt;</em>, <em>scheme=&lt;class 'triflow.plugins.schemes.RODASPR'&gt;</em>, <em>time_stepping=True</em>, <em>init_bokeh=True</em>, <em>tmax=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>High level container used to run simulation build on triflow Model.
-This object is an iterable which will yield every time step until the parameters &#8216;tmax&#8217; is reached if provided.
+This object is an iterable which will yield every time step until the parameters 'tmax' is reached if provided.
 By default, the solver use a 6th order ROW solver, an implicit method with integrated time-stepping.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; Contain finite difference approximation and routine of the dynamical system</li>
-<li><strong>t</strong> (<em>float</em>) &#8211; initial time</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; triflow container filled with initial conditions</li>
-<li><strong>physical_parameters</strong> (<em>dict</em>) &#8211; physical parameters of the simulation</li>
-<li><strong>id</strong> (<em>None</em><em>, </em><em>optional</em>) &#8211; name of the simulation. A 2 word slug will be generated if not provided.</li>
-<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
-<li><strong>scheme</strong> (<em>callable</em><em>, </em><em>optional</em><em>, </em><em>default triflow.schemes.RODASPR</em>) &#8211; an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.</li>
-<li><strong>**kwargs</strong> (<em>*args</em><em>,</em><em></em>) &#8211; <p>extra arguments passed to the scheme.</p>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- Contain finite difference approximation and routine of the dynamical system</li>
+<li><strong>t</strong> (<em>float</em>) -- initial time</li>
+<li><strong>fields</strong> (<em>triflow.BaseFields</em><em> or </em><em>dict</em><em> (</em><em>any mappable</em><em>)</em>) -- triflow container or mappable filled with initial conditions</li>
+<li><strong>physical_parameters</strong> (<em>dict</em>) -- physical parameters of the simulation</li>
+<li><strong>id</strong> (<em>None</em><em>, </em><em>optional</em>) -- name of the simulation. A 2 word slug will be generated if not provided.</li>
+<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) -- any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>scheme</strong> (<em>callable</em><em>, </em><em>optional</em><em>, </em><em>default triflow.schemes.RODASPR</em>) -- an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.</li>
+<li><strong>**kwargs</strong> (<em>*args</em><em>,</em>) -- <p>extra arguments passed to the scheme.</p>
 </li>
-<li><strong>**kwargs</strong> &#8211; <p>extra arguments passed to the scheme.</p>
+<li><strong>**kwargs</strong> -- <p>extra arguments passed to the scheme.</p>
 </li>
 </ul>
 </td>
@@ -565,55 +600,55 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.dt">
 <code class="descname">dt</code><a class="headerlink" href="#triflow.core.simulation.Simulation.dt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; output time step</p>
+<dd><p><em>float</em> -- output time step</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.fields">
 <code class="descname">fields</code><a class="headerlink" href="#triflow.core.simulation.Simulation.fields" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>triflow.Fields</em> &#8211; triflow container filled with actual data</p>
+<dd><p><em>triflow.Fields</em> -- triflow container filled with actual data</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.i">
 <code class="descname">i</code><a class="headerlink" href="#triflow.core.simulation.Simulation.i" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> &#8211; actual iteration</p>
+<dd><p><em>int</em> -- actual iteration</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.id">
 <code class="descname">id</code><a class="headerlink" href="#triflow.core.simulation.Simulation.id" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> &#8211; name of the simulation</p>
+<dd><p><em>str</em> -- name of the simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.model">
 <code class="descname">model</code><a class="headerlink" href="#triflow.core.simulation.Simulation.model" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>triflow.Model</em> &#8211; triflow Model used in the simulation</p>
+<dd><p><em>triflow.Model</em> -- triflow Model used in the simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.physical_parameters">
 <code class="descname">physical_parameters</code><a class="headerlink" href="#triflow.core.simulation.Simulation.physical_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>dict</em> &#8211; physical parameters of the simulation</p>
+<dd><p><em>dict</em> -- physical parameters of the simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.status">
 <code class="descname">status</code><a class="headerlink" href="#triflow.core.simulation.Simulation.status" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> &#8211; status of the simulation, one of the following one: (&#8216;created&#8217;, &#8216;running&#8217;, &#8216;finished&#8217;, &#8216;failed&#8217;)</p>
+<dd><p><em>str</em> -- status of the simulation, one of the following one: ('created', 'running', 'finished', 'failed')</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.t">
 <code class="descname">t</code><a class="headerlink" href="#triflow.core.simulation.Simulation.t" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; actual time</p>
+<dd><p><em>float</em> -- actual time</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="triflow.core.simulation.Simulation.tmax">
 <code class="descname">tmax</code><a class="headerlink" href="#triflow.core.simulation.Simulation.tmax" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float or None, default None</em> &#8211; stopping time of the simulation. Not stopping if set to None.</p>
+<dd><p><em>float or None, default None</em> -- stopping time of the simulation. Not stopping if set to None.</p>
 </dd></dl>
 
 <p class="rubric">Examples</p>
@@ -645,9 +680,35 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>display</strong> (<em>callable</em>) &#8211; a display as the one available in triflow.displays</li>
-<li><strong>*display_args</strong> &#8211; positional arguments for the display function (other than the simulation itself)</li>
-<li><strong>**display_kwargs</strong> &#8211; named arguments for the display function</li>
+<li><strong>display</strong> (<em>callable</em>) -- a display as the one available in triflow.displays</li>
+<li><strong>*display_args</strong> -- positional arguments for the display function (other than the simulation itself)</li>
+<li><strong>**display_kwargs</strong> -- named arguments for the display function</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.simulation.Simulation.add_probe">
+<code class="descname">add_probe</code><span class="sig-paren">(</span><em>name</em>, <em>dims</em>, <em>probe</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation.add_probe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation.add_probe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.simulation.Simulation.attach_container">
+<code class="descname">attach_container</code><span class="sig-paren">(</span><em>path='output/'</em>, <em>mode='w'</em>, <em>nbuffer=50</em>, <em>timeout=180</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation.attach_container"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation.attach_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a Container to the simulation which allows some
+persistance to the simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<em>str</em>) -- path for the container</li>
+<li><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) -- &quot;a&quot; or &quot;w&quot;</li>
+<li><strong>nbuffer</strong> (<em>int</em><em>, </em><em>optional</em>) -- wait until nbuffer data in the Queue before save on disk.</li>
+<li><strong>timeout</strong> (<em>int</em><em>, </em><em>optional</em>) -- wait until timeout since last flush before save on disk.</li>
 </ul>
 </td>
 </tr>
@@ -663,13 +724,44 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Yields:</th><td class="field-body"><strong>tuple</strong> (<em>t, fields</em>) &#8211; Actual time and updated fields container.</td>
+<tr class="field-odd field"><th class="field-name">Yields:</th><td class="field-body"><strong>tuple</strong> (<em>t, fields</em>) -- Actual time and updated fields container.</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="triflow.core.simulation.Simulation.container">
+<code class="descname">container</code><a class="headerlink" href="#triflow.core.simulation.Simulation.container" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.simulation.Simulation.probes">
+<code class="descname">probes</code><a class="headerlink" href="#triflow.core.simulation.Simulation.probes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="triflow.core.simulation.Simulation.timer">
+<code class="descname">timer</code><a class="headerlink" href="#triflow.core.simulation.Simulation.timer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="triflow.core.simulation.Simulation.timer_probe">
+<code class="descname">timer_probe</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Simulation.timer_probe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Simulation.timer_probe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
+
+<dl class="class">
+<dt id="triflow.core.simulation.Timer">
+<em class="property">class </em><code class="descclassname">triflow.core.simulation.</code><code class="descname">Timer</code><span class="sig-paren">(</span><em>last</em>, <em>total</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#Timer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="triflow.core.simulation.null_hook">
+<code class="descclassname">triflow.core.simulation.</code><code class="descname">null_hook</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>pars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/core/simulation.html#null_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.core.simulation.null_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="module-triflow.core">
@@ -721,7 +813,7 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.4.3',
+            VERSION:'0.4.12',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -731,7 +823,7 @@ By default, the solver use a 6th order ROW solver, an implicit method with integ
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

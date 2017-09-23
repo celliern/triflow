@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.plugins.schemes &mdash; triflow 0.4.3 documentation</title>
+  <title>triflow.plugins.schemes &mdash; triflow 0.4.12 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="triflow 0.4.3 documentation" href="../../../index.html"/>
+    <link rel="top" title="triflow 0.4.12 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -180,15 +180,57 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sps</span>
 <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="k">import</span> <span class="n">ode</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
 <span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="k">import</span> <span class="n">norm</span>
 <span class="kn">from</span> <span class="nn">toolz</span> <span class="k">import</span> <span class="n">memoize</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 <span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="null_hook"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.null_hook">[docs]</a><span class="k">def</span> <span class="nf">null_hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span></div>
+
+
+<div class="viewcode-block" id="time_stepping"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.time_stepping">[docs]</a><span class="k">def</span> <span class="nf">time_stepping</span><span class="p">(</span><span class="n">scheme</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1E-2</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">reject_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">internal_dt</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">one_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">):</span>
+        <span class="n">dt_</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">t_</span><span class="p">,</span> <span class="n">fields_</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">m</span> <span class="o">*</span> <span class="n">dt_</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+                <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt_</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
+            <span class="n">errs</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fields_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span> <span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">ord</span><span class="p">)</span> <span class="o">/</span>
+                    <span class="p">(</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">dependent_variables</span><span class="p">]</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">errs</span><span class="p">)</span>
+            <span class="n">dt_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tol</span> <span class="o">/</span> <span class="n">err</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dt_</span> <span class="o">&lt;</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">reject_factor</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">break</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt_</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">scheme</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">adaptatif_scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">internal_dt</span>
+        <span class="n">next_step</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span>
+        <span class="n">internal_dt</span> <span class="o">=</span> <span class="n">internal_dt</span> <span class="k">if</span> <span class="n">internal_dt</span> <span class="k">else</span> <span class="n">dt</span>
+        <span class="k">while</span> <span class="n">t</span> <span class="o">+</span> <span class="n">internal_dt</span> <span class="o">&lt;=</span> <span class="n">next_step</span><span class="p">:</span>
+            <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">internal_dt</span> <span class="o">=</span> <span class="n">one_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
+                                              <span class="n">internal_dt</span> <span class="o">/</span> <span class="n">m</span><span class="p">,</span>
+                                              <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">next_step</span><span class="p">:</span>
+            <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
+                               <span class="n">next_step</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span>
+                               <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span>
+    <span class="k">return</span> <span class="n">adaptatif_scheme</span></div>
 
 
 <div class="viewcode-block" id="ROW_general"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.ROW_general">[docs]</a><span class="k">class</span> <span class="nc">ROW_general</span><span class="p">:</span>
@@ -204,7 +246,9 @@
         <span class="k">return</span> <span class="n">Id</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">b_pred</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">time_stepping</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">time_stepping</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">safety_factor</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">recompute_target</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
@@ -213,12 +257,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_b_pred</span> <span class="o">=</span> <span class="n">b_pred</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_control</span> <span class="o">=</span> <span class="n">time_stepping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tol</span> <span class="o">=</span> <span class="n">tol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_safety_factor</span> <span class="o">=</span> <span class="n">safety_factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dt_min</span> <span class="o">=</span> <span class="n">dt_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recompute_target</span> <span class="o">=</span> <span class="n">recompute_target</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interp_cache</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="ROW_general.__call__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.ROW_general.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                 <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+                 <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Perform a step of the solver: took a time and a system state as a</span>
 <span class="sd">          triflow Fields container and return the next time step with updated</span>
 <span class="sd">          container.</span>
@@ -259,13 +307,13 @@
         <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span></div>
 
     <span class="k">def</span> <span class="nf">_fixed_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                    <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+                    <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
         <span class="n">J</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">J</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
         <span class="n">Id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cache__</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">uflat</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="n">A</span> <span class="o">=</span> <span class="n">Id</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">J</span>
-        <span class="n">luf</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">splu</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_A</span> <span class="o">=</span> <span class="n">A</span> <span class="o">=</span> <span class="n">Id</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">J</span>
+        <span class="n">luf</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">factorized</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
         <span class="n">ks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">fields_i</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_s</span><span class="p">):</span>
@@ -273,11 +321,11 @@
                           <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">ks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)]))</span>
             <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="n">fields_i</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
-            <span class="n">ks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">luf</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">F</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">J</span> <span class="o">@</span> <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span>
-                                                        <span class="n">ks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                                                        <span class="k">for</span> <span class="n">j</span>
-                                                        <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span>
-                                               <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)))</span>
+            <span class="n">ks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">luf</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">F</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">J</span> <span class="o">@</span> <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span>
+                                                  <span class="n">ks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                                                  <span class="k">for</span> <span class="n">j</span>
+                                                  <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span>
+                                         <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)))</span>
         <span class="n">U</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">uflat</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">U</span> <span class="o">=</span> <span class="n">U</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">bi</span> <span class="o">*</span> <span class="n">ki</span> <span class="k">for</span> <span class="n">bi</span><span class="p">,</span> <span class="n">ki</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_b</span><span class="p">,</span> <span class="n">ks</span><span class="p">)])</span>
 
@@ -291,44 +339,66 @@
                                 <span class="k">if</span> <span class="n">U_pred</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_variable_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                       <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+                       <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_dt</span> <span class="o">=</span> <span class="n">t</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1E-6</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="ow">is</span> <span class="kc">None</span>
-                                  <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interp_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">,</span> <span class="n">fields</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recompute_target</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1E-6</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="ow">is</span> <span class="kc">None</span>
+                                      <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="mf">1E-6</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="ow">is</span> <span class="kc">None</span>
+                                          <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span><span class="p">),</span>
+                                         <span class="n">dt</span><span class="p">)</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">while</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tol</span><span class="p">):</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">newfields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span>
-                                                           <span class="n">fields</span><span class="p">,</span>
-                                                           <span class="n">dt</span><span class="p">,</span>
-                                                           <span class="n">pars</span><span class="p">,</span>
-                                                           <span class="n">hook</span><span class="p">)</span>
+                <span class="n">new_t</span><span class="p">,</span> <span class="n">new_fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span>
+                                                                <span class="n">fields</span><span class="p">,</span>
+                                                                <span class="n">dt</span><span class="p">,</span>
+                                                                <span class="n">pars</span><span class="p">,</span>
+                                                                <span class="n">hook</span><span class="p">)</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;error: </span><span class="si">{self._err}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.9</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tol</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">))</span>
-            <span class="n">fields</span> <span class="o">=</span> <span class="n">newfields</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safety_factor</span> <span class="o">*</span>
+                                          <span class="n">dt</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tol</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span><span class="p">))</span>
+
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;dt computed after err below tol: </span><span class="si">{dt}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;ROS_vart, t </span><span class="si">{t}</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;new t more than next expected time step&#39;</span><span class="p">)</span>
-                <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span> <span class="o">-</span> <span class="n">t</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;dt falling to </span><span class="si">{dt}</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="n">dt</span>
-            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">=</span> <span class="n">dt</span>
+            <span class="k">if</span> <span class="n">new_t</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">:</span>
+                <span class="n">target_dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span> <span class="o">-</span> <span class="n">t</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;new t more than next expected time step, &#39;</span>
+                              <span class="n">f</span><span class="s1">&#39;compute with proper timestep </span><span class="si">{target_dt}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recompute_target</span><span class="p">:</span>
+                    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_step</span><span class="p">(</span>
+                        <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span> <span class="o">-</span> <span class="n">t</span><span class="p">,</span>
+                        <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_interp_cache</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">([</span><span class="n">t</span><span class="p">,</span> <span class="n">new_t</span><span class="p">],</span>
+                                                  <span class="p">[</span><span class="n">fields</span><span class="o">.</span><span class="n">uflat</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span>
+                                                   <span class="n">new_fields</span><span class="o">.</span><span class="n">uflat</span><span class="p">[</span><span class="kc">None</span><span class="p">]],</span>
+                                                  <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">fields</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interp_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_time_step</span><span class="p">,</span> <span class="n">fields</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">new_t</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">new_fields</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">&gt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span>
                                       <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_iter</span>
                                       <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_iter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Rosebrock internal iteration &quot;</span>
                                    <span class="s2">&quot;above max iterations authorized&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dt_min</span>
-                                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dt_min</span>
-                                    <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_dt</span> <span class="o">*</span> <span class="o">.</span><span class="mi">5</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dt_min</span>
+                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dt_min</span>
+                     <span class="k">else</span> <span class="n">dt</span> <span class="o">*</span> <span class="o">.</span><span class="mi">5</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Rosebrock internal time step &quot;</span>
                                    <span class="s2">&quot;less than authorized&quot;</span><span class="p">)</span></div>
 
@@ -366,10 +436,12 @@
 <span class="sd">          maximum internal iteration allowed</span>
 <span class="sd">      dt_min : float or None, optional, default None</span>
 <span class="sd">          minimum internal time step allowed</span>
+<span class="sd">      recompute_target : bool, optional, default False</span>
+<span class="sd">          if True a new computation is done when the target time is exceeded, interpolation used otherwise.</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1E-2</span><span class="p">,</span> <span class="n">time_stepping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recompute_target</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
         <span class="n">gamma_i</span> <span class="o">=</span> <span class="mf">7.8867513459481287e-01</span>
@@ -389,7 +461,8 @@
         <span class="n">gamma</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">8.7306695894642317e-01</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">b_pred</span><span class="o">=</span><span class="n">b_pred</span><span class="p">,</span>
                          <span class="n">time_stepping</span><span class="o">=</span><span class="n">time_stepping</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
-                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">)</span></div>
+                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">,</span>
+                         <span class="n">recompute_target</span><span class="o">=</span><span class="n">recompute_target</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ROS3PRL"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.ROS3PRL">[docs]</a><span class="k">class</span> <span class="nc">ROS3PRL</span><span class="p">(</span><span class="n">ROW_general</span><span class="p">):</span>
@@ -407,10 +480,12 @@
 <span class="sd">          maximum internal iteration allowed</span>
 <span class="sd">      dt_min : float or None, optional, default None</span>
 <span class="sd">          minimum internal time step allowed</span>
+<span class="sd">      recompute_target : bool, optional, default False</span>
+<span class="sd">          if True a new computation is done when the target time is exceeded, interpolation used otherwise.</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1E-2</span><span class="p">,</span> <span class="n">time_stepping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recompute_target</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
         <span class="n">gamma_i</span> <span class="o">=</span> <span class="mf">4.3586652150845900e-01</span>
@@ -439,7 +514,8 @@
         <span class="n">gamma</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.2405197677907682e-01</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">b_pred</span><span class="o">=</span><span class="n">b_pred</span><span class="p">,</span>
                          <span class="n">time_stepping</span><span class="o">=</span><span class="n">time_stepping</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
-                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">)</span></div>
+                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">,</span>
+                         <span class="n">recompute_target</span><span class="o">=</span><span class="n">recompute_target</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RODASPR"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.RODASPR">[docs]</a><span class="k">class</span> <span class="nc">RODASPR</span><span class="p">(</span><span class="n">ROW_general</span><span class="p">):</span>
@@ -457,10 +533,12 @@
 <span class="sd">          maximum internal iteration allowed</span>
 <span class="sd">      dt_min : float or None, optional, default None</span>
 <span class="sd">          minimum internal time step allowed</span>
+<span class="sd">      recompute_target : bool, optional, default False</span>
+<span class="sd">          if True a new computation is done when the target time is exceeded, interpolation used otherwise.</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1E-2</span><span class="p">,</span> <span class="n">time_stepping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">max_iter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recompute_target</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
         <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">7.9683251690137014E-1</span><span class="p">,</span>
@@ -510,7 +588,8 @@
         <span class="n">gamma</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.57142857e-1</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">b_pred</span><span class="o">=</span><span class="n">b_pred</span><span class="p">,</span>
                          <span class="n">time_stepping</span><span class="o">=</span><span class="n">time_stepping</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
-                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">)</span></div>
+                         <span class="n">max_iter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">,</span> <span class="n">dt_min</span><span class="o">=</span><span class="n">dt_min</span><span class="p">,</span>
+                         <span class="n">recompute_target</span><span class="o">=</span><span class="n">recompute_target</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="scipy_ode"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.scipy_ode">[docs]</a><span class="k">class</span> <span class="nc">scipy_ode</span><span class="p">:</span>
@@ -527,7 +606,8 @@
 <span class="sd">          extra arguments provided to the scipy integration scheme.</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">integrator</span><span class="o">=</span><span class="s1">&#39;vode&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">integrator_kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">jac</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">integrator</span><span class="o">=</span><span class="s1">&#39;vode&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">integrator_kwargs</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">func_scipy_proxy</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="p">):</span>
             <span class="n">fields</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
             <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="n">hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
@@ -539,11 +619,11 @@
             <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">J</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_solv</span> <span class="o">=</span> <span class="n">ode</span><span class="p">(</span><span class="n">func_scipy_proxy</span><span class="p">,</span>
-                         <span class="n">jac</span><span class="o">=</span><span class="n">jacob_scipy_proxy</span><span class="p">)</span>
+                         <span class="n">jac</span><span class="o">=</span><span class="n">jacob_scipy_proxy</span> <span class="k">if</span> <span class="n">jac</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_solv</span><span class="o">.</span><span class="n">set_integrator</span><span class="p">(</span><span class="n">integrator</span><span class="p">,</span> <span class="o">**</span><span class="n">integrator_kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="scipy_ode.__call__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.scipy_ode.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                 <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+                 <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Perform a step of the solver: took a time and a system state as a</span>
 <span class="sd">          triflow Fields container and return the next time step with updated</span>
 <span class="sd">          container.</span>
@@ -606,7 +686,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_solver</span> <span class="o">=</span> <span class="n">solver</span>
 
 <div class="viewcode-block" id="Theta.__call__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.schemes.Theta.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                 <span class="n">hook</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">:</span> <span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)):</span>
+                 <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Perform a step of the solver: took a time and a system state as a</span>
 <span class="sd">          triflow Fields container and return the next time step with updated</span>
 <span class="sd">          container.</span>
@@ -678,7 +758,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.4.3',
+            VERSION:'0.4.12',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -688,7 +768,7 @@
       <script type="text/javascript" src="../../../_static/jquery.js"></script>
       <script type="text/javascript" src="../../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

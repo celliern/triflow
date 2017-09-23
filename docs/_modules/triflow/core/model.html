@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.core.model &mdash; triflow 0.4.3 documentation</title>
+  <title>triflow.core.model &mdash; triflow 0.4.12 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="triflow 0.4.3 documentation" href="../../../index.html"/>
+    <link rel="top" title="triflow 0.4.12 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -173,25 +173,23 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">pickle</span> <span class="k">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pformat</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">theano</span> <span class="k">as</span> <span class="nn">th</span>
-<span class="kn">import</span> <span class="nn">theano.sparse</span> <span class="k">as</span> <span class="nn">ths</span>
-<span class="kn">from</span> <span class="nn">sympy</span> <span class="k">import</span> <span class="n">Derivative</span><span class="p">,</span> <span class="n">Function</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">,</span> <span class="n">SympifyError</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">sympify</span>
-<span class="kn">from</span> <span class="nn">sympy.printing.theanocode</span> <span class="k">import</span> <span class="n">theano_code</span>
-<span class="kn">from</span> <span class="nn">theano</span> <span class="k">import</span> <span class="n">tensor</span> <span class="k">as</span> <span class="n">T</span>
-<span class="kn">from</span> <span class="nn">theano.ifelse</span> <span class="k">import</span> <span class="n">ifelse</span>
-
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="k">import</span> <span class="p">(</span><span class="n">Derivative</span><span class="p">,</span> <span class="n">Function</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">,</span>
+                   <span class="n">SympifyError</span><span class="p">,</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">sympify</span><span class="p">,</span> <span class="n">Max</span><span class="p">,</span> <span class="n">Min</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">triflow.core.fields</span> <span class="k">import</span> <span class="n">BaseFields</span>
 <span class="kn">from</span> <span class="nn">triflow.core.routines</span> <span class="k">import</span> <span class="n">F_Routine</span><span class="p">,</span> <span class="n">J_Routine</span>
+<span class="kn">from</span> <span class="nn">triflow.core.compilers</span> <span class="k">import</span> <span class="n">theano_compiler</span><span class="p">,</span> <span class="n">numpy_compiler</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 <span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">sys</span><span class="o">.</span><span class="n">setrecursionlimit</span><span class="p">(</span><span class="mi">40000</span><span class="p">)</span>
+<span class="n">EPS</span> <span class="o">=</span> <span class="mf">1E-6</span>
 
 
-<span class="k">def</span> <span class="nf">_generate_sympify_namespace</span><span class="p">(</span><span class="n">independent_variable</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">_generate_sympify_namespace</span><span class="p">(</span><span class="n">independent_variables</span><span class="p">,</span>
                                 <span class="n">dependent_variables</span><span class="p">,</span>
                                 <span class="n">helper_functions</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Generate the link between the symbols of the derivatives and the</span>
@@ -212,6 +210,7 @@
 <span class="sd">          dictionnary containing the symbol to parse as keys and the sympy expression to evaluate instead as values.</span>
 <span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
 
+    <span class="n">independent_variable</span> <span class="o">=</span> <span class="n">independent_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># TEMP FIX BEFORE REAL ND</span>
     <span class="n">symbolic_independent_variable</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="n">independent_variable</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">partial_derivative</span><span class="p">(</span><span class="n">symbolic_independent_variable</span><span class="p">,</span>
@@ -235,9 +234,9 @@
 
 
 <span class="k">def</span> <span class="nf">_reduce_model</span><span class="p">(</span><span class="n">eq_diffs</span><span class="p">,</span> <span class="n">dep_vars</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                  <span class="n">help_functions</span><span class="p">):</span>
+                  <span class="n">help_functions</span><span class="p">,</span> <span class="n">bdc_conditions</span><span class="p">):</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">eq_diffs</span><span class="p">,</span> <span class="n">dep_vars</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span>
-                  <span class="n">help_functions</span><span class="p">)</span>
+                  <span class="n">help_functions</span><span class="p">,</span> <span class="n">bdc_conditions</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">model</span>
 
@@ -260,6 +259,8 @@
 <span class="sd">          list of the parameters. Can be feed with a scalar of an array with the same size</span>
 <span class="sd">      help_functions : None, optional</span>
 <span class="sd">          All fields which have not to be solved with the time derivative but will be derived in space.</span>
+<span class="sd">      double: bool, optional</span>
+<span class="sd">          Choose if the dtypes are float64 (the default) or float32</span>
 
 <span class="sd">      Attributes</span>
 <span class="sd">      ----------</span>
@@ -299,37 +300,67 @@
                  <span class="n">differential_equations</span><span class="p">,</span>
                  <span class="n">dependent_variables</span><span class="p">,</span>
                  <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">help_functions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">help_functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">bdc_conditions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compiler</span><span class="o">=</span><span class="s2">&quot;theano&quot;</span><span class="p">,</span>
+                 <span class="n">simplify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">fdiff_jac</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">double</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">hold_compilation</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">compiler</span> <span class="o">==</span> <span class="s2">&quot;theano&quot;</span><span class="p">:</span>
+            <span class="n">compiler</span> <span class="o">=</span> <span class="n">theano_compiler</span>
+        <span class="k">if</span> <span class="n">compiler</span> <span class="o">==</span> <span class="s2">&quot;numpy&quot;</span><span class="p">:</span>
+            <span class="n">compiler</span> <span class="o">=</span> <span class="n">numpy_compiler</span>
+
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;enter __init__ Model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_double</span> <span class="o">=</span> <span class="n">double</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_symb_t</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+        <span class="n">indep_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
 
         <span class="c1"># coerce the inputs the way to have coherent types</span>
-        <span class="c1"># TODO: be more pythonic, it should not be necessary with coherent</span>
-        <span class="c1"># duck typing..</span>
+        <span class="k">def</span> <span class="nf">coerce</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">)):</span>
+                    <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">arg</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_diff_eqs</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
          <span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
          <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span>
-         <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coerce_inputs</span><span class="p">(</span><span class="n">differential_equations</span><span class="p">,</span>
-                                                 <span class="n">dependent_variables</span><span class="p">,</span>
-                                                 <span class="n">parameters</span><span class="p">,</span>
-                                                 <span class="n">help_functions</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_bdcs</span><span class="p">)</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">coerce</span><span class="p">,</span> <span class="p">(</span><span class="n">differential_equations</span><span class="p">,</span>
+                                    <span class="n">indep_vars</span><span class="p">,</span>
+                                    <span class="n">dependent_variables</span><span class="p">,</span>
+                                    <span class="n">parameters</span><span class="p">,</span>
+                                    <span class="n">help_functions</span><span class="p">,</span>
+                                    <span class="n">bdc_conditions</span><span class="p">))</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">)</span>
         <span class="c1"># generate the sympy namespace which will connect the math input into</span>
         <span class="c1"># sympy operation.</span>
         <span class="n">sympify_namespace</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">sympify_namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_generate_sympify_namespace</span><span class="p">(</span>
-            <span class="s1">&#39;x&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">))</span>
 
         <span class="c1"># parse the inputs in order to have Sympy symbols and expressions</span>
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_diff_eqs</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_symb_indep_vars</span><span class="p">,</span>
          <span class="bp">self</span><span class="o">.</span><span class="n">_symb_dep_vars</span><span class="p">,</span>
          <span class="bp">self</span><span class="o">.</span><span class="n">_symb_pars</span><span class="p">,</span>
-         <span class="bp">self</span><span class="o">.</span><span class="n">_symb_help_funcs</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sympify_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_diff_eqs</span><span class="p">,</span>
-                                                      <span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
-                                                      <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span>
-                                                      <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
-                                                      <span class="n">sympify_namespace</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_symb_help_funcs</span><span class="p">,</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">_symb_bdcs</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sympify_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_diff_eqs</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">_bdcs</span><span class="p">,</span>
+                                                <span class="n">sympify_namespace</span><span class="p">)</span>
 
         <span class="c1"># we will need to extract the order of the != spatial derivative</span>
         <span class="c1"># in order to know the size of the ghost area at the limit of</span>
@@ -344,6 +375,12 @@
         <span class="c1"># variables and help functions.</span>
         <span class="n">approximated_diff_eqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_approximate_derivative</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_symb_diff_eqs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_indep_vars</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_dep_vars</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_help_funcs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dbdcs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_approximate_derivative</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_bdcs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_indep_vars</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_symb_dep_vars</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_symb_help_funcs</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;approximated equations: </span><span class="si">{approximated_diff_eqs}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -373,13 +410,26 @@
         <span class="c1"># We expose a numpy.ndarray filled with the rhs of our approximated</span>
         <span class="c1"># dynamical system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">approximated_diff_eqs</span><span class="p">)</span>
-
+        <span class="k">if</span> <span class="n">simplify</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">eq</span><span class="o">.</span><span class="n">simplify</span><span class="p">()</span>
+                                     <span class="k">for</span> <span class="n">eq</span>
+                                     <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span><span class="o">.</span><span class="n">tolist</span><span class="p">()])</span>
         <span class="c1"># We compute the jacobian as the partial derivative of all equation of</span>
         <span class="c1"># our system according to all the discrete variable in U.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-            <span class="p">[</span><span class="n">diff_eq</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span>
-             <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">U</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">diff_eq</span> <span class="ow">in</span> <span class="n">approximated_diff_eqs</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fdiff_jac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="p">[(</span><span class="n">diff_eq</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">u</span> <span class="o">+</span> <span class="n">EPS</span><span class="p">)</span> <span class="o">-</span> <span class="n">diff_eq</span><span class="p">)</span> <span class="o">/</span> <span class="n">EPS</span>
+                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">U</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">diff_eq</span> <span class="ow">in</span> <span class="n">approximated_diff_eqs</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="p">[</span><span class="n">diff_eq</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">U</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">diff_eq</span> <span class="ow">in</span> <span class="n">approximated_diff_eqs</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">simplify</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">eq</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span><span class="o">.</span><span class="n">simplify</span><span class="p">()</span>
+                                     <span class="k">for</span> <span class="n">eq</span>
+                                     <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span><span class="o">.</span><span class="n">tolist</span><span class="p">()])</span>
 
         <span class="c1"># We flag and store the null entry of the Jacobian matrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sparse_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">J_array</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
@@ -387,163 +437,37 @@
         <span class="c1"># a sparse matrix storage for memory saving and efficient linalg ops.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_J_sparse_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">J_array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span>
 
-        <span class="c1"># We convert the sympy description of the system into a theano</span>
-        <span class="c1"># graph compilation</span>
-        <span class="n">F</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_extended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_theano_convert</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_J_sparse_array</span><span class="p">)</span>
-        <span class="c1"># We compile the previous graphs and obtain optimized C based</span>
-        <span class="c1"># routines</span>
-        <span class="n">F_theano_function</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-                                        <span class="n">outputs</span><span class="o">=</span><span class="n">F</span><span class="p">,</span>
-                                        <span class="n">on_unused_input</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
-        <span class="n">J_theano_function</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-                                        <span class="n">outputs</span><span class="o">=</span><span class="n">J</span><span class="p">,</span>
-                                        <span class="n">on_unused_input</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_th_args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_th_vectors</span> <span class="o">=</span> <span class="p">[</span><span class="n">F</span><span class="p">,</span> <span class="n">J</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_theano_routines</span> <span class="o">=</span> <span class="p">[</span><span class="n">F_theano_function</span><span class="p">,</span> <span class="n">J_theano_function</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F_array</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_J_sparse_array</span><span class="p">,</span>
-                      <span class="n">F_theano_function</span><span class="p">,</span> <span class="n">J_theano_function</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hold_compilation</span><span class="p">:</span>
+            <span class="k">return</span>
 
-    <span class="k">def</span> <span class="nf">_theano_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F_array</span><span class="p">,</span> <span class="n">J_array</span><span class="p">):</span>
-        <span class="n">th_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="nb">map</span><span class="p">(</span>
-                <span class="n">partial</span><span class="p">(</span><span class="n">theano_code</span><span class="p">,</span>
-                        <span class="n">broadcastables</span><span class="o">=</span><span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="p">(</span><span class="kc">False</span><span class="p">,)</span>
-                                        <span class="k">for</span> <span class="n">arg</span>
-                                        <span class="ow">in</span> <span class="p">[</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
-                                            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_discrete_variables</span><span class="p">,</span>
-                                            <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_pars</span><span class="p">]}),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_symbolic_args</span><span class="p">))</span>
-        <span class="n">ins</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">gof</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">inputs</span><span class="p">(</span><span class="n">th_args</span><span class="p">)</span>
-        <span class="n">mapargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">inp</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">inp</span>
-                   <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="n">ins</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">T</span><span class="o">.</span><span class="n">TensorVariable</span><span class="p">)}</span>
-        <span class="n">x_th</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">dvector</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-        <span class="n">periodic</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">bscalar</span><span class="p">(</span><span class="s1">&#39;periodic&#39;</span><span class="p">)</span>
-        <span class="n">middle_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="n">x_th</span><span class="o">.</span><span class="n">size</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="n">x_th</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">computed_dx</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">subs</span> <span class="o">=</span> <span class="p">{</span><span class="n">mapargs</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]:</span> <span class="n">computed_dx</span><span class="p">}</span>
-        <span class="n">map_extended</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">discretisation_tree</span><span class="p">)</span> <span class="ow">in</span> \
-                <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span>
-            <span class="n">per_extended_var</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">][</span><span class="n">pad_left</span><span class="p">:],</span>
-                                              <span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">],</span>
-                                              <span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">][:</span><span class="n">pad_right</span><span class="p">]])</span>
-            <span class="n">edge_extended_var</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">][:</span><span class="mi">1</span><span class="p">],</span>
-                                                        <span class="n">middle_point</span><span class="p">),</span>
-                                               <span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">],</span>
-                                               <span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
-                                                        <span class="n">middle_point</span><span class="p">)])</span>
-            <span class="n">extended_var</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span><span class="n">periodic</span><span class="p">,</span>
-                                  <span class="n">per_extended_var</span><span class="p">,</span>
-                                  <span class="n">edge_extended_var</span><span class="p">)</span>
-            <span class="n">map_extended</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">extended_var</span>
-            <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">order</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">var</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="s2">&quot;</span><span class="si">{varname}</span><span class="s2">_{&#39;m&#39; if order &lt; 0 else &#39;p&#39;}&quot;</span>
-                           <span class="n">f</span><span class="s2">&quot;{np.abs(order)}&quot;</span><span class="p">)</span>
-                    <span class="n">new_var</span> <span class="o">=</span> <span class="n">extended_var</span><span class="p">[</span><span class="n">order</span> <span class="o">-</span> <span class="n">pad_left</span><span class="p">:</span>
-                                           <span class="n">extended_var</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span>
-                                           <span class="n">order</span> <span class="o">-</span> <span class="n">pad_right</span><span class="p">]</span>
-                    <span class="n">subs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">mapargs</span><span class="p">[</span><span class="n">var</span><span class="p">]:</span>
-                                 <span class="n">new_var</span><span class="p">})</span>
-        <span class="n">F</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">theano_code</span><span class="p">,</span>
-                             <span class="n">broadcastables</span><span class="o">=</span><span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="p">(</span><span class="kc">False</span><span class="p">,)</span>
-                                             <span class="k">for</span> <span class="n">arg</span>
-                                             <span class="ow">in</span> <span class="p">[</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
-                                                 <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_discrete_variables</span><span class="p">,</span>
-                                                 <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_pars</span><span class="p">]}),</span>
-                     <span class="n">F_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+        <span class="c1"># We compile the math with a theano based compiler (default)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compiler</span><span class="p">)</span>
 
-        <span class="n">J</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">theano_code</span><span class="p">,</span>
-                             <span class="n">broadcastables</span><span class="o">=</span><span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="p">(</span><span class="kc">False</span><span class="p">,)</span>
-                                             <span class="k">for</span> <span class="n">arg</span>
-                                             <span class="ow">in</span> <span class="p">[</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
-                                                 <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_discrete_variables</span><span class="p">,</span>
-                                                 <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_pars</span><span class="p">]}),</span>
-                     <span class="n">J_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
-        <span class="n">J</span> <span class="o">=</span> <span class="p">[</span><span class="n">Ji</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Ji</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span> <span class="k">else</span> <span class="n">th</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">Ji</span><span class="p">)</span>
-             <span class="k">for</span> <span class="n">Ji</span> <span class="ow">in</span> <span class="n">J</span><span class="p">]</span>
-        <span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">th</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">subs</span><span class="p">))</span>
-             <span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
-        <span class="n">J</span> <span class="o">=</span> <span class="n">th</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">subs</span><span class="p">)</span>
-
-        <span class="n">J</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">J</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">dimshuffle</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">])</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">edge_extended_idx</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">1</span><span class="p">],</span>
-                                                    <span class="n">middle_point</span><span class="p">,</span>
-                                                    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                                           <span class="n">idx</span><span class="p">,</span>
-                                           <span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
-                                                    <span class="n">middle_point</span><span class="p">,</span>
-                                                    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span>
-                                          <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="n">per_extended_idx</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="n">middle_point</span><span class="p">:],</span>
-                                          <span class="n">idx</span><span class="p">,</span>
-                                          <span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="n">middle_point</span><span class="p">]],</span>
-                                         <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="n">extended_idx</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span><span class="n">periodic</span><span class="p">,</span>
-                              <span class="n">per_extended_idx</span><span class="p">,</span> <span class="n">edge_extended_idx</span><span class="p">)</span>
-
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
-                      <span class="bp">self</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">extended_idx</span><span class="p">[</span><span class="n">cols</span><span class="p">][:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span> \
-            <span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-        <span class="n">permutation</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
-
-        <span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">permutation</span><span class="p">]</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">permutation</span><span class="p">]</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="n">permutation</span><span class="p">]</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="n">uq</span><span class="p">,</span> <span class="n">cnt</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">extra_ops</span><span class="o">.</span><span class="n">Unique</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)(</span><span class="n">cols</span><span class="p">)</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">set_subtensor</span><span class="p">(</span><span class="n">count</span><span class="p">[</span><span class="n">uq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">cnt</span><span class="p">)</span>
-
-        <span class="n">indptr</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvar</span><span class="p">])</span>
-        <span class="n">sparse_J</span> <span class="o">=</span> <span class="n">ths</span><span class="o">.</span><span class="n">CSC</span><span class="p">(</span><span class="n">J</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">indptr</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
-
-        <span class="n">th_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_th</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="n">mapargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                           <span class="k">for</span> <span class="n">key</span>
-                           <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span> <span class="o">+</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span> <span class="o">+</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">)],</span>
-                   <span class="n">periodic</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">F</span><span class="p">,</span> <span class="n">sparse_J</span><span class="p">,</span> <span class="n">th_args</span><span class="p">,</span> <span class="n">map_extended</span>
-
-    <span class="k">def</span> <span class="nf">_compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F_array</span><span class="p">,</span> <span class="n">J_array</span><span class="p">,</span> <span class="n">F_theano_function</span><span class="p">,</span> <span class="n">J_theano_function</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.compile"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.model.Model.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compiler</span><span class="p">):</span>
+        <span class="n">F_function</span><span class="p">,</span> <span class="n">J_function</span> <span class="o">=</span> <span class="n">compiler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compile F&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F_Routine</span><span class="p">(</span><span class="n">F_array</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F_Routine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F_array</span><span class="p">,</span>
                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span> <span class="o">+</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">),</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="n">F_theano_function</span><span class="p">)</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="n">F_function</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compile J&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J_Routine</span><span class="p">(</span><span class="n">J_array</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">J</span> <span class="o">=</span> <span class="n">J_Routine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_J_sparse_array</span><span class="p">,</span>
                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span> <span class="o">+</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">),</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="n">J_theano_function</span><span class="p">)</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="n">J_function</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">fields_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">BaseFields</span><span class="o">.</span><span class="n">factory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
-                                  <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BaseFields</span><span class="o">.</span><span class="n">factory1D</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_symbolic_args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_symbolic_args</span><span class="p">))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_symbolic_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">([</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">),</span>
+        <span class="k">return</span> <span class="p">([</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_indep_vars</span><span class="p">),</span>
                  <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_discrete_variables</span><span class="p">),</span>
                  <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_pars</span><span class="p">),</span>
                  <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;dx&#39;</span><span class="p">)])</span>
@@ -563,8 +487,24 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="Model.load"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.model.Model.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="si">{equations}</span><span class="s2"></span>
+
+<span class="s2">Variables</span>
+<span class="s2">---------</span>
+<span class="s2">unknowns:       </span><span class="si">{vars}</span><span class="s2"></span>
+<span class="s2">helpers:        </span><span class="si">{helps}</span><span class="s2"></span>
+<span class="s2">parameters:     </span><span class="si">{pars}</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="nb">repr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">vars</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">),</span>
+            <span class="n">helps</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">equations</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_diff_eqs</span><span class="p">),</span>
+            <span class="n">pars</span><span class="o">=</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">repr</span>
+
+<div class="viewcode-block" id="Model.load"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.model.Model.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;load a pre-compiled triflow model. The internal of theano allow a</span>
 <span class="sd">        caching of the model. Will be slow if it is the first time the model is</span>
 <span class="sd">        loaded on the system.</span>
@@ -608,21 +548,6 @@
                     <span class="n">unknowns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{var}</span><span class="s1">_p{np.abs(order)}&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">unknowns</span>
 
-    <span class="k">def</span> <span class="nf">_coerce_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">diff_eqs</span><span class="p">,</span> <span class="n">dep_vars</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">helper_functions</span><span class="p">):</span>
-        <span class="n">pars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">pars</span><span class="p">)</span> <span class="k">if</span> <span class="n">pars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">()</span>
-        <span class="n">helper_functions</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">helper_functions</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">helper_functions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">())</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diff_eqs</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">)):</span>
-            <span class="n">diff_eqs</span> <span class="o">=</span> <span class="p">[</span><span class="n">diff_eqs</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dep_vars</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">)):</span>
-            <span class="n">dep_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">dep_vars</span><span class="p">]</span>
-
-        <span class="n">diff_eqs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">diff_eqs</span><span class="p">)</span>
-        <span class="n">dep_vars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dep_vars</span><span class="p">)</span>
-        <span class="n">helper_functions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">helper_functions</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">diff_eqs</span><span class="p">,</span> <span class="n">dep_vars</span><span class="p">,</span> <span class="n">pars</span><span class="p">,</span> <span class="n">helper_functions</span>
-
     <span class="k">def</span> <span class="nf">_finite_diff_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;finite diff approximation </span><span class="si">%i</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">U</span><span class="p">))</span>
         <span class="n">dx</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;dx&#39;</span><span class="p">)</span>
@@ -662,34 +587,97 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Finite difference up &#39;</span>
                                   <span class="s1">&#39;to 5th order not implemented yet&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_sympify_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                       <span class="n">diff_eqs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                       <span class="n">dep_vars</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                       <span class="n">pars</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                       <span class="n">help_functions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                       <span class="n">sympify_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;enter _sympify_model&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_upwind_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">):</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;dx&#39;</span><span class="p">)</span>
+        <span class="n">var_label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+        <span class="n">ap</span> <span class="o">=</span> <span class="n">Max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">am</span> <span class="o">=</span> <span class="n">Min</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">accuracy</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">Um1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_m1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Up1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_p1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Um1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Up1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">Um</span> <span class="o">=</span> <span class="p">(</span><span class="n">U</span> <span class="o">-</span> <span class="n">Um1</span><span class="p">)</span> <span class="o">/</span> <span class="n">dx</span>
+            <span class="n">Up</span> <span class="o">=</span> <span class="p">(</span><span class="n">Up1</span> <span class="o">-</span> <span class="n">U</span><span class="p">)</span> <span class="o">/</span> <span class="n">dx</span>
+            <span class="k">return</span> <span class="n">ap</span> <span class="o">*</span> <span class="n">Um</span> <span class="o">+</span> <span class="n">am</span> <span class="o">*</span> <span class="n">Up</span>
+        <span class="k">elif</span> <span class="n">accuracy</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">Um1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_m1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Up1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_p1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Um2</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_m2&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Up2</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_p2&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Um1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Up1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Um2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Up2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">Um</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">U</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">Um1</span> <span class="o">+</span> <span class="n">Um2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="n">Up</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span> <span class="o">*</span> <span class="n">U</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">Up1</span> <span class="o">-</span> <span class="n">Up2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ap</span> <span class="o">*</span> <span class="n">Um</span> <span class="o">+</span> <span class="n">am</span> <span class="o">*</span> <span class="n">Up</span>
+        <span class="k">elif</span> <span class="n">accuracy</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">Um1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_m1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Up1</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_p1&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Um2</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_m2&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="n">Up2</span> <span class="o">=</span> <span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_p2&#39;</span> <span class="o">%</span> <span class="n">var_label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Um1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Up1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Um2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="p">[</span><span class="n">var_label</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">Up2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">Um</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Up1</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">U</span> <span class="o">-</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">Um1</span> <span class="o">+</span> <span class="n">Um2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="n">Up</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Um1</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">U</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">Up1</span> <span class="o">-</span> <span class="n">Up2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ap</span> <span class="o">*</span> <span class="n">Um</span> <span class="o">+</span> <span class="n">am</span> <span class="o">*</span> <span class="n">Up</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Upwind up &#39;</span>
+                                  <span class="s1">&#39;to 2nd order not implemented yet&#39;</span><span class="p">)</span>
 
-        <span class="n">symbolic_dep_vars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">dep_var</span><span class="p">)(</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">_sympify_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">diff_eqs</span><span class="p">,</span>
+                       <span class="n">indep_vars</span><span class="p">,</span>
+                       <span class="n">dep_vars</span><span class="p">,</span>
+                       <span class="n">pars</span><span class="p">,</span>
+                       <span class="n">help_functions</span><span class="p">,</span>
+                       <span class="n">bdc_conditions</span><span class="p">,</span>
+                       <span class="n">sympify_namespace</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;enter _sympify_model&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">pformat</span><span class="p">(</span><span class="n">diff_eqs</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">pformat</span><span class="p">(</span><span class="n">dep_vars</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">pformat</span><span class="p">(</span><span class="n">pars</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">pformat</span><span class="p">(</span><span class="n">help_functions</span><span class="p">))</span>
+
+        <span class="n">symbolic_indep_vars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([(</span><span class="n">Symbol</span><span class="p">(</span><span class="n">indep_var</span><span class="p">))</span>
+                                     <span class="k">for</span> <span class="n">indep_var</span> <span class="ow">in</span> <span class="n">indep_vars</span><span class="p">])</span>
+
+        <span class="n">symbolic_dep_vars</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">dep_var</span><span class="p">)(</span><span class="o">*</span><span class="n">symbolic_indep_vars</span><span class="p">)</span>
                                    <span class="k">for</span> <span class="n">dep_var</span> <span class="ow">in</span> <span class="n">dep_vars</span><span class="p">])</span>
-        <span class="n">symbolic_help_functions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">help_function</span><span class="p">)(</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">))</span>
+
+        <span class="n">symbolic_help_functions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">Function</span><span class="p">(</span><span class="n">help_function</span><span class="p">)</span>
+                                         <span class="p">(</span><span class="o">*</span><span class="n">symbolic_indep_vars</span><span class="p">)</span>
                                          <span class="k">for</span> <span class="n">help_function</span> <span class="ow">in</span> <span class="n">help_functions</span><span class="p">])</span>
         <span class="n">symbolic_pars</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="n">pars</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">symbolic_diff_eqs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">sympify</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">locals</span><span class="o">=</span><span class="n">sympify_namespace</span><span class="p">)</span>
-                                       <span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">Symbol</span><span class="p">,</span> <span class="n">dep_vars</span><span class="p">),</span>
-                                                 <span class="p">(</span><span class="n">symbolic_dep_vars</span> <span class="o">+</span>
-                                                  <span class="n">symbolic_help_functions</span><span class="p">)))</span>
-                                       <span class="k">for</span> <span class="n">func</span>
-                                       <span class="ow">in</span> <span class="n">diff_eqs</span><span class="p">])</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">SympifyError</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;badly formated differential equations&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">symbolic_diff_eqs</span><span class="p">,</span> <span class="n">symbolic_dep_vars</span><span class="p">,</span>
-                <span class="n">symbolic_pars</span><span class="p">,</span> <span class="n">symbolic_help_functions</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">sympify_equations</span><span class="p">(</span><span class="n">equations</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">sympify</span><span class="p">(</span><span class="n">func</span><span class="p">,</span>
+                             <span class="nb">locals</span><span class="o">=</span><span class="n">sympify_namespace</span><span class="p">)</span>
+                     <span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">Symbol</span><span class="p">,</span>
+                                   <span class="n">dep_vars</span><span class="p">),</span>
+                               <span class="p">(</span><span class="n">symbolic_dep_vars</span> <span class="o">+</span>
+                                <span class="n">symbolic_help_functions</span><span class="p">)))</span>
+                     <span class="o">.</span><span class="n">doit</span><span class="p">()</span>
+                     <span class="k">for</span> <span class="n">func</span>
+                     <span class="ow">in</span> <span class="n">equations</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="n">SympifyError</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;badly formated differential equations&quot;</span><span class="p">)</span>
+
+        <span class="n">symbolic_diff_eqs</span><span class="p">,</span> <span class="n">symbolic_bdcs</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">sympify_equations</span><span class="p">,</span>
+                                               <span class="p">(</span><span class="n">diff_eqs</span><span class="p">,</span>
+                                                <span class="n">bdc_conditions</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">symbolic_diff_eqs</span><span class="p">,</span> <span class="n">symbolic_indep_vars</span><span class="p">,</span> <span class="n">symbolic_dep_vars</span><span class="p">,</span>
+                <span class="n">symbolic_pars</span><span class="p">,</span> <span class="n">symbolic_help_functions</span><span class="p">,</span> <span class="n">symbolic_bdcs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_approximate_derivative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                 <span class="n">symbolic_diff_eqs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
-                                <span class="n">symbolic_vars</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+                                <span class="n">symbolic_indep_vars</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
+                                <span class="n">symbolic_dep_vars</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span>
                                 <span class="n">symbolic_fields</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;enter _approximate_derivative&#39;</span><span class="p">)</span>
@@ -705,13 +693,17 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_finite_diff_scheme</span><span class="p">(</span><span class="n">var</span><span class="p">,</span>
                                              <span class="n">order</span><span class="p">))</span>
             <span class="n">afunc</span> <span class="o">=</span> <span class="n">afunc</span><span class="o">.</span><span class="n">subs</span><span class="p">([(</span><span class="n">var</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">func</span><span class="p">)))</span>
-                                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">symbolic_vars</span> <span class="o">+</span> <span class="n">symbolic_fields</span><span class="p">])</span>
+                                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">symbolic_dep_vars</span> <span class="o">+</span>
+                                <span class="n">symbolic_fields</span><span class="p">])</span>
+            <span class="n">afunc</span> <span class="o">=</span> <span class="n">afunc</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">Function</span><span class="p">(</span><span class="s2">&quot;upwind&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_upwind_scheme</span><span class="p">)</span>
             <span class="n">approximated_diff_eqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">afunc</span><span class="o">.</span><span class="n">expand</span><span class="p">())</span>
+
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">approximated_diff_eqs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">_reduce_model</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_diff_eqs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">))</span></div>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_bdcs</span><span class="p">))</span></div>
 </pre></div>
 
            </div>
@@ -748,7 +740,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.4.3',
+            VERSION:'0.4.12',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -758,7 +750,7 @@
       <script type="text/javascript" src="../../../_static/jquery.js"></script>
       <script type="text/javascript" src="../../../_static/underscore.js"></script>
       <script type="text/javascript" src="../../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

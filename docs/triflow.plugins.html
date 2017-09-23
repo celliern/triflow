@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>triflow.plugins package &mdash; triflow 0.4.3 documentation</title>
+  <title>triflow.plugins package &mdash; triflow 0.4.12 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="triflow 0.4.3 documentation" href="index.html"/>
+    <link rel="top" title="triflow 0.4.12 documentation" href="index.html"/>
         <link rel="up" title="triflow package" href="triflow.html"/>
         <link rel="prev" title="triflow.core package" href="triflow.core.html"/> 
 
@@ -225,20 +225,19 @@
 in order to give extra informationto the user during the simulation
 (plot, post-processing...)</p>
 <dl class="class">
-<dt id="triflow.plugins.displays.bokeh_fields_update">
-<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_fields_update</code><span class="sig-paren">(</span><em>simul</em>, <em>keys=None</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>notebook=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_fields_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_fields_update" title="Permalink to this definition">¶</a></dt>
+<dt id="triflow.plugins.displays.display_0D">
+<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">display_0D</code><span class="sig-paren">(</span><em>simul</em>, <em>keys=None</em>, <em>line_kwargs={}</em>, <em>scatter_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>default_fig_kwargs={'width': 600</em>, <em>'height': 250}</em>, <em>default_line_kwargs={}</em>, <em>default_scatter_kwargs={}</em>, <em>notebook=True</em>, <em>stack=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#display_0D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.display_0D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Display fields data in a interactive Bokeh plot displayed in
-a jupyter notebook.</p>
+<p>Display custom probes in a interactive Bokeh plot displayed in a jupyter notebook.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>keys</strong> (<em>None</em><em>, </em><em>optional</em>) &#8211; list of the dependant variables to be displayed</li>
-<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
-<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
-<li><strong>init_notebook</strong> (<em>True</em><em>, </em><em>optional</em>) &#8211; if True, initialize the javascript component needed for bokeh.</li>
+<li><strong>probes</strong> (<em>dictionnary of callable</em>) -- Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) -- dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) -- dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>init_notebook</strong> (<em>True</em><em>, </em><em>optional</em>) -- if True, initialize the javascript component needed for bokeh.</li>
 </ul>
 </td>
 </tr>
@@ -247,19 +246,29 @@ a jupyter notebook.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="triflow.plugins.displays.bokeh_probes_update">
-<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">bokeh_probes_update</code><span class="sig-paren">(</span><em>simul</em>, <em>probes</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>notebook=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#bokeh_probes_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.bokeh_probes_update" title="Permalink to this definition">¶</a></dt>
+<dt id="triflow.plugins.displays.display_1D">
+<em class="property">class </em><code class="descclassname">triflow.plugins.displays.</code><code class="descname">display_1D</code><span class="sig-paren">(</span><em>simul</em>, <em>keys=None</em>, <em>line_kwargs={}</em>, <em>fig_kwargs={}</em>, <em>default_fig_kwargs={'width': 600</em>, <em>'height': 250}</em>, <em>default_line_kwargs={}</em>, <em>notebook=True</em>, <em>stack=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/displays.html#display_1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.displays.display_1D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Display custom probes in a interactive Bokeh plot displayed in a jupyter notebook.</p>
+<p>Display fields data in a interactive Bokeh plot displayed in
+a jupyter notebook.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>probes</strong> (<em>dictionnary of callable</em>) &#8211; Dictionnary with {name: callable} used to plot the probes. The signature is the same as in the hooks and return the value we want to plot.</li>
-<li><strong>line_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
-<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) &#8211; dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
-<li><strong>init_notebook</strong> (<em>True</em><em>, </em><em>optional</em>) &#8211; if True, initialize the javascript component needed for bokeh.</li>
+<li><strong>keys</strong> (<em>None</em><em>, </em><em>optional</em>) -- <p>list of the dependant variables to be displayed if string provided. If tuple or list,
+it should contain (key, callable), and the callable will have the following signature.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">callable</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">field</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span> <span class="o">+</span> <span class="n">fields</span><span class="o">.</span><span class="n">V</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="n">field</span>
+</pre></div>
+</div>
+<p>That way it is possible to display post-processed data.</p>
+</li>
+<li><strong>line_kwargs</strong> (<em>dict of dict</em>) -- dictionnary with vars as key and a dictionnary of keywords arguments passed to the lines plots</li>
+<li><strong>fig_kwargs</strong> (<em>dict of dict</em>) -- dictionnary with vars as key and a dictionnary of keywords arguments passed to the figs plots</li>
+<li><strong>init_notebook</strong> (<em>True</em><em>, </em><em>optional</em>) -- if True, initialize the javascript component needed for bokeh.</li>
+<li><strong>stack</strong> (<em>False</em><em>, </em><em>optional</em>) -- if True, all the plots are displayed in the same figure. fig kwargs is directly passed to this fig.</li>
 </ul>
 </td>
 </tr>
@@ -285,7 +294,7 @@ called.</p>
 </dl>
 <dl class="class">
 <dt id="triflow.plugins.schemes.RODASPR">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">RODASPR</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#RODASPR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.RODASPR" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">RODASPR</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em>, <em>recompute_target=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#RODASPR"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.RODASPR" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
 <p>6th order Rosenbrock scheme, with time stepping</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -293,11 +302,12 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</li>
+<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) -- tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) -- allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- minimum internal time step allowed</li>
+<li><strong>recompute_target</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default False</em>) -- if True a new computation is done when the target time is exceeded, interpolation used otherwise.</li>
 </ul>
 </td>
 </tr>
@@ -314,7 +324,7 @@ called.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</td>
 </tr>
 </tbody>
 </table>
@@ -322,7 +332,7 @@ called.</p>
 
 <dl class="class">
 <dt id="triflow.plugins.schemes.ROS3PRL">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRL</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRL" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRL</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em>, <em>recompute_target=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
 <p>4th order Rosenbrock scheme, with time stepping</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -330,11 +340,12 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</li>
+<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) -- tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) -- allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- minimum internal time step allowed</li>
+<li><strong>recompute_target</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default False</em>) -- if True a new computation is done when the target time is exceeded, interpolation used otherwise.</li>
 </ul>
 </td>
 </tr>
@@ -344,7 +355,7 @@ called.</p>
 
 <dl class="class">
 <dt id="triflow.plugins.schemes.ROS3PRw">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRw</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRw" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROS3PRw</code><span class="sig-paren">(</span><em>model</em>, <em>tol=0.01</em>, <em>time_stepping=True</em>, <em>max_iter=None</em>, <em>dt_min=None</em>, <em>recompute_target=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROS3PRw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROS3PRw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#triflow.plugins.schemes.ROW_general" title="triflow.plugins.schemes.ROW_general"><code class="xref py py-class docutils literal"><span class="pre">triflow.plugins.schemes.ROW_general</span></code></a></p>
 <p>Third order Rosenbrock scheme, with time stepping</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -352,11 +363,12 @@ called.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) &#8211; tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
-<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) &#8211; allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
-<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; maximum internal iteration allowed</li>
-<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) &#8211; minimum internal time step allowed</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</li>
+<li><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default 1E-2</em>) -- tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.</li>
+<li><strong>time_stepping</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default True</em>) -- allow a variable internal time-step to ensure good agreement between computing performance and accuracy.</li>
+<li><strong>max_iter</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- maximum internal iteration allowed</li>
+<li><strong>dt_min</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>optional</em><em>, </em><em>default None</em>) -- minimum internal time step allowed</li>
+<li><strong>recompute_target</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default False</em>) -- if True a new computation is done when the target time is exceeded, interpolation used otherwise.</li>
 </ul>
 </td>
 </tr>
@@ -366,14 +378,14 @@ called.</p>
 
 <dl class="class">
 <dt id="triflow.plugins.schemes.ROW_general">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROW_general</code><span class="sig-paren">(</span><em>model</em>, <em>alpha</em>, <em>gamma</em>, <em>b</em>, <em>b_pred=None</em>, <em>time_stepping=False</em>, <em>tol=None</em>, <em>max_iter=None</em>, <em>dt_min=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">ROW_general</code><span class="sig-paren">(</span><em>model</em>, <em>alpha</em>, <em>gamma</em>, <em>b</em>, <em>b_pred=None</em>, <em>time_stepping=False</em>, <em>tol=None</em>, <em>max_iter=None</em>, <em>dt_min=None</em>, <em>safety_factor=0.9</em>, <em>recompute_target=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Rosenbrock Wanner class of temporal solvers</p>
 <p>The implementation and the different parameters can be found in
 <a class="reference external" href="http://www.digibib.tu-bs.de/?docid=00055262">http://www.digibib.tu-bs.de/?docid=00055262</a></p>
 <dl class="method">
 <dt id="triflow.plugins.schemes.ROW_general.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function ROW_general.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function null_hook&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#ROW_general.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.ROW_general.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a step of the solver: took a time and a system state as a
 triflow Fields container and return the next time step with updated
 container.</p>
@@ -382,24 +394,24 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<em>float</em>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
-<li><strong>dt</strong> (<em>float</em>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<em>dict</em>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
-<li><strong>container</strong> &#8211; </li>
+<li><strong>t</strong> (<em>float</em>) -- actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) -- actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<em>float</em>) -- temporal step-size</li>
+<li><strong>pars</strong> (<em>dict</em>) -- physical parameters of the model</li>
+<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) -- any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>container</strong> -- </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> -- updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> &#8211; raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> &#8211; raised if time_stepping is True and tol is not provided.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> -- raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> -- raised if time_stepping is True and tol is not provided.</li>
 </ul>
 </td>
 </tr>
@@ -424,9 +436,9 @@ if theta = 0.5, the scheme is called a Crank-Nicolson scheme</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>theta</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1</em>) &#8211; weight of the theta-scheme</li>
-<li><strong>solver</strong> (<em>callable</em><em>, </em><em>optional</em><em>, </em><em>default scipy.sparse.linalg.spsolve</em>) &#8211; method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</li>
+<li><strong>theta</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1</em>) -- weight of the theta-scheme</li>
+<li><strong>solver</strong> (<em>callable</em><em>, </em><em>optional</em><em>, </em><em>default scipy.sparse.linalg.spsolve</em>) -- method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.</li>
 </ul>
 </td>
 </tr>
@@ -434,7 +446,7 @@ if theta = 0.5, the scheme is called a Crank-Nicolson scheme</dd>
 </table>
 <dl class="method">
 <dt id="triflow.plugins.schemes.Theta.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function Theta.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#Theta.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.Theta.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function null_hook&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#Theta.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.Theta.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a step of the solver: took a time and a system state as a
 triflow Fields container and return the next time step with updated
 container.</p>
@@ -443,15 +455,15 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<em>float</em>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields container</li>
-<li><strong>dt</strong> (<em>float</em>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<em>dict</em>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>t</strong> (<em>float</em>) -- actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) -- actual system state in a triflow Fields container</li>
+<li><strong>dt</strong> (<em>float</em>) -- temporal step-size</li>
+<li><strong>pars</strong> (<em>dict</em>) -- physical parameters of the model</li>
+<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) -- any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> -- updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
@@ -463,9 +475,14 @@ container.</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="triflow.plugins.schemes.null_hook">
+<code class="descclassname">triflow.plugins.schemes.</code><code class="descname">null_hook</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>pars</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#null_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.null_hook" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="class">
 <dt id="triflow.plugins.schemes.scipy_ode">
-<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">scipy_ode</code><span class="sig-paren">(</span><em>model</em>, <em>integrator='vode'</em>, <em>**integrator_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">triflow.plugins.schemes.</code><code class="descname">scipy_ode</code><span class="sig-paren">(</span><em>model</em>, <em>jac=False</em>, <em>integrator='vode'</em>, <em>**integrator_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Proxy written around the scipy.integrate.ode class. Give access to all
 the scpy integrators.</p>
@@ -474,9 +491,9 @@ the scpy integrators.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>model</strong> (<em>triflow.Model</em>) &#8211; triflow Model</li>
-<li><strong>integrator</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default 'vode'</em>) &#8211; name of the chosen scipy integration scheme.</li>
-<li><strong>**integrator_kwargs</strong> &#8211; extra arguments provided to the scipy integration scheme.</li>
+<li><strong>model</strong> (<em>triflow.Model</em>) -- triflow Model</li>
+<li><strong>integrator</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default 'vode'</em>) -- name of the chosen scipy integration scheme.</li>
+<li><strong>**integrator_kwargs</strong> -- extra arguments provided to the scipy integration scheme.</li>
 </ul>
 </td>
 </tr>
@@ -484,7 +501,7 @@ the scpy integrators.</p>
 </table>
 <dl class="method">
 <dt id="triflow.plugins.schemes.scipy_ode.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function scipy_ode.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>t</em>, <em>fields</em>, <em>dt</em>, <em>pars</em>, <em>hook=&lt;function null_hook&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#scipy_ode.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.scipy_ode.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a step of the solver: took a time and a system state as a
 triflow Fields container and return the next time step with updated
 container.</p>
@@ -493,22 +510,22 @@ container.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>t</strong> (<em>float</em>) &#8211; actual time step</li>
-<li><strong>fields</strong> (<em>triflow.Fields</em>) &#8211; actual system state in a triflow Fields</li>
-<li><strong>dt</strong> (<em>float</em>) &#8211; temporal step-size</li>
-<li><strong>pars</strong> (<em>dict</em>) &#8211; physical parameters of the model</li>
-<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) &#8211; any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
-<li><strong>container</strong> &#8211; </li>
+<li><strong>t</strong> (<em>float</em>) -- actual time step</li>
+<li><strong>fields</strong> (<em>triflow.Fields</em>) -- actual system state in a triflow Fields</li>
+<li><strong>dt</strong> (<em>float</em>) -- temporal step-size</li>
+<li><strong>pars</strong> (<em>dict</em>) -- physical parameters of the model</li>
+<li><strong>hook</strong> (<em>callable</em><em>, </em><em>optional</em>) -- any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...</li>
+<li><strong>container</strong> -- </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> &#8211; updated time and fields container</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tuple</strong> -- updated time and fields container</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="triflow.core.html#triflow.core.simulation.Simulation.t" title="triflow.core.simulation.Simulation.t">t</a>, <a class="reference internal" href="triflow.core.html#module-triflow.core.fields" title="triflow.core.fields">fields</a></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code> &#8211; Description</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code> -- Description</p>
 </td>
 </tr>
 </tbody>
@@ -516,6 +533,11 @@ container.</p>
 </dd></dl>
 
 </dd></dl>
+
+<dl class="function">
+<dt id="triflow.plugins.schemes.time_stepping">
+<code class="descclassname">triflow.plugins.schemes.</code><code class="descname">time_stepping</code><span class="sig-paren">(</span><em>scheme</em>, <em>tol=0.01</em>, <em>ord=2</em>, <em>m=10</em>, <em>reject_factor=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/triflow/plugins/schemes.html#time_stepping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#triflow.plugins.schemes.time_stepping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="module-triflow.plugins.signals">
@@ -548,7 +570,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<em>float</em>) &#8211; Value of the offset</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<em>float</em>) -- Value of the offset</td>
 </tr>
 </tbody>
 </table>
@@ -577,11 +599,11 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency_sampling</strong> (<em>float</em>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
-<li><strong>frequency_cut</strong> (<em>float</em>) &#8211; Filter frequency cut.</li>
-<li><strong>mean</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>seed</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+<li><strong>frequency_sampling</strong> (<em>float</em>) -- Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>frequency_cut</strong> (<em>float</em>) -- Filter frequency cut.</li>
+<li><strong>mean</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) -- sampling number of the signal.</li>
+<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) -- sampling number of the signal.</li>
+<li><strong>seed</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) -- pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
 </ul>
 </td>
 </tr>
@@ -609,10 +631,10 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency_sampling</strong> (<em>float</em>) &#8211; Frequency sampling (the highest frequency of the white signal spectrum).</li>
-<li><strong>mean</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) &#8211; sampling number of the signal.</li>
-<li><strong>seed</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) &#8211; pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
+<li><strong>frequency_sampling</strong> (<em>float</em>) -- Frequency sampling (the highest frequency of the white signal spectrum).</li>
+<li><strong>mean</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) -- sampling number of the signal.</li>
+<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em><em>, </em><em>default 1000</em>) -- sampling number of the signal.</li>
+<li><strong>seed</strong> (<em>int</em><em> or </em><em>None</em><em>, </em><em>optional</em>) -- pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</li>
 </ul>
 </td>
 </tr>
@@ -650,9 +672,9 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>signal_period</strong> (<em>float</em>) &#8211; period of the signal.</li>
-<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em>) &#8211; sampling number of the signal.</li>
-<li><strong>**kwargs</strong> &#8211; extra arguments provided to the custom signal template.</li>
+<li><strong>signal_period</strong> (<em>float</em>) -- period of the signal.</li>
+<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em>) -- sampling number of the signal.</li>
+<li><strong>**kwargs</strong> -- extra arguments provided to the custom signal template.</li>
 </ul>
 </td>
 </tr>
@@ -671,7 +693,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) -- second signal to which this one will be added.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
 </tr>
@@ -689,7 +711,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>t</strong> (<em>float</em>) &#8211; time where the signal is evaluated.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>t</strong> (<em>float</em>) -- time where the signal is evaluated.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">amplitude of the signal a the time t.</td>
 </tr>
@@ -706,7 +728,7 @@ conditions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) &#8211; second signal to which this one will be added.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other_signal</strong> (<em>triflow.plugins.signal.Signal</em>) -- second signal to which this one will be added.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">added signal.</td>
 </tr>
@@ -744,10 +766,10 @@ conditions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>frequency</strong> (<em>float</em>) &#8211; frequency of the signal</li>
-<li><strong>amplitude</strong> (<em>float</em>) &#8211; amplitude of the signal</li>
-<li><strong>phase</strong> (<em>float</em><em>, </em><em>optional</em>) &#8211; phase of the signam</li>
-<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em>) &#8211; number of sample for 2 period of the signal</li>
+<li><strong>frequency</strong> (<em>float</em>) -- frequency of the signal</li>
+<li><strong>amplitude</strong> (<em>float</em>) -- amplitude of the signal</li>
+<li><strong>phase</strong> (<em>float</em><em>, </em><em>optional</em>) -- phase of the signam</li>
+<li><strong>n</strong> (<em>int</em><em>, </em><em>optional</em>) -- number of sample for 2 period of the signal</li>
 </ul>
 </td>
 </tr>
@@ -824,7 +846,7 @@ conditions.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.4.3',
+            VERSION:'0.4.12',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -834,7 +856,7 @@ conditions.</p>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

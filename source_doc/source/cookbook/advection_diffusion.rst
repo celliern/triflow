@@ -5,7 +5,6 @@ The convection diffusion equation
 .. code:: ipython3
 
     import functools as ft
-    import multiprocessing as mp
     import logging
     
     import numpy as np
@@ -84,6 +83,7 @@ We initialize the simulation.
     t = 0
     simulation = Simulation(model, t, fields, parameters,
                             dt=.1, tmax=30)
+    simulation.add_display(displays.bokeh_fields_update
 
 We iterate on the simulation until the end.
 
@@ -109,5 +109,4 @@ We iterate on the simulation until the end.
 
 
 .. image:: advection_diffusion_files/advection_diffusion_13_1.png
-
 

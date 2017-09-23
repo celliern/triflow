@@ -42,6 +42,11 @@ You can install the last version of the library using pip and the `github reposi
 
     pip install git+git://github.com/locie/triflow.git
 
+and for the developpement branch:
+
+.. code:: bash
+
+    pip install git+git://github.com/locie/triflow@dev
 
 .. _github repository: https://github.com/locie/triflow
 .. _Anaconda3: https://www.continuum.io/downloads

@@ -15,6 +15,8 @@ Moreover, we provide extra tools and we write the library in a modular way, allo
 
 The library fits well with an interactive usage (in a jupyter notebook).
 
+This is just an overview : more details are in the dedicated pages of each submodules.
+
 Model writing
 -----------------
 
@@ -28,13 +30,13 @@ We write the symbolic model as a simple mathematic equation. For exemple, a diff
 
 .. code-block:: python3
 
-    >>> from triflow import Model
+    >>> import triflow as trf
 
     >>> eq_diff = "k * dxxU - c * dxU"
     >>> dep_var = "U"
     >>> pars = ["k", "c"]
 
-    >>> model = Model(eq_diff, dep_var, pars)
+    >>> model = trf.Model(eq_diff, dep_var, pars)
 
 the model give us access after that to the compiled routines for F and the corresponding Jacobian matrix as:
 
@@ -69,7 +71,7 @@ a numerical approximation is available for debug purpose with
 
 be aware that numerical approximation of the Jacobian is far less efficient than the provided optimized routine.
 
-optional arguments : fields and parameters
+optional arguments : helpers function and parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The model take two mandatory parameters: differential_equations, dependent_variables. The first define the evaluation of the time derivative, the second the name of the dependant variables.
@@ -86,11 +88,13 @@ So, what is main difference between them? The difference is that you have the po
 Model compilation
 ------------------
 
-The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, a tool has been written in order to convert sympy complex expressions to Theano_ graph which can be easily compiled.
+The model has to be compiled before being employed. The sympy_ library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, the symbolic form of the expression feed custom compilers in order to provide the routine for the time derivative and the associate jacobian.
+
+Actually there are two different compilers : the first one use only the NumPy_ library (and is not really compiled, but use NumPy_ mechanism which stand by C array operations). In that case the initialization time depend only of the symbolic computation and can be almost instant for simple models. The second one is build on Theano_, thus provide algorithm graph optimization and write a C binary for the routines. For simple case, the Theano_ compiler is twice faster as the NumPy_ one. By default, Theano_ is used.
 
 In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).
 
-The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be sae on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (> 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the Theano_ documentation for more details).
+The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host if using this compiler, leading to potential long initialization for large and complex models. The memory footprint can be large (> 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. It should be important to notice that Theano_ is able to handle GPU computation if properly configured (see its documentation for more details). For large parametric studies and simple models, using the NumPy_ compiler could be more interesting.
 
 Fields containers
 ------------------
@@ -102,24 +106,22 @@ A factory is linked to the model and is accessible via the model.fields_template
 .. code-block:: python3
 
     >>> import numpy as np
-    >>> from triflow import Model
+    >>> import triflow as trf
 
-    >>> model = Model("k * dxxU - c * dxU",
-    ...              "U", ["k", "c"])
+    >>> model = trf.Model("k * dxxU - c * dxU",
+    ...                   "U", ["k", "c"])
 
     >>> x, dx = np.linspace(0, 1, 100, retstep=True)
     >>> U = np.cos(2 * np.pi * x * 5)
     >>> fields = model.fields_template(x=x, U=U)
 
-The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations.
+The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations. This container is built on the top of the xarray_ library, a pandas-like data container for multi-dimensional sets. Triflow BaseFields derived from the xarray Dataset_ thus have the same API for most methods and attributes.
 
 .. code-block:: python3
 
     >>> fields.U[:] = 5
     >>> print(fields.U)
     [5, 5, 5, ..., 5, 5]
-
-Be aware of difference between the attribute giving access to a view of the main array and the one returning a copy of the subarray: the first one allow an on-the-fly modification of the fields (in order to inject boundary condition for exemple), the second one should be only used as read-only meaning.
 
 Numerical scheme, temporal solver
 ----------------------------------
@@ -158,6 +160,18 @@ Inside the model, the fields are padded in order to solve the equation. If the p
 .. plot:: pyplots/overview_model_hook.py
    :include-source:
 
+The hook function is used in order to deal with variable and conditional parameters and boundary condition.
+
+Inside the model, the fields are padded in order to solve the equation. If the parameter "periodic" is used, the pad function is used with the mode "wrap" leading to periodic fields. If not, the mode "edge" is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:
+
+.. plot:: pyplots/overview_model_hook.py
+   :include-source:
+
+Time Stepping
+^^^^^^^^^^^^^
+
+Some of the provided solvers come with built-in automatic time stepping. For the others, an external tool is provided in the same module as the temporal schemes. It takes a scheme as input and return a decorated scheme with internal time-stepping. This one is not as efficient as the built-in (and require extra computation) but is handy to deal with simulation that has varying kinetics. It is used by default in the Simulation Class (see bellow).
+
 Simulation class: higher level control
 --------------------------------------
 
@@ -165,11 +179,11 @@ The loop snippet
 
 .. code-block:: python3
 
-    >>> scheme = schemes.RODASPR(model)
+    >>> scheme = trf.schemes.RODASPR(model)
     >>> for i in it.count():
     ...     t, fields = scheme(t, fields, dt, parameters)
     ...     print(f"iteration: {i}\tt: {t:g}", end='\r')
-    ...     if t >= tmax:
+    ...     if t > tmax:
     ...         break
 
 is not handy.
@@ -178,27 +192,119 @@ To avoid it, we provide a higher level control class, the Simulation. It is an i
 
 .. code-block:: python3
 
-    >>> simul = Simulation(model, t, fields, parameters, dt,
-    ...                    scheme=schemes.RODASPR(model), tmax=tmax)
+    >>> simul = trf.Simulation(model, t, fields, parameters, dt,
+    ...                        scheme=trf.schemes.RODASPR, tmax=tmax)
     >>> for i, (t, fields) in enumerate(simul):
-    ...     print(f"iteration: {i}\tt: {t:g}", end='\r')
+    ...     print(f"iteration: {i}\tt: {t:g}".ljust(80), end='\r')
 
 and we write the previous advection-diffusion example as:
 
 .. plot:: pyplots/overview_simulation_hook.py
    :include-source:
 
+Probes
+^^^^^^
+
+Simulation allows to add one or more probes which are used to compute post-processed values as flux, computation time, mean or standard of a value...
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, t, fields, parameters, dt, tmax=tmax)
+    >>> simul.add_probe("mean", lambda simul: simul.fields["U"].mean())
+    >>> for i, (t, fields) in enumerate(simul):
+    ...     print(f"iteration: {i} t: {t:g} mean: {simul.probes['mean']:g} ".ljust(80), end='\r')
+
+will compute and print the mean value of U every time-step.
+
+By default, last step and full simulation cpu time are computed every time-step.
+
+Container
+^^^^^^^^^
+
+Triflow containers give some persistence-flavored on the results. They can be attached to a simulation and save the metadata via the Treant library and the data as a netCDF file. Fields and probes are saved every time-step.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, t, fields,
+                               parameters, dt, tmax=tmax,
+                               id="triflow_simulation")
+    >>> simul.add_probe("std", "t",
+    ...                 lambda simul: simul.fields["U"].std())
+    >>> simul.attach_container("/tmp/triflow_result")
+    >>> for i, (t, fields) in enumerate(simul):
+    ...     print(f"iteration: {i} "
+    ...           f"t: {t:g} "
+    ...           f"std: {float(simul.probes['std'].values):g} ".ljust(80),
+    ...           end='\r')
+
+Data can be retrieved with
+
+.. code-block:: python3
+
+    >>> container = trf.Container.get_all("/tmp/triflow_result/triflow_simulation")
+    >>> data = container.data
+    <xarray.Dataset>
+    Dimensions:     (t: 6, x: 100)
+    Coordinates:
+      * x           (x) float64 0.0 0.0101 0.0202 0.0303 0.0404 0.05051 0.06061 ...
+      * t           (t) float64 0.0 0.2 0.4 0.6 0.8 1.0
+    Data variables:
+        U           (t, x) float64 1.0 0.9501 0.8053 0.5801 0.2969 -0.01587 ...
+        ctime       (t) float64 0.0 4.553 0.4998 0.1356 0.05534 0.04571
+        full_ctime  (t) float64 0.0 4.553 5.053 5.189 5.244 5.29
+        std         (t) float64 0.7106 0.1067 0.02265 0.01391 0.01193 0.01064
+    Attributes:
+        id:         triflow_simulation
+        dt:         0.2
+        tmax:       1
+        timestamp:  2017-09-23 13:10:42
+        hook:       def null_hook(t, fields, pars):\n    return fields, pars\n
+        c:          1
+        k:          0.01
+        periodic:   1
+    >>> container.metadata
+    {'c': 1,
+     'dt': 0.2,
+     'hook': 'def null_hook(t, fields, pars):\n    return fields, pars\n',
+     'id': 'triflow_simulation',
+     'k': 0.01,
+     'periodic': True,
+     'timestamp': '2017-09-23 13:10:42',
+     'tmax': 1}
+
+and the get_last method give access only to the last time-step.
+
+.. code-block:: python3
+
+    >>> container = trf.Container.get_last("/tmp/triflow_result/triflow_simulation")
+
+The data are loaded lazily thus saving memory for large scale simulations.
+
 Displays
 ^^^^^^^^
 
-Hooks are called every internal time step and allow granular modification of the parameters or fields.
+Triflow provide displays which are built on Bokeh_ and allow real-time plotting when used on a jupyter notebook.
 
-Displays have to be called by the user and can not modify the fields or parameters, but can display or save data during the simulation.
+`display_0D` provide (t, probe) display.
 
-Like the hooks, they are basically callable or coroutine taking fields or the other to output post-processed data. The built-ins displays are detailed on the section of the same name.
+`display_1D` provide (x, field) display.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, t, fields, parameters, dt, tmax=tmax,
+                               id="triflow_simulation")
+    >>> simul.add_display(trf.display_0D, ["ctime"])
+    >>> simul.add_display(trf.display_1D, ["U"])
+    >>> for i, (t, fields) in enumerate(simul):
+    ...     print(f"iteration: {i} t: {t:g}".ljust(80), end='\r')
+
+Will display the fields U and the total time spent on the simulation.
 
 .. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html
-.. _Numpy: http://www.sympy.org/en/index.html
+.. _NumPy: http://www.sympy.org/en/index.html
+.. _Bokeh: https://bokeh.pydata.org/en/latest/
+.. _xarray: http://xarray.pydata.org/en/stable/
+.. _Dataset: http://xarray.pydata.org/en/stable/generated/xarray.Dataset.html?highlight=dataset
 .. _scipy sparse column matrix format: https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.sparse.csc_matrix.html
 .. _SuperLU: http://crd-legacy.lbl.gov/~xiaoye/SuperLU/

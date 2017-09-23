@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Overview &mdash; triflow 0.4.3 documentation</title>
+  <title>Overview &mdash; triflow 0.4.12 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="triflow 0.4.3 documentation" href="index.html"/>
+    <link rel="top" title="triflow 0.4.12 documentation" href="index.html"/>
         <link rel="next" title="Temporal schemes" href="schemes.html"/>
         <link rel="prev" title="Installation" href="installation.html"/> 
 
@@ -99,16 +99,19 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#motivation">Motivation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#model-writing">Model writing</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#optional-arguments-fields-and-parameters">optional arguments : fields and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-arguments-helpers-function-and-parameters">optional arguments : helpers function and parameters</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#model-compilation">Model compilation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fields-containers">Fields containers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#numerical-scheme-temporal-solver">Numerical scheme, temporal solver</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#hook-and-boundary-conditions">hook and boundary conditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#time-stepping">Time Stepping</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#simulation-class-higher-level-control">Simulation class: higher level control</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#probes">Probes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#container">Container</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#displays">Displays</a></li>
 </ul>
 </li>
@@ -228,6 +231,7 @@
 </ul>
 <p>Moreover, we provide extra tools and we write the library in a modular way, allowing an easy extension of these different parts (see the plug-in module of the library.)</p>
 <p>The library fits well with an interactive usage (in a jupyter notebook).</p>
+<p>This is just an overview : more details are in the dedicated pages of each submodules.</p>
 </div>
 <div class="section" id="model-writing">
 <h2>Model writing<a class="headerlink" href="#model-writing" title="Permalink to this headline">¶</a></h2>
@@ -235,13 +239,13 @@
 <div class="math">
 \[\frac{\partial U}{\partial t} = F(U)\]</div>
 <p>We write the symbolic model as a simple mathematic equation. For exemple, a diffusion advection model:</p>
-<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">triflow</span> <span class="k">as</span> <span class="nn">trf</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">eq_diff</span> <span class="o">=</span> <span class="s2">&quot;k * dxxU - c * dxU&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dep_var</span> <span class="o">=</span> <span class="s2">&quot;U&quot;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">eq_diff</span><span class="p">,</span> <span class="n">dep_var</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">eq_diff</span><span class="p">,</span> <span class="n">dep_var</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>the model give us access after that to the compiled routines for F and the corresponding Jacobian matrix as:</p>
@@ -270,8 +274,8 @@
 </pre></div>
 </div>
 <p>be aware that numerical approximation of the Jacobian is far less efficient than the provided optimized routine.</p>
-<div class="section" id="optional-arguments-fields-and-parameters">
-<h3>optional arguments : fields and parameters<a class="headerlink" href="#optional-arguments-fields-and-parameters" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="optional-arguments-helpers-function-and-parameters">
+<h3>optional arguments : helpers function and parameters<a class="headerlink" href="#optional-arguments-helpers-function-and-parameters" title="Permalink to this headline">¶</a></h3>
 <p>The model take two mandatory parameters: differential_equations, dependent_variables. The first define the evaluation of the time derivative, the second the name of the dependant variables.</p>
 <p>It can take two optional arguments :</p>
 <ul class="simple">
@@ -283,32 +287,32 @@
 </div>
 <div class="section" id="model-compilation">
 <h2>Model compilation<a class="headerlink" href="#model-compilation" title="Permalink to this headline">¶</a></h2>
-<p>The model has to be compiled before being employed. The sympy library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, a tool has been written in order to convert sympy complex expressions to <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> graph which can be easily compiled.</p>
+<p>The model has to be compiled before being employed. The <a class="reference external" href="http://www.sympy.org/en/index.html">sympy</a> library provides an easy way to automatically write the Fortran or C routine corresponding. Better than that, the symbolic form of the expression feed custom compilers in order to provide the routine for the time derivative and the associate jacobian.</p>
+<p>Actually there are two different compilers : the first one use only the <a class="reference external" href="http://www.sympy.org/en/index.html">NumPy</a> library (and is not really compiled, but use <a class="reference external" href="http://www.sympy.org/en/index.html">NumPy</a> mechanism which stand by C array operations). In that case the initialization time depend only of the symbolic computation and can be almost instant for simple models. The second one is build on <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a>, thus provide algorithm graph optimization and write a C binary for the routines. For simple case, the <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> compiler is twice faster as the <a class="reference external" href="http://www.sympy.org/en/index.html">NumPy</a> one. By default, <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> is used.</p>
 <p>In the examples folder live some classic 1D PDE (diffusion, diffusion/advection, burger equation...).</p>
-<p>The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be sae on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host, leading to potential long initialization for large and complex models. The memory footprint can be large (&gt; 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. [Further work will include the choice between high performance and fast overhead]. It should be important to notice that Theano is able to handle GPU computation if properly configured (see the <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> documentation for more details).</p>
+<p>The Model class is pickable, means that it can be sent across the network and between cpu for multiprocessing purpose. It can be save on disk as a binary and reload later. It is important in order to reduce the large compilation overhead. (see Model.save and load_model). Thus, the model has to be re-optimized by Theano on every new host if using this compiler, leading to potential long initialization for large and complex models. The memory footprint can be large (&gt; 1Go) in some case: this is the cost of the theano aggressive graph optimization strategy. It should be important to notice that <a class="reference external" href="http://deeplearning.net/software/theano/">Theano</a> is able to handle GPU computation if properly configured (see its documentation for more details). For large parametric studies and simple models, using the <a class="reference external" href="http://www.sympy.org/en/index.html">NumPy</a> compiler could be more interesting.</p>
 </div>
 <div class="section" id="fields-containers">
 <h2>Fields containers<a class="headerlink" href="#fields-containers" title="Permalink to this headline">¶</a></h2>
 <p>A special container has been designed to handle initial values of the dependant solutions (the unknowns), the independant variables (spatial coordinates), the constant fields and the post-processed variable (known as helper function).</p>
 <p>A factory is linked to the model and is accessible via the model.fields_template property :</p>
 <div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">triflow</span> <span class="k">as</span> <span class="nn">trf</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
-<span class="gp">... </span>             <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                  <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations.</p>
+<p>The variable involved in the computation are stored on a large vector containing all the fields, and this object give access to each fields to simplify their modification and the computations. This container is built on the top of the <a href="#id1"><span class="problematic" id="id2">xarray_</span></a> library, a pandas-like data container for multi-dimensional sets. Triflow BaseFields derived from the xarray <a href="#id3"><span class="problematic" id="id4">Dataset_</span></a> thus have the same API for most methods and attributes.</p>
 <div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">)</span>
 <span class="go">[5, 5, 5, ..., 5, 5]</span>
 </pre></div>
 </div>
-<p>Be aware of difference between the attribute giving access to a view of the main array and the one returning a copy of the subarray: the first one allow an on-the-fly modification of the fields (in order to inject boundary condition for exemple), the second one should be only used as read-only meaning.</p>
 </div>
 <div class="section" id="numerical-scheme-temporal-solver">
 <h2>Numerical scheme, temporal solver<a class="headerlink" href="#numerical-scheme-temporal-solver" title="Permalink to this headline">¶</a></h2>
@@ -411,7 +415,63 @@
 <div class="section" id="hook-and-boundary-conditions">
 <h3>hook and boundary conditions<a class="headerlink" href="#hook-and-boundary-conditions" title="Permalink to this headline">¶</a></h3>
 <p>The hook function is used in order to deal with variable and conditional parameters and boundary condition.</p>
-<p>Inside the model, the fields are padded in order to solve the equation. If the parameter &#8220;periodic&#8221; is used, the pad function is used with the mode &#8220;wrap&#8221; leading to periodic fields. If not, the mode &#8220;edge&#8221; is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
+<p>Inside the model, the fields are padded in order to solve the equation. If the parameter &quot;periodic&quot; is used, the pad function is used with the mode &quot;wrap&quot; leading to periodic fields. If not, the mode &quot;edge&quot; is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>  <span class="c1"># isort:skip</span>
+
+<span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-whitegrid&#39;</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
+
+<span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+
+<span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">c</span><span class="o">=.</span><span class="mo">03</span><span class="p">,</span> <span class="n">k</span><span class="o">=.</span><span class="mo">001</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="mf">5E-1</span>
+<span class="n">tmax</span> <span class="o">=</span> <span class="mf">2.5</span>
+
+<span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
+
+<span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">dirichlet_condition</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">):</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span>
+
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="n">dirichlet_condition</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: {i}</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="n">f</span><span class="s2">&quot;t: {t:g}&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;t: {t:g}&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">tmax</span><span class="p">:</span>
+        <span class="k">break</span>
+
+<span class="n">pl</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">legend</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
+
+<span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference external" href="./pyplots/overview_model_hook.py">Source code</a>, <a class="reference external" href="./pyplots/overview_model_hook.png">png</a>, <a class="reference external" href="./pyplots/overview_model_hook.hires.png">hires.png</a>, <a class="reference external" href="./pyplots/overview_model_hook.pdf">pdf</a>)</p>
+<div class="figure">
+<img alt="_images/overview_model_hook.png" src="_images/overview_model_hook.png" />
+</div>
+<p>The hook function is used in order to deal with variable and conditional parameters and boundary condition.</p>
+<p>Inside the model, the fields are padded in order to solve the equation. If the parameter &quot;periodic&quot; is used, the pad function is used with the mode &quot;wrap&quot; leading to periodic fields. If not, the mode &quot;edge&quot; is used, repeating the first and last node. It is very easy to implement Dirichlet condition with the following function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">itertools</span> <span class="kn">as</span> <span class="nn">it</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib</span>
@@ -467,24 +527,28 @@
 <img alt="_images/overview_model_hook.png" src="_images/overview_model_hook.png" />
 </div>
 </div>
+<div class="section" id="time-stepping">
+<h3>Time Stepping<a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h3>
+<p>Some of the provided solvers come with built-in automatic time stepping. For the others, an external tool is provided in the same module as the temporal schemes. It takes a scheme as input and return a decorated scheme with internal time-stepping. This one is not as efficient as the built-in (and require extra computation) but is handy to deal with simulation that has varying kinetics. It is used by default in the Simulation Class (see bellow).</p>
+</div>
 </div>
 <div class="section" id="simulation-class-higher-level-control">
 <h2>Simulation class: higher level control<a class="headerlink" href="#simulation-class-higher-level-control" title="Permalink to this headline">¶</a></h2>
 <p>The loop snippet</p>
-<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scheme</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
 <span class="gp">... </span>    <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="se">\t</span><span class="s2">t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">tmax</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="n">tmax</span><span class="p">:</span>
 <span class="gp">... </span>        <span class="k">break</span>
 </pre></div>
 </div>
 <p>is not handy.</p>
 <p>To avoid it, we provide a higher level control class, the Simulation. It is an iterable and we can write the snippet as:</p>
-<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span>
-<span class="gp">... </span>                   <span class="n">scheme</span><span class="o">=</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">(</span><span class="n">model</span><span class="p">),</span> <span class="n">tmax</span><span class="o">=</span><span class="n">tmax</span><span class="p">)</span>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span>
+<span class="gp">... </span>                       <span class="n">scheme</span><span class="o">=</span><span class="n">trf</span><span class="o">.</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="n">tmax</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="se">\t</span><span class="s2">t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="se">\t</span><span class="s2">t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>and we write the previous advection-diffusion example as:</p>
@@ -538,11 +602,87 @@
 <div class="figure">
 <img alt="_images/overview_simulation_hook.png" src="_images/overview_simulation_hook.png" />
 </div>
+<div class="section" id="probes">
+<h3>Probes<a class="headerlink" href="#probes" title="Permalink to this headline">¶</a></h3>
+<p>Simulation allows to add one or more probes which are used to compute post-processed values as flux, computation time, mean or standard of a value...</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="n">tmax</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span><span class="o">.</span><span class="n">add_probe</span><span class="p">(</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">simul</span><span class="p">:</span> <span class="n">simul</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="s2"> t: </span><span class="si">{t:g}</span><span class="s2"> mean: </span><span class="si">{simul.probes[&#39;mean&#39;]:g}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will compute and print the mean value of U every time-step.</p>
+<p>By default, last step and full simulation cpu time are computed every time-step.</p>
+</div>
+<div class="section" id="container">
+<h3>Container<a class="headerlink" href="#container" title="Permalink to this headline">¶</a></h3>
+<p>Triflow containers give some persistence-flavored on the results. They can be attached to a simulation and save the metadata via the Treant library and the data as a netCDF file. Fields and probes are saved every time-step.</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span>
+<span class="go">                           parameters, dt, tmax=tmax,</span>
+<span class="go">                           id=&quot;triflow_simulation&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span><span class="o">.</span><span class="n">add_probe</span><span class="p">(</span><span class="s2">&quot;std&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                <span class="k">lambda</span> <span class="n">simul</span><span class="p">:</span> <span class="n">simul</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span><span class="o">.</span><span class="n">attach_container</span><span class="p">(</span><span class="s2">&quot;/tmp/triflow_result&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="s2"> &quot;</span>
+<span class="gp">... </span>          <span class="n">f</span><span class="s2">&quot;t: </span><span class="si">{t:g}</span><span class="s2"> &quot;</span>
+<span class="gp">... </span>          <span class="n">f</span><span class="s2">&quot;std: {float(simul.probes[&#39;std&#39;].values):g} &quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span>
+<span class="gp">... </span>          <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Data can be retrieved with</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Container</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="s2">&quot;/tmp/triflow_result/triflow_simulation&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">data</span>
+<span class="go">&lt;xarray.Dataset&gt;</span>
+<span class="go">Dimensions:     (t: 6, x: 100)</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * x           (x) float64 0.0 0.0101 0.0202 0.0303 0.0404 0.05051 0.06061 ...</span>
+<span class="go">  * t           (t) float64 0.0 0.2 0.4 0.6 0.8 1.0</span>
+<span class="go">Data variables:</span>
+<span class="go">    U           (t, x) float64 1.0 0.9501 0.8053 0.5801 0.2969 -0.01587 ...</span>
+<span class="go">    ctime       (t) float64 0.0 4.553 0.4998 0.1356 0.05534 0.04571</span>
+<span class="go">    full_ctime  (t) float64 0.0 4.553 5.053 5.189 5.244 5.29</span>
+<span class="go">    std         (t) float64 0.7106 0.1067 0.02265 0.01391 0.01193 0.01064</span>
+<span class="go">Attributes:</span>
+<span class="go">    id:         triflow_simulation</span>
+<span class="go">    dt:         0.2</span>
+<span class="go">    tmax:       1</span>
+<span class="go">    timestamp:  2017-09-23 13:10:42</span>
+<span class="go">    hook:       def null_hook(t, fields, pars):\n    return fields, pars\n</span>
+<span class="go">    c:          1</span>
+<span class="go">    k:          0.01</span>
+<span class="go">    periodic:   1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">container</span><span class="o">.</span><span class="n">metadata</span>
+<span class="go">{&#39;c&#39;: 1,</span>
+<span class="go"> &#39;dt&#39;: 0.2,</span>
+<span class="go"> &#39;hook&#39;: &#39;def null_hook(t, fields, pars):\n    return fields, pars\n&#39;,</span>
+<span class="go"> &#39;id&#39;: &#39;triflow_simulation&#39;,</span>
+<span class="go"> &#39;k&#39;: 0.01,</span>
+<span class="go"> &#39;periodic&#39;: True,</span>
+<span class="go"> &#39;timestamp&#39;: &#39;2017-09-23 13:10:42&#39;,</span>
+<span class="go"> &#39;tmax&#39;: 1}</span>
+</pre></div>
+</div>
+<p>and the get_last method give access only to the last time-step.</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">container</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Container</span><span class="o">.</span><span class="n">get_last</span><span class="p">(</span><span class="s2">&quot;/tmp/triflow_result/triflow_simulation&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The data are loaded lazily thus saving memory for large scale simulations.</p>
+</div>
 <div class="section" id="displays">
 <h3>Displays<a class="headerlink" href="#displays" title="Permalink to this headline">¶</a></h3>
-<p>Hooks are called every internal time step and allow granular modification of the parameters or fields.</p>
-<p>Displays have to be called by the user and can not modify the fields or parameters, but can display or save data during the simulation.</p>
-<p>Like the hooks, they are basically callable or coroutine taking fields or the other to output post-processed data. The built-ins displays are detailed on the section of the same name.</p>
+<p>Triflow provide displays which are built on <a href="#id5"><span class="problematic" id="id6">Bokeh_</span></a> and allow real-time plotting when used on a jupyter notebook.</p>
+<p><cite>display_0D</cite> provide (t, probe) display.</p>
+<p><cite>display_1D</cite> provide (x, probe) display.</p>
+<div class="highlight-python3"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Simulation</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="n">tmax</span><span class="p">,</span>
+<span class="go">                           id=&quot;triflow_simulation&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span><span class="o">.</span><span class="n">add_display</span><span class="p">(</span><span class="n">trf</span><span class="o">.</span><span class="n">display_0D</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;ctime&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simul</span><span class="o">.</span><span class="n">add_display</span><span class="p">(</span><span class="n">trf</span><span class="o">.</span><span class="n">display_1D</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;iteration: </span><span class="si">{i}</span><span class="s2"> t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Will display the fields U and the total time spent on the simulation.</p>
 </div>
 </div>
 </div>
@@ -591,7 +731,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.4.3',
+            VERSION:'0.4.12',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -601,7 +741,7 @@
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

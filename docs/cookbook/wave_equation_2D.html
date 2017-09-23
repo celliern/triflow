@@ -35,10 +35,7 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="triflow 0.4.12 documentation" href="../index.html"/>
-        <link rel="up" title="Cookbook" href="../cookbook.html"/>
-        <link rel="next" title="Coupled burger&#39;s-like equations" href="so_wavy.html"/>
-        <link rel="prev" title="The burger - kdv equation" href="burger_kdv_equation.html"/> 
+    <link rel="top" title="triflow 0.4.12 documentation" href="../index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -95,19 +92,12 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../schemes.html">Temporal schemes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="displays.html">Displays</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../cookbook.html">Cookbook</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="advection_diffusion.html">The convection diffusion equation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="burger_equation.html">The burger equation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="burger_kdv_equation.html">The burger - kdv equation</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Wave equation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="so_wavy.html">Coupled burger's-like equations</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute.html">Contribution guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">triflow</a></li>
 </ul>
@@ -154,15 +144,13 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../cookbook.html">Cookbook</a> &raquo;</li>
-        
       <li>Wave equation</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/cookbook/wave_equation.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/cookbook/wave_equation_2D.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -254,7 +242,7 @@ spatial step.</p>
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/wave_equation_7_0.png" src="../_images/wave_equation_7_0.png" />
+<img alt="../_images/wave_equation_2D_7_0.png" src="../_images/wave_equation_2D_7_0.png" />
 <p>We precise our parameters. The default scheme provide an automatic
 time_stepping. We want dirichlet boundary condition, so we set the
 periodic flag to False.</p>
@@ -298,7 +286,7 @@ have real-time plotting.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">t</span><span class="p">:</span> <span class="mi">15</span>
 </pre></div>
 </div>
-<img alt="../_images/wave_equation_15_1.png" src="../_images/wave_equation_15_1.png" />
+<img alt="../_images/wave_equation_2D_15_1.png" src="../_images/wave_equation_2D_15_1.png" />
 </div>
 
 
@@ -308,15 +296,6 @@ have real-time plotting.</p>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="so_wavy.html" class="btn btn-neutral float-right" title="Coupled burger&#39;s-like equations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="burger_kdv_equation.html" class="btn btn-neutral" title="The burger - kdv equation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

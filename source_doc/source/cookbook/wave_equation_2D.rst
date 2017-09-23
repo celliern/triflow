@@ -63,7 +63,7 @@ We initialize with three gaussian pulses for the initial condition
 
 
 
-.. image:: wave_equation_files/wave_equation_7_0.png
+.. image:: wave_equation_2D_files/wave_equation_2D_7_0.png
 
 
 We precise our parameters. The default scheme provide an automatic
@@ -120,5 +120,5 @@ We iterate on the simulation until the end.
     t: 15                                                                           
 
 
-.. image:: wave_equation_files/wave_equation_15_1.png
+.. image:: wave_equation_2D_files/wave_equation_2D_15_1.png
 

@@ -109,4 +109,3 @@ We iterate on the simulation until the end.
 
 .. image:: burger_equation_files/burger_equation_13_1.png
 
-

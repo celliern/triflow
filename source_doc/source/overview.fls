@@ -1,0 +1,7 @@
+PWD /home/nicolas/Documents/01-these/02-repository/triflow/source_doc/source
+INPUT /usr/share/texmf-dist/web2c/texmf.cnf
+INPUT /var/lib/texmf/web2c/pdftex/pdflatex.fmt
+INPUT /home/nicolas/Documents/01-these/02-repository/triflow/source_doc/source/overview.rst
+OUTPUT /home/nicolas/Documents/01-these/02-repository/triflow/source_doc/source/overview.log
+OUTPUT /home/nicolas/Documents/01-these/02-repository/triflow/source_doc/source/overview.pdf
+INPUT /var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map

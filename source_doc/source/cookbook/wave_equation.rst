@@ -122,4 +122,3 @@ We iterate on the simulation until the end.
 
 .. image:: wave_equation_files/wave_equation_15_1.png
 
-

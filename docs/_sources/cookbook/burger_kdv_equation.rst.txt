@@ -130,5 +130,3 @@ We iterate on the simulation until the end.
 
 .. image:: burger_kdv_equation_files/burger_kdv_equation_14_3.png
 
-
-
