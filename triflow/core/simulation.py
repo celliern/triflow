@@ -159,11 +159,11 @@ class Simulation(object):
         self._handler = []
         self._bokeh_layout = []
         self._probes_info = {}
-        self._probes = None
         self._init_bokeh = init_bokeh
         self._iterator = self.compute()
         self.add_probe("ctime", "t", lambda simul: simul.timer.last)
         self.add_probe("full_ctime", "t", lambda simul: simul.timer.total)
+        self._compute_probes()
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -188,6 +188,9 @@ class Simulation(object):
 
         try:
             while True:
+                if self.tmax and (self.t >= self.tmax):
+                    self._end_simul()
+                    return
                 fields, pars = self._hook(t, fields, pars)
                 self.dt = (self.tmax - t
                            if self.tmax and (t + self.dt >= self.tmax)
@@ -211,11 +214,8 @@ class Simulation(object):
                     for display in self._displays:
                         display(t, fields, probes=self.probes)
                     push_notebook(handle=self._handler)
-
                 yield self.t, self.fields
-                if self.tmax and (self.t >= self.tmax):
-                    self._end_simul()
-                    return
+
         except RuntimeError:
             self.status = 'failed'
             if self._container:
