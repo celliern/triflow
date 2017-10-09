@@ -103,8 +103,12 @@ def theano_compiler(model):
           in model._args]
     )
 
-    J = [j if j != 0 else T.constant(0.) for j in J]
-    J = T.stack([T.repeat(j, N) if j.ndim == 0 else j for j in J])
+    J = [j if j != 0 else T.constant(0.)
+         for j in J]
+    J = [j if isinstance(j, T.TensorVariable) else T.constant(j)
+         for j in J]
+    J = T.stack([T.repeat(j, N) if j.ndim == 0 else j
+                 for j in J])
     J = J[model._sparse_indices[0]].T.squeeze()
 
     i = T.arange(N).dimshuffle([0, 'x'])

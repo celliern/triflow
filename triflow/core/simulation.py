@@ -4,6 +4,7 @@
 import inspect
 import logging
 import pprint
+from functools import partial
 
 import time
 import pendulum
@@ -155,6 +156,7 @@ class Simulation(object):
         self._actual_timestamp = pendulum.now()
         self._hook = hook
         self._container = None
+        self._save = None
         self._displays = []
         self._handler = []
         self._bokeh_layout = []
@@ -209,7 +211,7 @@ class Simulation(object):
                 self._actual_timestamp = pendulum.now()
                 self._compute_probes()
                 if self._container:
-                    self._container.append(t, fields, probes=self.probes)
+                    self._save(t, fields, probes=self.probes)
                 if self._displays:
                     for display in self._displays:
                         display(t, fields, probes=self.probes)
@@ -311,8 +313,8 @@ Hook function
         self._displays.append(display)
         self._bokeh_layout += display.figs
 
-    def attach_container(self, path="output/", mode="w",
-                         nbuffer=50, timeout=180, force=False):
+    def attach_container(self, path="output/", save_iter="all",
+                         mode="w", nbuffer=50, timeout=180, force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
@@ -321,7 +323,10 @@ Hook function
         path : str
             path for the container
         mode : str, optional
-            "a" or "w"
+            "a" or "w" (default "w")
+        mode : str, optional
+            "all" will save every time-step,
+            "last" will only get the last time step
         nbuffer : int, optional
             wait until nbuffer data in the Queue before save on disk.
         timeout : int, optional
@@ -345,6 +350,10 @@ Hook function
             timeout=timeout)
         logging.info("Persistent container attached (%s)"
                      % container_path.abspath())
+        if save_iter == "all":
+            self._save = self._container.append
+        elif save_iter == "last":
+            self._save = partial(self._container.set, force=True)
         self._container.metadata["status"] = "created"
 
     @property

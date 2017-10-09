@@ -6,7 +6,6 @@ import time
 from collections import namedtuple
 
 import datreant.core as dtr
-import numpy as np
 from path import Path
 from queue import Queue
 from xarray import merge, open_dataset, concat
@@ -42,7 +41,8 @@ class Container(object):
             path.rmtree_p()
 
         if self._mode == "w" and not force and path.exists():
-            raise IOError("Directory %s exists" % path)
+            raise IOError("Directory %s exists, set force=True to override it"
+                          % path)
 
         if self._mode == "r" and not path.exists():
             raise IOError("Container not found.")
@@ -64,7 +64,7 @@ class Container(object):
         if initial_fields and not self._dataset:
             self._init_data(t0, initial_fields, probes=probes)
             return
-        else:
+        elif initial_fields and self._dataset:
             raise ValueError("Trying to initialize with fields"
                              " and non-empty datasets")
 
@@ -73,7 +73,8 @@ class Container(object):
             return
         logging.debug('init data')
         self._dataset = initial_fields.expand_dims("t").assign_coords(t=[t0])
-        self._dataset = merge([self._dataset, probes])
+        if probes:
+            self._dataset = merge([self._dataset, probes])
         for key, value in self.metadata.items():
             if isinstance(value, bool):
                 value = int(value)
@@ -135,7 +136,6 @@ path:   {path}
         log.debug("Queue empty.")
         log.debug("Writing.")
         self._dataset.to_netcdf(self.path_data)
-        self._dataset = open_dataset(self.path_data)
 
     def append(self, t, fields, probes=None):
         if self._mode == "r":
@@ -153,12 +153,11 @@ path:   {path}
             self._time_last_flush = time.time()
 
     def set(self, t, fields, probes=None, force=False):
-        if self._datasets and not force:
+        if self._dataset and not force:
             raise IOError("container not empty, "
                           "set force=True to override actual data")
         else:
-            log.warning("container not empty, "
-                        "erasing...")
+            log.info("container not empty, erasing...")
             self._init_data(t, fields, probes=probes)
 
     @property
