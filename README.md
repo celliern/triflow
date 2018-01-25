@@ -159,6 +159,9 @@ v0.4.12:
 - update display and containers
 - adding repr string to all major classes
 
+v0.5.0:
+- move schemes from plugins to core
+
 
 [ROADMAP / TODO LIST](ROADMAP.md)
 ---------------------------------
