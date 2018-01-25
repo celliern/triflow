@@ -7,11 +7,11 @@ import pprint
 from functools import partial
 
 import time
+import streamz
 import pendulum
 from coolname import generate_slug
 from path import Path
 from . import schemes
-from ..plugins import container
 from xarray import Dataset
 
 
@@ -56,7 +56,7 @@ class Simulation(object):
           initial time
       fields : triflow.BaseFields or dict (any mappable)
           triflow container or mappable filled with initial conditions
-      physical_parameters : dict
+      parameters : dict
           physical parameters of the simulation
       id : None, optional
           name of the simulation. A 2 word slug will be generated if not provided.
@@ -81,7 +81,7 @@ class Simulation(object):
         name of the simulation
       model : triflow.Model
         triflow Model used in the simulation
-      physical_parameters : dict
+      parameters : dict
         physical parameters of the simulation
       status : str
         status of the simulation, one of the following one: ('created', 'running', 'finished', 'failed')
@@ -111,12 +111,10 @@ class Simulation(object):
       50
       """  # noqa
 
-    def __init__(self, model, t, fields, physical_parameters, dt,
+    def __init__(self, model, fields, parameters, dt, t=0, tmax=None,
                  id=None, hook=null_hook,
                  scheme=schemes.RODASPR,
-                 time_stepping=True,
-                 init_bokeh=True,
-                 tmax=None, **kwargs):
+                 time_stepping=True, **kwargs):
 
         def intersection_kwargs(kwargs, function):
             func_signature = inspect.signature(function)
@@ -128,7 +126,7 @@ class Simulation(object):
         kwargs["time_stepping"] = time_stepping
         self.id = generate_slug(2) if not id else id
         self.model = model
-        self.physical_parameters = physical_parameters
+        self.parameters = parameters
         self.fields = model.fields_template(**fields)
         self.t = t
         self.dt = dt
@@ -155,17 +153,7 @@ class Simulation(object):
         self._last_timestamp = None
         self._actual_timestamp = pendulum.now()
         self._hook = hook
-        self._container = None
-        self._save = None
-        self._displays = []
-        self._handler = []
-        self._bokeh_layout = []
-        self._probes_info = {}
-        self._init_bokeh = init_bokeh
         self._iterator = self.compute()
-        self.add_probe("ctime", "t", lambda simul: simul.timer.last)
-        self.add_probe("full_ctime", "t", lambda simul: simul.timer.total)
-        self._compute_probes()
 
     def _compute_one_step(self, t, fields, pars):
         fields, pars = self._hook(t, fields, pars)
@@ -181,17 +169,9 @@ class Simulation(object):
         self.fields = fields
         self.t = t
         self.i += 1
-        self.physical_parameters = pars
+        self.parameters = pars
         self._last_timestamp = self._actual_timestamp
         self._actual_timestamp = pendulum.now()
-        self._compute_probes()
-        if self._container:
-            self._save(t, fields, probes=self.probes)
-        if self._displays:
-            from bokeh.io import push_notebook
-            for display in self._displays:
-                display(t, fields, probes=self.probes)
-            push_notebook(handle=self._handler)
         return t, fields
 
     def compute(self):
@@ -204,16 +184,8 @@ class Simulation(object):
         """
         fields = self.fields
         t = self.t
-        pars = self.physical_parameters
+        pars = self.parameters
         self._started_timestamp = pendulum.now()
-        if self._displays:
-            from bokeh.io import push_notebook, show
-            from bokeh.plotting import Column
-            self._handler = show(Column(*self._bokeh_layout),
-                                 notebook_handle=True)
-            for display in self._displays:
-                display(t, fields, probes=self.probes)
-            push_notebook(handle=self._handler)
 
         try:
             while True:
@@ -225,14 +197,9 @@ class Simulation(object):
 
         except RuntimeError:
             self.status = 'failed'
-            if self._container:
-                self._container.metadata["status"] = "failed"
-            raise
 
     def _end_simul(self):
-        if self._container:
-            self._container.metadata["status"] = "finished"
-            self._container.close()
+        pass
 
     def __repr__(self):
         repr = """
@@ -267,7 +234,7 @@ Hook function
                                [("%s:" % key).ljust(12) +
                                 pprint.pformat(value)
                                 for key, value
-                                in self.physical_parameters.items()]),
+                                in self.parameters.items()]),
                            t=self.t,
                            iter=self.i,
                            model_repr=self.model,
@@ -296,28 +263,6 @@ Hook function
                                       else "None"))
         return repr
 
-    def add_display(self, display, *display_args, **display_kwargs):
-        """add a display for the simulation.
-
-        Parameters
-        ----------
-        display : callable
-            a display as the one available in triflow.displays
-        *display_args
-            positional arguments for the display function (other than the simulation itself)
-        **display_kwargs
-            named arguments for the display function
-        """  # noqa
-        if self._init_bokeh:
-            from bokeh.io import output_notebook
-            output_notebook()
-            self._init_bokeh = False
-        display = display(self,
-                          *display_args,
-                          **display_kwargs)
-        self._displays.append(display)
-        self._bokeh_layout += display.figs
-
     def attach_container(self, path="output/", save_iter="all",
                          mode="w", nbuffer=50, timeout=180, force=False):
         """add a Container to the simulation which allows some
@@ -337,37 +282,7 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
-        self._compute_probes()
-        container_path = Path(path) / self.id
-        self._container = container.Container(
-            container_path,
-            t0=self.t,
-            initial_fields=self.fields,
-            force=force,
-            metadata=dict(id=self.id, dt=self.dt, tmax=self.tmax,
-                          timestamp="{:%Y-%m-%d %H:%M:%S}"
-                          .format(self._created_timestamp),
-                          hook=inspect.getsource(self._hook),
-                          **self.physical_parameters),
-            probes=self._probes,
-            mode=mode,
-            nbuffer=nbuffer,
-            timeout=timeout)
-        logging.info("Persistent container attached (%s)"
-                     % container_path.abspath())
-        if save_iter == "all":
-            self._save = self._container.append
-        elif save_iter == "last":
-            self._save = partial(self._container.set, force=True)
-        self._container.metadata["status"] = "created"
-
-    @property
-    def container(self):
-        return self._container
-
-    @property
-    def probes(self):
-        return self._probes
+        pass
 
     @property
     def timer(self):
@@ -378,18 +293,3 @@ Hook function
 
     def __next__(self):
         return next(self._iterator)
-
-    def add_probe(self, name, dims, probe):
-        self._probes_info[name] = (dims, probe)
-
-    def _compute_probes(self):
-        self._probes = Dataset(data_vars={name: (dims, [probe(self)])
-                                          for name, (dims, probe)
-                                          in self._probes_info.items()},
-                               coords={"t": [self.t],
-                                       **{coord: self.fields[coord]
-                                          for coord
-                                          in self.model._indep_vars}})
-
-    def timer_probe(self):
-        return self._last_running
