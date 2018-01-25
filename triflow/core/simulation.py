@@ -129,7 +129,6 @@ class Simulation(object):
         self.model = model
         self.physical_parameters = physical_parameters
         self.fields = model.fields_template(**fields)
-        self.fields = fields
         self.t = t
         self.dt = dt
         self.tmax = tmax

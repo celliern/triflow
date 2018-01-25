@@ -105,7 +105,7 @@ def theano_compiler(model):
 
     J = [j if j != 0 else T.constant(0.)
          for j in J]
-    J = [j if isinstance(j, T.TensorVariable) else T.constant(j)
+    J = [j if not isinstance(j, (int, float)) else T.constant(j)
          for j in J]
     J = T.stack([T.repeat(j, N) if j.ndim == 0 else j
                  for j in J])
@@ -164,10 +164,12 @@ def theano_compiler(model):
 def numpy_compiler(model):
     from scipy.sparse import csc_matrix
 
-    def np_Min(a, b):
+    def np_Min(args):
+        a, b = args
         return np.where(a < b, a, b)
 
-    def np_Max(a, b):
+    def np_Max(args):
+        a, b = args
         return np.where(a < b, b, a)
 
     def np_Heaviside(a):
@@ -175,15 +177,17 @@ def numpy_compiler(model):
 
     f_func = lambdify((model._symbolic_args),
                       expr=model.F_array.tolist(),
-                      modules=["math", {"Max": np_Max,
-                                        "Min": np_Min,
-                                        "Heaviside": np_Heaviside}])
+                      modules=[{"amax": np_Max,
+                                "amin": np_Min,
+                                "Heaviside": np_Heaviside},
+                               "numpy"])
 
     j_func = lambdify((model._symbolic_args),
                       expr=model._J_sparse_array.tolist(),
-                      modules=["math", {"Max": np_Max,
-                                        "Min": np_Min,
-                                        "Heaviside": np_Heaviside}])
+                      modules=[{"amax": np_Max,
+                                "amin": np_Min,
+                                "Heaviside": np_Heaviside},
+                               "numpy"])
 
     def init_computation(*input_args):
         mapargs = {key: input_args[i]

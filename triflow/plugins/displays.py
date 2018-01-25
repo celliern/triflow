@@ -5,6 +5,8 @@ in order to give extra informationto the user during the simulation
 (plot, post-processing...)
 """
 
+import numpy as np
+
 
 class display_1D():
     """Display fields data in a interactive Bokeh plot displayed in
@@ -47,16 +49,16 @@ class display_1D():
         keys = keys if keys else [
             key for key in simul.fields.keys() if key != 'x']
 
-        self._datafunc = {'x': lambda t, fields, key: fields.x}
+        self._datafunc = {'x': lambda t, fields, key: np.array(fields.x)}
         for key in keys:
             if isinstance(key, str):
                 self._datafunc[key] = lambda t, fields, key: fields[key]
             if isinstance(key, (tuple, list)):
                 self._datafunc[key[0]] = key[1]
         self._datasource = ColumnDataSource({key:
-                                             func(simul.t,
-                                                  simul.fields,
-                                                  key).values
+                                             np.array(func(simul.t,
+                                                           simul.fields,
+                                                           key))
                                              for (key, func)
                                              in self._datafunc.items()})
         self.keys = list(self._datafunc.keys())
@@ -87,7 +89,7 @@ class display_1D():
 
     def __call__(self, t, fields, probes):
         for key, func in self._datafunc.items():
-            self._datasource.data[key] = func(t, fields, key).values
+            self._datasource.data[key] = np.array(func(t, fields, key))
 
 
 class display_0D():

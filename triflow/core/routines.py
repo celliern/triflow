@@ -82,7 +82,7 @@ class J_Routine(ModelRoutine):
     def __call__(self, fields, pars, sparse=True):
         uargs = [fields['x'].values,
                  *[fields[key].values for key in self.args]]
-        pargs = [pars[key] + fields['x'].values * 0
+        pargs = [(pars[key] + fields['x'] * 0).values
                  if key != 'periodic' else pars[key]
                  for key
                  in self.pars]

@@ -4,6 +4,7 @@
 import logging
 import time
 from collections import namedtuple
+from concurrent.futures import ProcessPoolExecutor
 
 import datreant.core as dtr
 from path import Path
@@ -34,8 +35,10 @@ class Container(object):
         self._mode = mode
         self._writing_queue = None
         self._dataset = None
-
-        path = Path(path).abspath()
+        self._metadata = metadata
+        self._executor = ProcessPoolExecutor(1)
+        self.path = path = Path(path).abspath()
+        self.path_data = self.path / "data.nc"
 
         if self._mode == "w" and force:
             path.rmtree_p()
@@ -57,11 +60,13 @@ class Container(object):
         if self._mode in ["a", "r"]:
             try:
                 self._dataset = open_dataset(self.path_data)
+                self._metadata = dict(**self._dataset.attrs)
                 return
             except IOError:
                 raise IOError("Directory not found")
 
         if initial_fields and not self._dataset:
+            return
             self._init_data(t0, initial_fields, probes=probes)
             return
         elif initial_fields and self._dataset:
@@ -76,9 +81,15 @@ class Container(object):
         if probes:
             self._dataset = merge([self._dataset, probes])
         for key, value in self.metadata.items():
-            if isinstance(value, bool):
-                value = int(value)
-            self._dataset.attrs[key] = value
+            if value is None:
+                value = "None"
+            try:
+                if isinstance(value, bool):
+                    value = int(value)
+                self._dataset.attrs[key] = value
+            except TypeError:
+                logging.error('Key %s (%s) not saved, type error' %
+                              (key, value))
         self._dataset.to_netcdf(self.path_data)
         self._writing_queue = Queue(self._nbuffer)
         self._time_last_flush = time.time()
@@ -130,21 +141,30 @@ path:   {path}
 
         self._dataset = concat([self._dataset, *yield_fields()], "t")
         for key, value in self.metadata.items():
-            if isinstance(value, bool):
-                value = int(value)
-            self._dataset.attrs[key] = value
+            if value is None:
+                value = "None"
+            try:
+                if isinstance(value, bool):
+                    value = int(value)
+                self._dataset.attrs[key] = value
+            except TypeError:
+                logging.error('Key %s (%s) not saved, type error' %
+                              (key, value))
         log.debug("Queue empty.")
-        log.debug("Writing.")
+        log.debug("actual dataset:\n%s" % self._dataset)
+        log.debug("Writing to %s" % self.path_data)
         self._dataset.to_netcdf(self.path_data)
+        log.debug(self.path_data)
 
     def append(self, t, fields, probes=None):
         if self._mode == "r":
             return
         if not self.keys():
-            self._init_data(t, fields)
+            self._init_data(t, fields, probes=probes)
             return
         fields = fields.expand_dims("t").assign_coords(t=[t])
-        fields = merge([fields, probes])
+        if probes:
+            fields = merge([fields, probes])
         self._writing_queue.put(fields)
         if (self._writing_queue.full() or
                 (time.time() - self._time_last_flush > self._timeout)):
@@ -168,14 +188,14 @@ path:   {path}
     @property
     def metadata(self):
         self.flush()
-        return dict(**self.treant.categories)
+        return self._metadata.copy()
 
     @metadata.setter
     def metadata(self, parameters):
         if self._mode == "r":
             return
         for key, value in parameters.items():
-            self.treant.categories[key] = value
+            self._metadata[key] = value
 
     def __getitem__(self, key):
         try:
