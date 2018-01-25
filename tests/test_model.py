@@ -24,8 +24,8 @@ def heat_model():
                                                "k * dx(dxU)"]],
                                           dtype=object)
                          .flatten().tolist())
-@pytest.mark.parametrize("var", [func("U") for func in (str, tuple, list)])
-@pytest.mark.parametrize("par", [func("k") for func in (str, tuple, list)])
+@pytest.mark.parametrize("var", [func("U") for func in (str, list)])
+@pytest.mark.parametrize("par", [func("k") for func in (str, list)])
 @pytest.mark.parametrize("k", [1, np.ones((100,))])
 @pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
 def test_model_monovariate(func, var, par, k, compiler):
@@ -50,13 +50,11 @@ def test_model_monovariate(func, var, par, k, compiler):
     assert np.isclose(J_approx, J_dense, atol=1E-3).all()
 
 
-@pytest.mark.parametrize("func", [["k1 * dxx(v)",
-                                   "k2 * dxx(u)"]])
-@pytest.mark.parametrize("var", [func(["u", "v"])
-                                 for func in (tuple, list)])
-@pytest.mark.parametrize("par", [func(["k1", "k2"]) for func in (tuple, list)])
-def test_model_bivariate(func, var, par):
-    model = Model(func, var, par)
+def test_model_bivariate():
+    model = Model(["k1 * dxx(v)",
+                   "k2 * dxx(u)"],
+                  ["u", "v"],
+                  ["k1", "k2"])
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
     u = np.cos(x * 2 * np.pi / 10)
     v = np.sin(x * 2 * np.pi / 10)
