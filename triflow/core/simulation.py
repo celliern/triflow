@@ -10,7 +10,7 @@ import time
 import pendulum
 from coolname import generate_slug
 from path import Path
-from triflow.plugins import container, schemes
+from triflow import container, schemes
 from xarray import Dataset
 
 
@@ -166,6 +166,33 @@ class Simulation(object):
         self.add_probe("full_ctime", "t", lambda simul: simul.timer.total)
         self._compute_probes()
 
+    def _compute_one_step(self, t, fields, pars):
+        fields, pars = self._hook(t, fields, pars)
+        self.dt = (self.tmax - t
+                   if self.tmax and (t + self.dt >= self.tmax)
+                   else self.dt)
+        before_compute = time.clock()
+        t, fields = self._scheme(t, fields, self.dt,
+                                 pars, hook=self._hook)
+        after_compute = time.clock()
+        self._last_running = after_compute - before_compute
+        self._total_running += self._last_running
+        self.fields = fields
+        self.t = t
+        self.i += 1
+        self.physical_parameters = pars
+        self._last_timestamp = self._actual_timestamp
+        self._actual_timestamp = pendulum.now()
+        self._compute_probes()
+        if self._container:
+            self._save(t, fields, probes=self.probes)
+        if self._displays:
+            from bokeh.io import push_notebook
+            for display in self._displays:
+                display(t, fields, probes=self.probes)
+            push_notebook(handle=self._handler)
+        return t, fields
+
     def compute(self):
         """Generator which yield the actual state of the system every dt.
 
@@ -192,29 +219,7 @@ class Simulation(object):
                 if self.tmax and (self.t >= self.tmax):
                     self._end_simul()
                     return
-                fields, pars = self._hook(t, fields, pars)
-                self.dt = (self.tmax - t
-                           if self.tmax and (t + self.dt >= self.tmax)
-                           else self.dt)
-                before_compute = time.clock()
-                t, fields = self._scheme(t, fields, self.dt,
-                                         pars, hook=self._hook)
-                after_compute = time.clock()
-                self._last_running = after_compute - before_compute
-                self._total_running += self._last_running
-                self.fields = fields
-                self.t = t
-                self.i += 1
-                self.physical_parameters = pars
-                self._last_timestamp = self._actual_timestamp
-                self._actual_timestamp = pendulum.now()
-                self._compute_probes()
-                if self._container:
-                    self._save(t, fields, probes=self.probes)
-                if self._displays:
-                    for display in self._displays:
-                        display(t, fields, probes=self.probes)
-                    push_notebook(handle=self._handler)
+                self._compute_one_step(t, fields, pars)
                 yield self.t, self.fields
 
         except RuntimeError:
