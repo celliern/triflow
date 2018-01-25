@@ -167,4 +167,4 @@ v0.5.0:
 License
 -------
 
-This project is licensed under the term of the [BEERWARE license](LICENSE)
+This project is licensed under the term of the [MIT license](LICENSE)
