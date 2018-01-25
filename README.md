@@ -150,7 +150,7 @@ v0.4.7:
 - adding tensor flow support with full testing
 - adding post-processing in bokeh fields display
 
-v0.5.0:
+v0.4.12:
 - give user choice of compiler
   - get out tensorflow compiler (not really efficient, lot of maintenance trouble)
   - give access to theano and numpy compiler
