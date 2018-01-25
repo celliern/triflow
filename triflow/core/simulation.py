@@ -10,7 +10,8 @@ import time
 import pendulum
 from coolname import generate_slug
 from path import Path
-from triflow import container, schemes
+from . import schemes
+from ..plugins import container
 from xarray import Dataset
 
 

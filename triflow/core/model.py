@@ -11,9 +11,9 @@ from pprint import pformat
 import numpy as np
 from sympy import (Derivative, Function, Symbol,
                    SympifyError, symbols, sympify, Max, Min)
-from triflow.core.fields import BaseFields
-from triflow.core.routines import F_Routine, J_Routine
-from triflow.core.compilers import theano_compiler, numpy_compiler
+from .fields import BaseFields
+from .routines import F_Routine, J_Routine
+from .compilers import theano_compiler, numpy_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
