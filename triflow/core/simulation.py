@@ -4,15 +4,12 @@
 import inspect
 import logging
 import pprint
-from functools import partial
 
 import time
 import streamz
 import pendulum
 from coolname import generate_slug
-from path import Path
 from . import schemes
-from xarray import Dataset
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -132,6 +129,7 @@ class Simulation(object):
         self.dt = dt
         self.tmax = tmax
         self.i = 0
+        self.stream = streamz.Stream()
 
         self._scheme = scheme(model,
                               **intersection_kwargs(kwargs,
@@ -166,13 +164,9 @@ class Simulation(object):
         after_compute = time.clock()
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
-        self.fields = fields
-        self.t = t
-        self.i += 1
-        self.parameters = pars
         self._last_timestamp = self._actual_timestamp
         self._actual_timestamp = pendulum.now()
-        return t, fields
+        return t, fields, pars
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -192,7 +186,15 @@ class Simulation(object):
                 if self.tmax and (self.t >= self.tmax):
                     self._end_simul()
                     return
-                self._compute_one_step(t, fields, pars)
+                t, fields, pars = self._compute_one_step(t, fields, pars)
+
+                self.i += 1
+                self.t = t
+                self.fields = fields
+                self.parameters = pars
+
+                self.stream.emit(self)
+
                 yield self.t, self.fields
 
         except RuntimeError:
@@ -215,7 +217,6 @@ iteration:    {iter:g}
 last step:    {step_time}
 total time:   {running_time}
 
-container:    {container}
 
 Physical parameters
 -------------------
@@ -248,9 +249,6 @@ Hook function
                                          .subtract(
                                seconds=self._total_running)
                                .diff()),
-                           container=(None if not
-                                      self._container
-                                      else self._container.path),
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
