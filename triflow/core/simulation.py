@@ -178,9 +178,6 @@ class Simulation(object):
         after_compute = time.clock()
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
-        self.fields = fields
-        self.t = t
-        self.i += 1
         self.physical_parameters = pars
         self._last_timestamp = self._actual_timestamp
         self._actual_timestamp = pendulum.now()
@@ -220,7 +217,10 @@ class Simulation(object):
                 if self.tmax and (self.t >= self.tmax):
                     self._end_simul()
                     return
-                self._compute_one_step(t, fields, pars)
+                t, fields = self._compute_one_step(t, fields, pars)
+                self.fields = fields
+                self.t = t
+                self.i += 1
                 yield self.t, self.fields
 
         except RuntimeError:
