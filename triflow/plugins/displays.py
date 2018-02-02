@@ -5,19 +5,20 @@ from collections import deque
 import coolname
 from uuid import uuid4
 import warnings
+from holoviews import DynamicMap, Curve, Layout, streams
 
 
 class TriflowDisplay:
     def __init__(self, simul, plot_function, connect=True):
-        self._plot_pipe = hv.streams.Pipe(data=simul)
-        self._dynmap = (hv.DynamicMap(plot_function,
-                                      streams=[self._plot_pipe])
+        self._plot_pipe = streams.Pipe(data=simul)
+        self._dynmap = (DynamicMap(plot_function,
+                                   streams=[self._plot_pipe])
                         .opts("Curve [width=600] {+framewise}"))
         if connect:
             self.connect(simul.stream)
 
     def connect(self, stream):
-        simul.stream.sink(self._plot_pipe.send)
+        stream.sink(self._plot_pipe.send)
 
     def show(self):
         return self._dynmap
@@ -36,12 +37,12 @@ class TriflowDisplay:
     def display_fields(simul, keys="all"):
         def plot_function(data):
             curves = []
-            for var in (data.fields.data_vars if keys=="all" else keys):
+            for var in (data.fields.data_vars if keys == "all" else keys):
                 displayed_field = data.fields[var]
                 if displayed_field.dims != ('x', ):
                     continue
-                curves.append(hv.Curve((displayed_field.squeeze())))
-            return hv.Layout(curves).cols(1)
+                curves.append(Curve((displayed_field.squeeze())))
+            return Layout(curves).cols(1)
         return TriflowDisplay(simul, plot_function)
 
     @staticmethod
@@ -58,5 +59,5 @@ class TriflowDisplay:
 
         def plot_function(data):
             history.append(function(simul))
-            return hv.Curve(history, kdims=xlabel, vdims=ylabel)
+            return Curve(history, kdims=xlabel, vdims=ylabel)
         return TriflowDisplay(simul, plot_function)
