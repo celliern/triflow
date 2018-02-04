@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import logging
 import warnings
 from collections import namedtuple
 from uuid import uuid1
@@ -10,6 +11,9 @@ from path import Path
 from streamz import collect
 from xarray import concat, open_dataset, open_mfdataset
 
+log = logging.getLogger(__name__)
+log.handlers = []
+log.addHandler(logging.NullHandler())
 
 FieldsData = namedtuple("FieldsData", ["data", "metadata"])
 
@@ -25,8 +29,8 @@ def coerce_attr(key, value):
     for cast in (int, float, str):
         try:
             value = cast(value)
-            warnings.warn("Illegal netCDF type ({}) of attribute for {}, "
-                          "casted to {}".format(value_type, key, cast))
+            log.warning("Illegal netCDF type ({}) of attribute for {}, "
+                        "casted to {}".format(value_type, key, cast))
             return value
         except TypeError:
             pass

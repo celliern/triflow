@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from collections import deque
-import coolname
-from uuid import uuid4
+import logging
 import warnings
-from holoviews import DynamicMap, Curve, Layout, streams
+from collections import deque
+from uuid import uuid4
+
+import coolname
+from holoviews import Curve, DynamicMap, Layout, streams
+
+log = logging.getLogger(__name__)
+log.handlers = []
+log.addHandler(logging.NullHandler())
 
 
 class TriflowDisplay:
