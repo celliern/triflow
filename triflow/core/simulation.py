@@ -10,6 +10,7 @@ import streamz
 import pendulum
 from coolname import generate_slug
 from . import schemes
+from ..plugins.container import TriflowContainer
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -201,7 +202,8 @@ class Simulation(object):
             self.status = 'failed'
 
     def _end_simul(self):
-        pass
+        if self.container:
+            self.container.flush()
 
     def __repr__(self):
         repr = """
@@ -262,7 +264,7 @@ Hook function
         return repr
 
     def attach_container(self, path="output/", save_iter="all",
-                         mode="w", nbuffer=50, timeout=180, force=False):
+                         mode="w", nbuffer=50, force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
@@ -280,7 +282,11 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
-        pass
+        self.container = TriflowContainer("%s/%s" % (path, self.id),
+                                          mode=mode, metadata=self.parameters,
+                                          force=force, nbuffer=nbuffer)
+        self.container.connect(self.stream)
+        return self.container
 
     @property
     def timer(self):

@@ -26,11 +26,13 @@ class AttrDict(dict):
 
 def coerce_attr(key, value):
     value_type = type(value)
+    if value_type in [int, float, str]:
+        return value
     for cast in (int, float, str):
         try:
             value = cast(value)
-            log.warning("Illegal netCDF type ({}) of attribute for {}, "
-                        "casted to {}".format(value_type, key, cast))
+            log.debug("Illegal netCDF type ({}) of attribute for {}, "
+                      "casted to {}".format(value_type, key, cast))
             return value
         except TypeError:
             pass
@@ -45,6 +47,7 @@ class TriflowContainer:
         self._nbuffer = nbuffer
         self._mode = mode
         self._metadata = metadata
+        self._cached_data = []
         self._collector = None
         self.path = path = Path(path).abspath()
 
@@ -67,6 +70,7 @@ class TriflowContainer:
         fields = fields.assign_coords(t=t).expand_dims("t")
         for key, value in self._metadata.items():
             fields.attrs[key] = coerce_attr(key, value)
+        self._cached_data.append(fields)
         return fields
 
     def _concat_fields(self, fields):
@@ -94,6 +98,7 @@ class TriflowContainer:
     def _write(self, concatenated_fields):
         if concatenated_fields is not None:
             concatenated_fields.to_netcdf(self.path / "data_%i.nc" % uuid1())
+            self._cached_data = []
 
     def __repr__(self):
         repr = """
@@ -101,6 +106,9 @@ path:   {path}
 {data}
 """.format(path=self.path, data=self.data)
         return repr
+
+    def __del__(self):
+        self.flush()
 
     @property
     def data(self):
