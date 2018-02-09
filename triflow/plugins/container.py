@@ -132,7 +132,10 @@ path:   {path}
     @staticmethod
     def retrieve(path, isel='all', lazy=True):
         path = Path(path)
-        data = open_mfdataset(path / "data*.nc")
+        data = open_mfdataset(path / "data*.nc",
+                              concat_dim="t").sortby("t")
+        with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
+            metadata = yaml.load(yaml_file)
 
         if isel == 'last':
             data = data.isel(t=-1)
@@ -186,7 +189,8 @@ path:   {path}
             raise FileExistsError(path / "data.nc")
         (path / "data.nc").remove_p()
 
-        split_data = open_mfdataset(path / "data*.nc")
+        split_data = open_mfdataset(path / "data*.nc",
+                                    concat_dim="t").sortby("t")
         split_data.to_netcdf(path / "data.nc")
         merged_data = open_dataset(path / "data.nc", chunks=split_data.chunks)
 
