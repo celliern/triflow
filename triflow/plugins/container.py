@@ -147,9 +147,11 @@ path:   {path}
             data = data.isel(t=isel)
 
         if not lazy:
-            return data.load()
+            return FieldsData(data=data.load(),
+                              metadata=AttrDict(**metadata))
 
-        return data
+        return FieldsData(data=data,
+                          metadata=AttrDict(**metadata))
 
     @staticmethod
     def get_last(path):
@@ -159,12 +161,7 @@ path:   {path}
             DeprecationWarning
         )
 
-        with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
-            metadata = yaml.load(yaml_file)
-        return FieldsData(data=TriflowContainer.retrieve(path,
-                                                         isel="last",
-                                                         lazy=False),
-                          metadata=AttrDict(**metadata))
+        return TriflowContainer.retrieve(path, isel="last", lazy=False)
 
     @staticmethod
     def get_all(path):
@@ -174,12 +171,7 @@ path:   {path}
             DeprecationWarning
         )
 
-        with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
-            metadata = yaml.load(yaml_file)
-        return FieldsData(data=TriflowContainer.retrieve(path,
-                                                         isel="all",
-                                                         lazy=False),
-                          metadata=AttrDict(**metadata))
+        return TriflowContainer.retrieve(path, isel="all", lazy=False)
 
     @staticmethod
     def merge_datafiles(path, override=True):
