@@ -4,4 +4,4 @@
 import numpy as np
 import pytest
 
-from triflow import Model, Simulation, displays
+from triflow import Model, Simulation
