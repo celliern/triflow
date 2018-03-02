@@ -12,3 +12,4 @@ toolz>=0.8.2
 coolname>=0.2.1
 theano>=0.9.0
 bokeh>=0.12.4
+streamz>=0.3.0
