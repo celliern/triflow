@@ -43,28 +43,48 @@ def null_hook(t, fields, pars):
 
 class Simulation(object):
     """High level container used to run simulation build on triflow Model.
-      This object is an iterable which will yield every time step until the parameters 'tmax' is reached if provided.
-      By default, the solver use a 6th order ROW solver, an implicit method with integrated time-stepping.
+      This object is an iterable which will yield every time step until the
+      parameters 'tmax' is reached if provided.
+      By default, the solver use a 6th order ROW solver, an implicit method
+      with integrated time-stepping.
 
       Parameters
       ----------
       model : triflow.Model
-          Contain finite difference approximation and routine of the dynamical system
-      t : float
-          initial time
+          Contain finite difference approximation and routine of the dynamical
+          system
       fields : triflow.BaseFields or dict (any mappable)
           triflow container or mappable filled with initial conditions
       parameters : dict
           physical parameters of the simulation
+      dt : float
+          time stepping for output. if time_stepping is False, the internal
+          time stepping will be the same.
+      t : float, optional, default 0.
+          initial time
+      tmax : float, optional, default None
+          Control the end of the simulation. If None (the default), the com-
+          putation will continue until interrupted by the user (using Ctrl-C
+          or a SIGTERM signal).
       id : None, optional
-          name of the simulation. A 2 word slug will be generated if not provided.
-      hook : callable, optional
-          any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+          Name of the simulation. A 2 word slug will be generated if not
+          provided.
+      hook : callable, optional, default null_hook.
+          Any callable taking the actual time, fields and parameters and
+          return modified fields and parameters.
+          Will be called every internal time step and can be used to include
+          time dependent or conditionnal parameters, boundary conditions...
+          The default null_hook has no impact on the computation.
       scheme : callable, optional, default triflow.schemes.RODASPR
-          an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
-      *args, **kwargs
-          extra arguments passed to the scheme.
-      *args, **kwargs
+          An callable object which take the simulation state and return
+          the next step.
+          Its signature is scheme.__call__(fields, t, dt, pars, hook)
+          and it should return the next time and the updated fields.
+          It take the model and extra positional and named arguments.
+      time_stepping : boolean, default True
+          Indicate if the time step is controlled by an algorithm dependant of
+          the temporal scheme (see the doc on time stepping for extra info).
+      **kwargs
           extra arguments passed to the scheme.
 
       Attributes
@@ -82,11 +102,16 @@ class Simulation(object):
       parameters : dict
         physical parameters of the simulation
       status : str
-        status of the simulation, one of the following one: ('created', 'running', 'finished', 'failed')
+        status of the simulation, one of the following one:
+        ('created', 'running', 'finished', 'failed')
       t : float
         actual time
       tmax : float or None, default None
         stopping time of the simulation. Not stopping if set to None.
+      stream: streamz.Stream
+        Streamz starting point, fed by the simulation state after each
+        time_step. This interface is used for post-processing, saving the data
+        on disk by the TriflowContainer and display the fields in real-time.
 
       Examples
       --------
@@ -101,8 +126,7 @@ class Simulation(object):
       >>> V = np.sin(x * 2 * np.pi / 100)
       >>> fields = model.fields_template(x=x, U=U, V=V)
       >>> pars = {'k1': 1, 'k2': 1, 'periodic': True}
-      >>> simulation = triflow.Simulation(model, 0, fields,
-      ...                                 pars, dt=5, tmax=50)
+      >>> simulation = triflow.Simulation(model, fields, pars, dt=5, tmax=50)
       >>> for t, fields in simulation:
       ...    pass
       >>> print(t)
@@ -115,6 +139,9 @@ class Simulation(object):
                  time_stepping=True, **kwargs):
 
         def intersection_kwargs(kwargs, function):
+            """Inspect the function signature to identify the relevant keys
+            in a dictionary of named parameters.
+            """
             func_signature = inspect.signature(function)
             func_parameters = func_signature.parameters
             kwargs = {key: value
@@ -155,6 +182,9 @@ class Simulation(object):
         self._iterator = self.compute()
 
     def _compute_one_step(self, t, fields, pars):
+        """
+        Compute one step of the simulation, then update the timers.
+        """
         fields, pars = self._hook(t, fields, pars)
         self.dt = (self.tmax - t
                    if self.tmax and (t + self.dt >= self.tmax)
@@ -185,7 +215,7 @@ class Simulation(object):
         try:
             while True:
                 if self.tmax and (self.t >= self.tmax):
-                    self._end_simul()
+                    self._end_simulation()
                     return
                 t, fields, pars = self._compute_one_step(t, fields, pars)
 
@@ -201,13 +231,13 @@ class Simulation(object):
         except RuntimeError:
             self.status = 'failed'
 
-    def _end_simul(self):
+    def _end_simulation(self):
         if self.container:
             self.container.flush()
 
     def __repr__(self):
         repr = """
-{simul_name:=^30}
+{simulation_name:=^30}
 
 created:      {created_date}
 started:      {started_date}
@@ -232,7 +262,7 @@ Hook function
 {model_repr}
 
 """
-        repr = repr.format(simul_name=" %s " % self.id,
+        repr = repr.format(simulation_name=" %s " % self.id,
                            parameters="\n\t".join(
                                [("%s:" % key).ljust(12) +
                                 pprint.pformat(value)
