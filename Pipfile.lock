@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "366cab36863112c34231ea06125ab312e754bab0e91fa9f0577e091a9ceb80b0"
+            "sha256": "0aad3846f57c671bf56c091ca47df193bfa6a29eb90574765e01618863e92dc9"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -52,6 +52,12 @@
                 "sha256:40c9e3680616cfdf942f77429a3a9e0a76f31ce965d62f4ffbe63a83a5ef1b5a"
             ],
             "version": "==1.0.0"
+        },
+        "holoviews": {
+            "hashes": [
+                "sha256:b1cac72c098f164360f8f306da4a74734f6e4dbf3d71d0adc5c1337d0e8f6f78"
+            ],
+            "version": "==1.9.5"
         },
         "jinja2": {
             "hashes": [
@@ -149,6 +155,12 @@
                 "sha256:44a94091dd71f05922eec661638ec1a35f26d573c119aa2fad964f10a2880e6c"
             ],
             "version": "==0.22.0"
+        },
+        "param": {
+            "hashes": [
+                "sha256:9e2d706819f725d8b6f82103e1576006d342366c34228f0b303861ea2abb9bd9"
+            ],
+            "version": "==1.5.1"
         },
         "path.py": {
             "hashes": [
