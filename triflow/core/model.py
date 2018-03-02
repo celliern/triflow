@@ -62,7 +62,7 @@ def _generate_sympify_namespace(independent_variables,
                       for order, var in product(range(1, 10),
                                                 dependent_variables +
                                                 helper_functions)})
-    logging.debug(f"sympy namespace: {namespace}")
+    logging.debug("sympy namespace: %s" % namespace)
     return namespace
 
 
