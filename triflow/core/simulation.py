@@ -4,6 +4,7 @@
 import inspect
 import logging
 import pprint
+from collections import namedtuple
 
 import time
 import streamz
@@ -39,6 +40,10 @@ total:  {total}
 
 def null_hook(t, fields, pars):
     return fields, pars
+
+
+PostProcess = namedtuple(
+    "PostProcess", ["name", "function", "description"])
 
 
 class Simulation(object):
@@ -108,6 +113,16 @@ class Simulation(object):
         actual time
       tmax : float or None, default None
         stopping time of the simulation. Not stopping if set to None.
+
+      Properties
+      ----------
+      post_processes: list of triflow.core.simulation.PostProcess
+        contain all the post processing function attached to the simulation.
+      container: triflow.TriflowContainer
+        give access to the attached container, if any.
+      timer: triflow.core.simulation.Timer
+        return the cpu time of the previous step and the total running time of
+        the simulation.
       stream: streamz.Stream
         Streamz starting point, fed by the simulation state after each
         time_step. This interface is used for post-processing, saving the data
@@ -157,7 +172,8 @@ class Simulation(object):
         self.dt = dt
         self.tmax = tmax
         self.i = 0
-        self.stream = streamz.Stream()
+        self._stream = streamz.Stream()
+        self._pprocesses = []
 
         self._scheme = scheme(model,
                               **intersection_kwargs(kwargs,
@@ -179,6 +195,7 @@ class Simulation(object):
         self._last_timestamp = None
         self._actual_timestamp = pendulum.now()
         self._hook = hook
+        self._container = None
         self._iterator = self.compute()
 
     def _compute_one_step(self, t, fields, pars):
@@ -223,7 +240,8 @@ class Simulation(object):
                 self.t = t
                 self.fields = fields
                 self.parameters = pars
-
+                for pprocess in self.post_processes:
+                    pprocess.function(self)
                 self.stream.emit(self)
 
                 yield self.t, self.fields
@@ -304,7 +322,7 @@ Hook function
             path for the container
         mode : str, optional
             "a" or "w" (default "w")
-        mode : str, optional
+        save_iter : str, optional
             "all" will save every time-step,
             "last" will only get the last time step
         nbuffer : int, optional
@@ -312,15 +330,56 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
-        self.container = TriflowContainer("%s/%s" % (path, self.id),
-                                          mode=mode, metadata=self.parameters,
-                                          force=force, nbuffer=nbuffer)
-        self.container.connect(self.stream)
-        return self.container
+        self._container = TriflowContainer("%s/%s" % (path, self.id),
+                                           mode=mode, metadata=self.parameters,
+                                           force=force, nbuffer=nbuffer)
+        self._container.connect(self.stream)
+        return self._container
+
+    @property
+    def post_processes(self):
+        return self._pprocesses
+
+    @property
+    def stream(self):
+        return self._stream
+
+    @property
+    def container(self):
+        return self._container
 
     @property
     def timer(self):
         return Timer(self._last_running, self._total_running)
+
+
+    def add_post_process(self, name, post_process, description=""):
+        """add a post-processing
+
+        Parameters
+        ----------
+        name : str
+            name of the post-traitment
+        post_process : callback (function of a class with a __call__ method
+                                 or a streamz.Stream).
+            this callback have to accept the simulation state as parameter
+            and return the modifield simulation state.
+            if a streamz.Stream is provided, it will me plugged_in with the
+            previous streamz (and ultimately to the initial_stream). All these
+            stream accept and return the simulation state.
+        description : str, optional, Default is "".
+            give extra information about the post-processing
+        """
+
+        self._pprocesses.append(PostProcess(name=name,
+                                            function=post_process,
+                                            description=description))
+        self._pprocesses[-1].function(self)
+
+    def remove_post_process(self, name):
+        self._pprocesses = [post_process
+                            for post_process in self._pprocesses
+                            if post_process.name != post_process]
 
     def __iter__(self):
         return self.compute()
