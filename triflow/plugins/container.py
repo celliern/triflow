@@ -7,6 +7,7 @@ from collections import namedtuple
 from uuid import uuid1
 
 import yaml
+import json
 from path import Path
 from streamz import collect
 from xarray import concat, open_dataset, open_mfdataset
@@ -132,10 +133,19 @@ path:   {path}
     @staticmethod
     def retrieve(path, isel='all', lazy=True):
         path = Path(path)
-        data = open_mfdataset(path / "data*.nc",
-                              concat_dim="t").sortby("t")
-        with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
-            metadata = yaml.load(yaml_file)
+        try:
+            data = open_dataset(path / "data.nc")
+            lazy = True
+        except FileNotFoundError:
+            data = open_mfdataset(path / "data*.nc",
+                                  concat_dim="t").sortby("t")
+        try:
+            with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
+                metadata = yaml.load(yaml_file)
+        except FileNotFoundError:
+            # Ensure retro-compatibility with older version
+            with open(path.glob("Treant.*.json")[0]) as f:
+                metadata = json.load(f)["categories"]
 
         if isel == 'last':
             data = data.isel(t=-1)
@@ -162,7 +172,6 @@ path:   {path}
         )
 
         return TriflowContainer.retrieve(path, isel=[-1], lazy=False)
-
 
     @staticmethod
     def get_all(path):
