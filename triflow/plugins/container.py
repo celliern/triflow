@@ -161,7 +161,8 @@ path:   {path}
             DeprecationWarning
         )
 
-        return TriflowContainer.retrieve(path, isel="last", lazy=False)
+        return TriflowContainer.retrieve(path, isel=[-1], lazy=False)
+
 
     @staticmethod
     def get_all(path):
