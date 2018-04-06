@@ -228,6 +228,7 @@ class Simulation(object):
         t = self.t
         pars = self.parameters
         self._started_timestamp = pendulum.now()
+        self.stream.emit(self)
 
         try:
             while True:
