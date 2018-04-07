@@ -2,14 +2,15 @@
 # coding=utf8
 
 import logging
-import time
+import warnings
 from collections import namedtuple
-from concurrent.futures import ProcessPoolExecutor
+from uuid import uuid1
 
-import datreant.core as dtr
+import yaml
+import json
 from path import Path
-from queue import Queue
-from xarray import merge, open_dataset, concat
+from streamz import collect
+from xarray import concat, open_dataset, open_mfdataset
 
 log = logging.getLogger(__name__)
 log.handlers = []
@@ -24,21 +25,32 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
-class Container(object):
+def coerce_attr(key, value):
+    value_type = type(value)
+    if value_type in [int, float, str]:
+        return value
+    for cast in (int, float, str):
+        try:
+            value = cast(value)
+            log.debug("Illegal netCDF type ({}) of attribute for {}, "
+                      "casted to {}".format(value_type, key, cast))
+            return value
+        except TypeError:
+            pass
+    raise TypeError("Illegal netCDF type ({}) of attribute for {}, "
+                    "auto-casting failed, tried to cast to "
+                    "int, float and str")
+
+
+class TriflowContainer:
     def __init__(self, path, mode='a', *,
-                 t0=0, initial_fields=None,
-                 metadata={}, probes=None,
-                 force=False,
-                 nbuffer=50, timeout=180):
+                 metadata={}, force=False, nbuffer=50):
         self._nbuffer = nbuffer
-        self._timeout = timeout
         self._mode = mode
-        self._writing_queue = None
-        self._dataset = None
         self._metadata = metadata
-        self._executor = ProcessPoolExecutor(1)
+        self._cached_data = []
+        self._collector = None
         self.path = path = Path(path).abspath()
-        self.path_data = self.path / "data.nc"
 
         if self._mode == "w" and force:
             path.rmtree_p()
@@ -49,146 +61,64 @@ class Container(object):
 
         if self._mode == "r" and not path.exists():
             raise IOError("Container not found.")
+        path.makedirs_p()
 
-        self.treant = dtr.Treant(path)
-        self.path = Path(self.treant.abspath)
-        self.path_data = self.path / "data.nc"
+        with open(self.path / 'metadata.yml', 'w') as yaml_file:
+            yaml.dump(self._metadata,
+                      yaml_file, default_flow_style=False)
 
-        for key, value in metadata.items():
-            self.treant.categories[key] = value
+    def _expand_fields(self, t, fields):
+        fields = fields.assign_coords(t=t).expand_dims("t")
+        for key, value in self._metadata.items():
+            fields.attrs[key] = coerce_attr(key, value)
+        self._cached_data.append(fields)
+        return fields
 
-        if self._mode in ["a", "r"]:
-            try:
-                self._dataset = open_dataset(self.path_data)
-                self._metadata = dict(**self._dataset.attrs)
-                return
-            except IOError:
-                raise IOError("Directory not found")
+    def _concat_fields(self, fields):
+        if fields:
+            return concat(fields, dim="t")
 
-        if initial_fields and not self._dataset:
-            return
-            self._init_data(t0, initial_fields, probes=probes)
-            return
-        elif initial_fields and self._dataset:
-            raise ValueError("Trying to initialize with fields"
-                             " and non-empty datasets")
+    def connect(self, stream):
+        accumulation_stream = (stream
+                               .map(lambda simul: (simul.t, simul.fields))
+                               .map(lambda inps: self._expand_fields(*inps)))
 
-    def _init_data(self, t0, initial_fields, probes=None):
-        if self._mode == "r":
-            return
-        logging.debug('init data')
-        self._dataset = initial_fields.expand_dims("t").assign_coords(t=[t0])
-        if probes:
-            self._dataset = merge([self._dataset, probes])
-        for key, value in self.metadata.items():
-            if value is None:
-                value = "None"
-            try:
-                if isinstance(value, bool):
-                    value = int(value)
-                self._dataset.attrs[key] = value
-            except TypeError:
-                logging.error('Key %s (%s) not saved, type error' %
-                              (key, value))
-        self._dataset.to_netcdf(self.path_data)
-        self._writing_queue = Queue(self._nbuffer)
-        self._time_last_flush = time.time()
+        self._collector = collect(accumulation_stream)
+        self._collector.map(self._concat_fields).sink(self._write)
+
+        (accumulation_stream
+         .partition(self._nbuffer)
+         .sink(self._collector.flush))
+
+        return self._collector
+
+    def flush(self):
+        if self._collector:
+            self._collector.flush()
+
+    def _write(self, concatenated_fields):
+        if concatenated_fields is not None:
+            concatenated_fields.to_netcdf(self.path / "data_%i.nc" % uuid1())
+            self._cached_data = []
 
     def __repr__(self):
         repr = """
 path:   {path}
-
 {data}
 """.format(path=self.path, data=self.data)
         return repr
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self._mode == "r":
-            return
+    def __del__(self):
         self.flush()
-        self.close()
-
-    def keys(self):
-        if self._dataset:
-            return self._dataset.keys()
-        return
-
-    def close(self):
-        if self.keys:
-            self.flush()
-            self._dataset.close()
-
-    def flush(self):
-        if self._mode == "r":
-            return
-        self._empty_queue()
-
-    def _empty_queue(self):
-        try:
-            if self._writing_queue.empty():
-                return
-        except AttributeError:
-            return
-        log.debug("Flushing queue.")
-
-        def yield_fields():
-            while not self._writing_queue.empty():
-                fields = self._writing_queue.get()
-                yield fields
-
-        self._dataset = concat([self._dataset, *yield_fields()], "t")
-        for key, value in self.metadata.items():
-            if value is None:
-                value = "None"
-            try:
-                if isinstance(value, bool):
-                    value = int(value)
-                self._dataset.attrs[key] = value
-            except TypeError:
-                logging.error('Key %s (%s) not saved, type error' %
-                              (key, value))
-        log.debug("Queue empty.")
-        log.debug("actual dataset:\n%s" % self._dataset)
-        log.debug("Writing to %s" % self.path_data)
-        self._dataset.to_netcdf(self.path_data)
-        log.debug(self.path_data)
-
-    def append(self, t, fields, probes=None):
-        if self._mode == "r":
-            return
-        if not self.keys():
-            self._init_data(t, fields, probes=probes)
-            return
-        fields = fields.expand_dims("t").assign_coords(t=[t])
-        if probes:
-            fields = merge([fields, probes])
-        self._writing_queue.put(fields)
-        if (self._writing_queue.full() or
-                (time.time() - self._time_last_flush > self._timeout)):
-            logging.debug('flushing')
-            self.flush()
-            self._time_last_flush = time.time()
-
-    def set(self, t, fields, probes=None, force=False):
-        if self._dataset and not force:
-            raise IOError("container not empty, "
-                          "set force=True to override actual data")
-        else:
-            log.info("container not empty, erasing...")
-            self._init_data(t, fields, probes=probes)
 
     @property
     def data(self):
-        self.flush()
-        return self._dataset
+        return open_mfdataset(self.path / "data*.nc")
 
     @property
     def metadata(self):
-        self.flush()
-        return self._metadata.copy()
+        with open(self.path / 'metadata.yml', 'r') as yaml_file:
+            return yaml.load(yaml_file)
 
     @metadata.setter
     def metadata(self, parameters):
@@ -196,30 +126,79 @@ path:   {path}
             return
         for key, value in parameters.items():
             self._metadata[key] = value
-
-    def __getitem__(self, key):
-        try:
-            data = self._dataset[key]
-            if self._mode == 'r':
-                data.setflags(write=False)
-            return data
-        except (KeyError, TypeError):
-            return self.metadata[key]
-
-    def __getattr__(self, key):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            raise AttributeError
+        with open(self.path / 'info.yml', 'w') as yaml_file:
+            yaml.dump(self._metadata,
+                      yaml_file, default_flow_style=False)
 
     @staticmethod
-    def get_all(path):
-        with Container(path, "r") as container:
-            return FieldsData(data=container.data,
-                              metadata=AttrDict(**container.metadata))
+    def retrieve(path, isel='all', lazy=True):
+        path = Path(path)
+        try:
+            data = open_dataset(path / "data.nc")
+            lazy = True
+        except FileNotFoundError:
+            data = open_mfdataset(path / "data*.nc",
+                                  concat_dim="t").sortby("t")
+        try:
+            with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
+                metadata = yaml.load(yaml_file)
+        except FileNotFoundError:
+            # Ensure retro-compatibility with older version
+            with open(path.glob("Treant.*.json")[0]) as f:
+                metadata = json.load(f)["categories"]
+
+        if isel == 'last':
+            data = data.isel(t=-1)
+        elif isel == 'all':
+            pass
+        elif isinstance(isel, dict):
+            data = data.isel(**isel)
+        else:
+            data = data.isel(t=isel)
+
+        if not lazy:
+            return FieldsData(data=data.load(),
+                              metadata=AttrDict(**metadata))
+
+        return FieldsData(data=data,
+                          metadata=AttrDict(**metadata))
 
     @staticmethod
     def get_last(path):
-        with Container(path, "r") as container:
-            return FieldsData(data=container.data.isel(t=[-1]),
-                              metadata=AttrDict(**container.metadata))
+        warnings.warn(
+            "get_last method is deprecied and will be removed in a "
+            "future version. Please use retrieve(path, 'last') instead.",
+            DeprecationWarning
+        )
+
+        return TriflowContainer.retrieve(path, isel=[-1], lazy=False)
+
+    @staticmethod
+    def get_all(path):
+        warnings.warn(
+            "get_last method is deprecied and will be removed in a "
+            "future version. Please use retrieve(path) instead.",
+            DeprecationWarning
+        )
+
+        return TriflowContainer.retrieve(path, isel="all", lazy=False)
+
+    @staticmethod
+    def merge_datafiles(path, override=True):
+        path = Path(path)
+
+        if (path / "data.nc").exists() and not override:
+            raise FileExistsError(path / "data.nc")
+        (path / "data.nc").remove_p()
+
+        split_data = open_mfdataset(path / "data*.nc",
+                                    concat_dim="t").sortby("t")
+        split_data.to_netcdf(path / "data.nc")
+        merged_data = open_dataset(path / "data.nc", chunks=split_data.chunks)
+
+        if not split_data.equals(merged_data):
+            (path / "data.nc").remove()
+            raise IOError("Unable to merge data ")
+
+        [file.remove() for file in path.files("data_*.nc")]
+        return path / "data.nc"

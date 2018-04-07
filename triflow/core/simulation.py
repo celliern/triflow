@@ -4,15 +4,14 @@
 import inspect
 import logging
 import pprint
-from functools import partial
+from collections import namedtuple
 
 import time
+import streamz
 import pendulum
 from coolname import generate_slug
-from path import Path
 from . import schemes
-from ..plugins import container
-from xarray import Dataset
+from ..plugins.container import TriflowContainer
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -43,30 +42,54 @@ def null_hook(t, fields, pars):
     return fields, pars
 
 
+PostProcess = namedtuple(
+    "PostProcess", ["name", "function", "description"])
+
+
 class Simulation(object):
     """High level container used to run simulation build on triflow Model.
-      This object is an iterable which will yield every time step until the parameters 'tmax' is reached if provided.
-      By default, the solver use a 6th order ROW solver, an implicit method with integrated time-stepping.
+      This object is an iterable which will yield every time step until the
+      parameters 'tmax' is reached if provided.
+      By default, the solver use a 6th order ROW solver, an implicit method
+      with integrated time-stepping.
 
       Parameters
       ----------
       model : triflow.Model
-          Contain finite difference approximation and routine of the dynamical system
-      t : float
-          initial time
+          Contain finite difference approximation and routine of the dynamical
+          system
       fields : triflow.BaseFields or dict (any mappable)
           triflow container or mappable filled with initial conditions
-      physical_parameters : dict
+      parameters : dict
           physical parameters of the simulation
+      dt : float
+          time stepping for output. if time_stepping is False, the internal
+          time stepping will be the same.
+      t : float, optional, default 0.
+          initial time
+      tmax : float, optional, default None
+          Control the end of the simulation. If None (the default), the com-
+          putation will continue until interrupted by the user (using Ctrl-C
+          or a SIGTERM signal).
       id : None, optional
-          name of the simulation. A 2 word slug will be generated if not provided.
-      hook : callable, optional
-          any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+          Name of the simulation. A 2 word slug will be generated if not
+          provided.
+      hook : callable, optional, default null_hook.
+          Any callable taking the actual time, fields and parameters and
+          return modified fields and parameters.
+          Will be called every internal time step and can be used to include
+          time dependent or conditionnal parameters, boundary conditions...
+          The default null_hook has no impact on the computation.
       scheme : callable, optional, default triflow.schemes.RODASPR
-          an callable object which take the simulation state and return the next step. Its signature is scheme.__call__(fields, t, dt, pars, hook) and it should return the next time and the updated fields. It take the model and extra positional and named arguments.
-      *args, **kwargs
-          extra arguments passed to the scheme.
-      *args, **kwargs
+          An callable object which take the simulation state and return
+          the next step.
+          Its signature is scheme.__call__(fields, t, dt, pars, hook)
+          and it should return the next time and the updated fields.
+          It take the model and extra positional and named arguments.
+      time_stepping : boolean, default True
+          Indicate if the time step is controlled by an algorithm dependant of
+          the temporal scheme (see the doc on time stepping for extra info).
+      **kwargs
           extra arguments passed to the scheme.
 
       Attributes
@@ -81,14 +104,29 @@ class Simulation(object):
         name of the simulation
       model : triflow.Model
         triflow Model used in the simulation
-      physical_parameters : dict
+      parameters : dict
         physical parameters of the simulation
       status : str
-        status of the simulation, one of the following one: ('created', 'running', 'finished', 'failed')
+        status of the simulation, one of the following one:
+        ('created', 'running', 'finished', 'failed')
       t : float
         actual time
       tmax : float or None, default None
         stopping time of the simulation. Not stopping if set to None.
+
+      Properties
+      ----------
+      post_processes: list of triflow.core.simulation.PostProcess
+        contain all the post processing function attached to the simulation.
+      container: triflow.TriflowContainer
+        give access to the attached container, if any.
+      timer: triflow.core.simulation.Timer
+        return the cpu time of the previous step and the total running time of
+        the simulation.
+      stream: streamz.Stream
+        Streamz starting point, fed by the simulation state after each
+        time_step. This interface is used for post-processing, saving the data
+        on disk by the TriflowContainer and display the fields in real-time.
 
       Examples
       --------
@@ -103,22 +141,22 @@ class Simulation(object):
       >>> V = np.sin(x * 2 * np.pi / 100)
       >>> fields = model.fields_template(x=x, U=U, V=V)
       >>> pars = {'k1': 1, 'k2': 1, 'periodic': True}
-      >>> simulation = triflow.Simulation(model, 0, fields,
-      ...                                 pars, dt=5, tmax=50)
+      >>> simulation = triflow.Simulation(model, fields, pars, dt=5, tmax=50)
       >>> for t, fields in simulation:
       ...    pass
       >>> print(t)
       50
       """  # noqa
 
-    def __init__(self, model, t, fields, physical_parameters, dt,
+    def __init__(self, model, fields, parameters, dt, t=0, tmax=None,
                  id=None, hook=null_hook,
                  scheme=schemes.RODASPR,
-                 time_stepping=True,
-                 init_bokeh=True,
-                 tmax=None, **kwargs):
+                 time_stepping=True, **kwargs):
 
         def intersection_kwargs(kwargs, function):
+            """Inspect the function signature to identify the relevant keys
+            in a dictionary of named parameters.
+            """
             func_signature = inspect.signature(function)
             func_parameters = func_signature.parameters
             kwargs = {key: value
@@ -128,12 +166,14 @@ class Simulation(object):
         kwargs["time_stepping"] = time_stepping
         self.id = generate_slug(2) if not id else id
         self.model = model
-        self.physical_parameters = physical_parameters
+        self.parameters = parameters
         self.fields = model.fields_template(**fields)
         self.t = t
         self.dt = dt
         self.tmax = tmax
         self.i = 0
+        self._stream = streamz.Stream()
+        self._pprocesses = []
 
         self._scheme = scheme(model,
                               **intersection_kwargs(kwargs,
@@ -156,18 +196,12 @@ class Simulation(object):
         self._actual_timestamp = pendulum.now()
         self._hook = hook
         self._container = None
-        self._save = None
-        self._displays = []
-        self._handler = []
-        self._bokeh_layout = []
-        self._probes_info = {}
-        self._init_bokeh = init_bokeh
         self._iterator = self.compute()
-        self.add_probe("ctime", "t", lambda simul: simul.timer.last)
-        self.add_probe("full_ctime", "t", lambda simul: simul.timer.total)
-        self._compute_probes()
 
     def _compute_one_step(self, t, fields, pars):
+        """
+        Compute one step of the simulation, then update the timers.
+        """
         fields, pars = self._hook(t, fields, pars)
         self.dt = (self.tmax - t
                    if self.tmax and (t + self.dt >= self.tmax)
@@ -178,18 +212,9 @@ class Simulation(object):
         after_compute = time.clock()
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
-        self.physical_parameters = pars
         self._last_timestamp = self._actual_timestamp
         self._actual_timestamp = pendulum.now()
-        self._compute_probes()
-        if self._container:
-            self._save(t, fields, probes=self.probes)
-        if self._displays:
-            from bokeh.io import push_notebook
-            for display in self._displays:
-                display(t, fields, probes=self.probes)
-            push_notebook(handle=self._handler)
-        return t, fields
+        return t, fields, pars
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -201,42 +226,37 @@ class Simulation(object):
         """
         fields = self.fields
         t = self.t
-        pars = self.physical_parameters
+        pars = self.parameters
         self._started_timestamp = pendulum.now()
-        if self._displays:
-            from bokeh.io import push_notebook, show
-            from bokeh.plotting import Column
-            self._handler = show(Column(*self._bokeh_layout),
-                                 notebook_handle=True)
-            for display in self._displays:
-                display(t, fields, probes=self.probes)
-            push_notebook(handle=self._handler)
+        self.stream.emit(self)
 
         try:
             while True:
                 if self.tmax and (self.t >= self.tmax):
-                    self._end_simul()
+                    self._end_simulation()
                     return
-                t, fields = self._compute_one_step(t, fields, pars)
-                self.fields = fields
-                self.t = t
+                t, fields, pars = self._compute_one_step(t, fields, pars)
+
                 self.i += 1
+                self.t = t
+                self.fields = fields
+                self.parameters = pars
+                for pprocess in self.post_processes:
+                    pprocess.function(self)
+                self.stream.emit(self)
+
                 yield self.t, self.fields
 
         except RuntimeError:
             self.status = 'failed'
-            if self._container:
-                self._container.metadata["status"] = "failed"
-            raise
 
-    def _end_simul(self):
-        if self._container:
-            self._container.metadata["status"] = "finished"
-            self._container.close()
+    def _end_simulation(self):
+        if self.container:
+            self.container.flush()
 
     def __repr__(self):
         repr = """
-{simul_name:=^30}
+{simulation_name:=^30}
 
 created:      {created_date}
 started:      {started_date}
@@ -248,7 +268,6 @@ iteration:    {iter:g}
 last step:    {step_time}
 total time:   {running_time}
 
-container:    {container}
 
 Physical parameters
 -------------------
@@ -262,12 +281,12 @@ Hook function
 {model_repr}
 
 """
-        repr = repr.format(simul_name=" %s " % self.id,
+        repr = repr.format(simulation_name=" %s " % self.id,
                            parameters="\n\t".join(
                                [("%s:" % key).ljust(12) +
                                 pprint.pformat(value)
                                 for key, value
-                                in self.physical_parameters.items()]),
+                                in self.parameters.items()]),
                            t=self.t,
                            iter=self.i,
                            model_repr=self.model,
@@ -281,9 +300,6 @@ Hook function
                                          .subtract(
                                seconds=self._total_running)
                                .diff()),
-                           container=(None if not
-                                      self._container
-                                      else self._container.path),
                            created_date=(self._created_timestamp
                                          .to_cookie_string()),
                            started_date=(self._started_timestamp
@@ -296,30 +312,8 @@ Hook function
                                       else "None"))
         return repr
 
-    def add_display(self, display, *display_args, **display_kwargs):
-        """add a display for the simulation.
-
-        Parameters
-        ----------
-        display : callable
-            a display as the one available in triflow.displays
-        *display_args
-            positional arguments for the display function (other than the simulation itself)
-        **display_kwargs
-            named arguments for the display function
-        """  # noqa
-        if self._init_bokeh:
-            from bokeh.io import output_notebook
-            output_notebook()
-            self._init_bokeh = False
-        display = display(self,
-                          *display_args,
-                          **display_kwargs)
-        self._displays.append(display)
-        self._bokeh_layout += display.figs
-
     def attach_container(self, path="output/", save_iter="all",
-                         mode="w", nbuffer=50, timeout=180, force=False):
+                         mode="w", nbuffer=50, force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
@@ -329,7 +323,7 @@ Hook function
             path for the container
         mode : str, optional
             "a" or "w" (default "w")
-        mode : str, optional
+        save_iter : str, optional
             "all" will save every time-step,
             "last" will only get the last time step
         nbuffer : int, optional
@@ -337,59 +331,59 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
-        self._compute_probes()
-        container_path = Path(path) / self.id
-        self._container = container.Container(
-            container_path,
-            t0=self.t,
-            initial_fields=self.fields,
-            force=force,
-            metadata=dict(id=self.id, dt=self.dt, tmax=self.tmax,
-                          timestamp="{:%Y-%m-%d %H:%M:%S}"
-                          .format(self._created_timestamp),
-                          hook=inspect.getsource(self._hook),
-                          **self.physical_parameters),
-            probes=self._probes,
-            mode=mode,
-            nbuffer=nbuffer,
-            timeout=timeout)
-        logging.info("Persistent container attached (%s)"
-                     % container_path.abspath())
-        if save_iter == "all":
-            self._save = self._container.append
-        elif save_iter == "last":
-            self._save = partial(self._container.set, force=True)
-        self._container.metadata["status"] = "created"
+        self._container = TriflowContainer("%s/%s" % (path, self.id),
+                                           mode=mode, metadata=self.parameters,
+                                           force=force, nbuffer=nbuffer)
+        self._container.connect(self.stream)
+        return self._container
+
+    @property
+    def post_processes(self):
+        return self._pprocesses
+
+    @property
+    def stream(self):
+        return self._stream
 
     @property
     def container(self):
         return self._container
 
     @property
-    def probes(self):
-        return self._probes
-
-    @property
     def timer(self):
         return Timer(self._last_running, self._total_running)
+
+
+    def add_post_process(self, name, post_process, description=""):
+        """add a post-processing
+
+        Parameters
+        ----------
+        name : str
+            name of the post-traitment
+        post_process : callback (function of a class with a __call__ method
+                                 or a streamz.Stream).
+            this callback have to accept the simulation state as parameter
+            and return the modifield simulation state.
+            if a streamz.Stream is provided, it will me plugged_in with the
+            previous streamz (and ultimately to the initial_stream). All these
+            stream accept and return the simulation state.
+        description : str, optional, Default is "".
+            give extra information about the post-processing
+        """
+
+        self._pprocesses.append(PostProcess(name=name,
+                                            function=post_process,
+                                            description=description))
+        self._pprocesses[-1].function(self)
+
+    def remove_post_process(self, name):
+        self._pprocesses = [post_process
+                            for post_process in self._pprocesses
+                            if post_process.name != post_process]
 
     def __iter__(self):
         return self.compute()
 
     def __next__(self):
         return next(self._iterator)
-
-    def add_probe(self, name, dims, probe):
-        self._probes_info[name] = (dims, probe)
-
-    def _compute_probes(self):
-        self._probes = Dataset(data_vars={name: (dims, [probe(self)])
-                                          for name, (dims, probe)
-                                          in self._probes_info.items()},
-                               coords={"t": [self.t],
-                                       **{coord: self.fields[coord]
-                                          for coord
-                                          in self.model._indep_vars}})
-
-    def timer_probe(self):
-        return self._last_running

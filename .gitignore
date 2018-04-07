@@ -15,6 +15,7 @@ dist/
 downloads/
 eggs/
 .eggs/
+.vscode
 lib/
 lib64/
 parts/
@@ -44,6 +45,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+.pytest_cache
 
 # Translations
 *.mo

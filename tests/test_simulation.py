@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from triflow import Model, Simulation
-from triflow.plugins import schemes
+from triflow import schemes
 
 
 @pytest.fixture
