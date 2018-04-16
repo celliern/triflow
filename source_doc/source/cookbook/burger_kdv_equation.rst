@@ -58,7 +58,7 @@ We initialize with the same initial condition as in the Dedalus tutorial
 
 
 We precise our parameters. The default scheme provide an automatic
-time\_stepping.
+time_stepping.
 
 .. code:: ipython3
 

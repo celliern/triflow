@@ -67,7 +67,7 @@ We initialize with three gaussian pulses for the initial condition
 
 
 We precise our parameters. The default scheme provide an automatic
-time\_stepping. We want dirichlet boundary condition, so we set the
+time_stepping. We want dirichlet boundary condition, so we set the
 periodic flag to False.
 
 .. code:: ipython3

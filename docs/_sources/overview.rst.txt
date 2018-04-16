@@ -287,7 +287,7 @@ Triflow provide displays which are built on Bokeh_ and allow real-time plotting 
 
 `display_0D` provide (t, probe) display.
 
-`display_1D` provide (x, probe) display.
+`display_1D` provide (x, field) display.
 
 .. code-block:: python3
 
@@ -303,5 +303,8 @@ Will display the fields U and the total time spent on the simulation.
 .. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _NumPy: http://www.sympy.org/en/index.html
+.. _Bokeh: https://bokeh.pydata.org/en/latest/
+.. _xarray: http://xarray.pydata.org/en/stable/
+.. _Dataset: http://xarray.pydata.org/en/stable/generated/xarray.Dataset.html?highlight=dataset
 .. _scipy sparse column matrix format: https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.sparse.csc_matrix.html
 .. _SuperLU: http://crd-legacy.lbl.gov/~xiaoye/SuperLU/

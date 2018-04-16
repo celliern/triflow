@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>The burger equation &mdash; triflow 0.4.12 documentation</title>
+  <title>The burger equation &mdash; triflow 0.5.0rc documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="triflow 0.4.12 documentation" href="../index.html"/>
+    <link rel="top" title="triflow 0.5.0rc documentation" href="../index.html"/>
         <link rel="up" title="Cookbook" href="../cookbook.html"/>
         <link rel="next" title="The burger - kdv equation" href="burger_kdv_equation.html"/>
         <link rel="prev" title="The convection diffusion equation" href="advection_diffusion.html"/> 
@@ -57,7 +57,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> triflow
+            <a href="../doc.html" class="icon icon-home"> triflow
           
 
           
@@ -70,7 +70,7 @@
             
             
               <div class="version">
-                0.4
+                0.5
               </div>
             
           
@@ -105,7 +105,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">The burger equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="burger_kdv_equation.html">The burger - kdv equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="wave_equation.html">Wave equation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="so_wavy.html">Coupled burger's-like equations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="so_wavy.html">Coupled burger’s-like equations</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute.html">Contribution guide</a></li>
@@ -124,7 +124,7 @@
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">triflow</a>
+          <a href="../doc.html">triflow</a>
         
       </nav>
 
@@ -152,7 +152,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../index.html">Docs</a> &raquo;</li>
+      <li><a href="../doc.html">Docs</a> &raquo;</li>
         
           <li><a href="../cookbook.html">Cookbook</a> &raquo;</li>
         
@@ -211,23 +211,23 @@
 </style>
 <div class="section" id="the-burger-equation">
 <h1>The burger equation<a class="headerlink" href="#the-burger-equation" title="Permalink to this headline">¶</a></h1>
-<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">functools</span> <span class="k">as</span> <span class="nn">ft</span>
-<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">functools</span> <span class="kn">as</span> <span class="nn">ft</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="kn">as</span> <span class="nn">mp</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="k">import</span> <span class="n">gaussian</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">gaussian</span>
 
-<span class="kn">import</span> <span class="nn">pylab</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
 
-<span class="kn">from</span> <span class="nn">triflow</span> <span class="k">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">schemes</span><span class="p">,</span> <span class="n">displays</span>
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">schemes</span><span class="p">,</span> <span class="n">displays</span>
 
 <span class="n">pl</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;seaborn-white&#39;</span><span class="p">)</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 </pre></div>
 </div>
-<p>Burgers' equation is a fundamental partial differential equation
+<p>Burgers’ equation is a fundamental partial differential equation
 occurring in various areas of applied mathematics, such as fluid
 mechanics, nonlinear acoustics, gas dynamics, traffic flow. It is named
 for Johannes Martinus Burgers (1895–1981).
@@ -250,7 +250,7 @@ This shock leads to discontinuity smoothed by the diffusion term.</p>
 spatial step. We want periodic condition, so <code class="docutils literal"><span class="pre">endpoint=True</span></code> exclude
 the final node (which will be redondant with the first node, <span class="math">\(x=0\)</span>
 and <span class="math">\(x=100\)</span> are merged)</p>
-<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We initialize with a simple gaussian pulse initial condition.</p>
@@ -267,7 +267,7 @@ and <span class="math">\(x=100\)</span> are merged)</p>
 <img alt="../_images/burger_equation_7_0.png" src="../_images/burger_equation_7_0.png" />
 <p>We precise our parameters. The default scheme provide an automatic
 time_stepping. We set the periodic flag to True</p>
-<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mf">1E-1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-ipython3"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mf">1E-1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We initialize the simulation.</p>
@@ -286,7 +286,7 @@ time_stepping. We set the periodic flag to True</p>
         <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">U</span> <span class="o">+</span> <span class="o">.</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                 <span class="n">color</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">,</span>
                 <span class="n">zorder</span><span class="o">=-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;t: </span><span class="si">{t:g}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;t: {t:g}&quot;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="n">pl</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">fields</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
 <span class="n">pl</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -341,7 +341,7 @@ time_stepping. We set the periodic flag to True</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.4.12',
+            VERSION:'0.5.0rc',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

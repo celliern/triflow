@@ -31,7 +31,7 @@ The equation reads
 with
 
 -  :math:`U` the physical quantities transferred (it could be a chemical
-   species concentration, the temperature of a fluid...)
+   species concentration, the temperature of a fluid…)
 -  :math:`k` a diffusion convection
 -  :math:`c` a velocity, which will be constant in our example.
 
@@ -70,7 +70,7 @@ We initialize with three gaussian pulses for the initial condition
 
 
 We precise our parameters. The default scheme provide an automatic
-time\_stepping. We set the periodic flag to True.
+time_stepping. We set the periodic flag to True.
 
 .. code:: ipython3
 

@@ -19,7 +19,7 @@ The burger equation
     
     %matplotlib inline
 
-Burgers' equation is a fundamental partial differential equation
+Burgers’ equation is a fundamental partial differential equation
 occurring in various areas of applied mathematics, such as fluid
 mechanics, nonlinear acoustics, gas dynamics, traffic flow. It is named
 for Johannes Martinus Burgers (1895–1981).
@@ -70,7 +70,7 @@ We initialize with a simple gaussian pulse initial condition.
 
 
 We precise our parameters. The default scheme provide an automatic
-time\_stepping. We set the periodic flag to True
+time_stepping. We set the periodic flag to True
 
 .. code:: ipython3
 

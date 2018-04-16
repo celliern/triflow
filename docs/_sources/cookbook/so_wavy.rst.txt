@@ -1,5 +1,5 @@
 
-Coupled burger's-like equations
+Coupled burger’s-like equations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: ipython3
@@ -49,7 +49,7 @@ We initialize with cosine and sine function for :math:`U` and :math:`V`.
     fields = model.fields_template(x=x, U=U, V=V)
 
 We precise our parameters. The default scheme provide an automatic
-time\_stepping. We set the periodic flag to True.
+time_stepping. We set the periodic flag to True.
 
 .. code:: ipython3
 

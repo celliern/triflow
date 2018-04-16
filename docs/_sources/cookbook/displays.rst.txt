@@ -20,7 +20,7 @@ The displays are objects with a ``__call__`` method. They can be add to
 a simulation with the ``Simulation.add_display`` method, or just called
 at every step during the simulation.
 
-A "null" display will be written as
+A “null” display will be written as
 
 .. code:: ipython3
 
