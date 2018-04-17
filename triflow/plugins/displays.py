@@ -15,19 +15,17 @@ log.addHandler(logging.NullHandler())
 
 
 class TriflowDisplay:
-    def __init__(self, simul, plot_function, connect=True):
-        self._plot_pipe = streams.Pipe(data=simul)
+    def __init__(self, skel_data, plot_function):
+        self._plot_pipe = streams.Pipe(data=skel_data)
         self._dynmap = (DynamicMap(plot_function,
                                    streams=[self._plot_pipe])
                         .opts("Curve [width=600] {+framewise}"))
-        if connect:
-            self.connect(simul.stream)
 
     def connect(self, stream):
         stream.sink(self._plot_pipe.send)
 
     def show(self):
-        return self._dynmap
+        return self._dynmap.collate()
 
     def __add__(self, other):
         if isinstance(other, TriflowDisplay):
@@ -49,7 +47,9 @@ class TriflowDisplay:
                     continue
                 curves.append(Curve((displayed_field.squeeze())))
             return Layout(curves).cols(1)
-        return TriflowDisplay(simul, plot_function)
+        display = TriflowDisplay(simul, plot_function)
+        display.connect(simul.stream)
+        return display
 
     @staticmethod
     def display_probe(simul, function, xlabel=None, ylabel=None, buffer=None):
@@ -66,4 +66,6 @@ class TriflowDisplay:
         def plot_function(data):
             history.append(function(simul))
             return Curve(history, kdims=xlabel, vdims=ylabel)
-        return TriflowDisplay(simul, plot_function)
+        display = TriflowDisplay(simul, plot_function)
+        display.connect(simul.stream)
+        return display
