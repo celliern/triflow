@@ -79,9 +79,15 @@ class TriflowContainer:
             return concat(fields, dim="t")
 
     def connect(self, stream):
+        def get_t_fields(simul):
+            return simul.t, simul.fields
+
+        def expand_fields(inps):
+            return self._expand_fields(*inps)
+
         accumulation_stream = (stream
-                               .map(lambda simul: (simul.t, simul.fields))
-                               .map(lambda inps: self._expand_fields(*inps)))
+                               .map(get_t_fields)
+                               .map(expand_fields))
 
         self._collector = collect(accumulation_stream)
         self._collector.map(self._concat_fields).sink(self._write)
