@@ -313,7 +313,7 @@ Hook function
                                       else "None"))
         return repr
 
-    def attach_container(self, path="output/", save_iter="all",
+    def attach_container(self, path="output/", save="all",
                          mode="w", nbuffer=50, force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
@@ -324,7 +324,7 @@ Hook function
             path for the container
         mode : str, optional
             "a" or "w" (default "w")
-        save_iter : str, optional
+        save : str, optional
             "all" will save every time-step,
             "last" will only get the last time step
         nbuffer : int, optional
@@ -334,7 +334,7 @@ Hook function
         """
         self._container = TriflowContainer("%s/%s" % (path, self.id)
                                            if path else None,
-                                           save=save_iter,
+                                           save=save,
                                            mode=mode, metadata=self.parameters,
                                            force=force, nbuffer=nbuffer)
         self._container.connect(self.stream)
