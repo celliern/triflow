@@ -253,6 +253,7 @@ class Simulation(object):
     def _end_simulation(self):
         if self.container:
             self.container.flush()
+            self.container.merge()
 
     def __repr__(self):
         repr = """
@@ -331,7 +332,9 @@ Hook function
         timeout : int, optional
             wait until timeout since last flush before save on disk.
         """
-        self._container = TriflowContainer("%s/%s" % (path, self.id),
+        self._container = TriflowContainer("%s/%s" % (path, self.id)
+                                           if path else None,
+                                           save=save_iter,
                                            mode=mode, metadata=self.parameters,
                                            force=force, nbuffer=nbuffer)
         self._container.connect(self.stream)
@@ -352,7 +355,6 @@ Hook function
     @property
     def timer(self):
         return Timer(self._last_running, self._total_running)
-
 
     def add_post_process(self, name, post_process, description=""):
         """add a post-processing

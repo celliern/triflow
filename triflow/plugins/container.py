@@ -3,7 +3,7 @@
 
 import logging
 import warnings
-from collections import namedtuple
+from collections import namedtuple, deque
 from uuid import uuid1
 
 import yaml
@@ -43,14 +43,18 @@ def coerce_attr(key, value):
 
 
 class TriflowContainer:
-    def __init__(self, path, mode='a', *,
+    def __init__(self, path=None, mode='a', *, save="all",
                  metadata={}, force=False, nbuffer=50):
         self._nbuffer = nbuffer
         self._mode = mode
         self._metadata = metadata
-        self._cached_data = []
+        self.save = save
+        self._cached_data = deque([], self._n_save)
         self._collector = None
-        self.path = path = Path(path).abspath()
+        self.path = path = Path(path).abspath() if path else None
+
+        if not path:
+            return
 
         if self._mode == "w" and force:
             path.rmtree_p()
@@ -66,6 +70,20 @@ class TriflowContainer:
         with open(self.path / 'metadata.yml', 'w') as yaml_file:
             yaml.dump(self._metadata,
                       yaml_file, default_flow_style=False)
+
+    @property
+    def save(self):
+        return "last" if self._n_save else "last"
+
+    @save.setter
+    def save(self, value):
+        if value == "all":
+            self._n_save = None
+        elif value == "last" or value == -1:
+            self._n_save = 1
+        else:
+            raise ValueError('save argument accept only "all", "last" or -1 '
+                             'as value, not %s' % value)
 
     def _expand_fields(self, t, fields):
         fields = fields.assign_coords(t=t).expand_dims("t")
@@ -103,9 +121,14 @@ class TriflowContainer:
             self._collector.flush()
 
     def _write(self, concatenated_fields):
-        if concatenated_fields is not None:
-            concatenated_fields.to_netcdf(self.path / "data_%i.nc" % uuid1())
+        if concatenated_fields is not None and self.path:
+            target_file = self.path / "data_%i.nc" % uuid1()
+            concatenated_fields.to_netcdf(target_file)
             self._cached_data = []
+            if self.save == "last":
+                [file.remove()
+                 for file in self.path.glob("data_*.nc")
+                 if file != target_file]
 
     def __repr__(self):
         repr = """
@@ -119,12 +142,22 @@ path:   {path}
 
     @property
     def data(self):
-        return open_mfdataset(self.path / "data*.nc")
+        try:
+            if self.path:
+                return open_mfdataset(self.path / "data*.nc")
+            return self._concat_fields(self._cached_data)
+        except OSError:
+            return
 
     @property
     def metadata(self):
-        with open(self.path / 'metadata.yml', 'r') as yaml_file:
-            return yaml.load(yaml_file)
+        try:
+            if self.path:
+                with open(self.path / 'metadata.yml', 'r') as yaml_file:
+                    return yaml.load(yaml_file)
+            return self._metadata
+        except OSError:
+            return
 
     @metadata.setter
     def metadata(self, parameters):
@@ -132,9 +165,10 @@ path:   {path}
             return
         for key, value in parameters.items():
             self._metadata[key] = value
-        with open(self.path / 'info.yml', 'w') as yaml_file:
-            yaml.dump(self._metadata,
-                      yaml_file, default_flow_style=False)
+        if self.path:
+            with open(self.path / 'info.yml', 'w') as yaml_file:
+                yaml.dump(self._metadata,
+                          yaml_file, default_flow_style=False)
 
     @staticmethod
     def retrieve(path, isel='all', lazy=True):
@@ -188,6 +222,11 @@ path:   {path}
         )
 
         return TriflowContainer.retrieve(path, isel="all", lazy=False)
+
+    def merge(self, override=True):
+        if self.path:
+            return TriflowContainer.merge_datafiles(self.path,
+                                                    override=override)
 
     @staticmethod
     def merge_datafiles(path, override=True):
