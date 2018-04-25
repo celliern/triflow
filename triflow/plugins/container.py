@@ -73,7 +73,7 @@ class TriflowContainer:
 
     @property
     def save(self):
-        return "last" if self._n_save else "last"
+        return "last" if self._n_save else "all"
 
     @save.setter
     def save(self, value):
