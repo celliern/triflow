@@ -6,19 +6,14 @@ Installation
 External requirements
 ---------------------
 
-This library is written for python &gt;= 3.6, and I recommend to install
-it via [Anaconda](https://www.continuum.io/downloads) : this is a full
-python distribution including a scientific-oriented IDE, the main
-scientific python libraries and the Jupyter project.
+This library is written for python &gt;= 3.6.
 
 The library is based on Theano, thus extra dependecies like fortran and
 C compiler are needed, see Theano install page for extra informations:
 
 <http://deeplearning.net/software/theano/install.html>
 
-On v4.7, it is possible to choose between theano and tensorflow (which provide similar features). Tensorflow will be slower but with faster compilation. For really huge system (as hybrid 2D finite difference / pseudo-spectral), Theano couldn't provide graph computation in a reasonable time, and TensorFlow can be an interesting alternative.
-
-In that case, tensorflow and it's python wrapper has to be install on the computer.
+On v0.5.0, it is possible to choose between theano and numpy (which provide similar features). numpy will be slower but with no compilation time, which is handy for testing and prototyping.
 
 via PyPI
 --------
@@ -59,14 +54,14 @@ Motivation
 ----------
 
 The aim of this library is to have a (relatively) easy way to write
-transient dynamic systems with 1D finite difference discretisation, with
+transient dynamic systems with 1D finite difference discretization, with
 fast temporal solvers.
 
 The main two parts of the library are:
 
--   symbolic tools defining the spatial discretisation, with boundary
+- symbolic tools defining the spatial discretization, with boundary
     taking into account in a separated part
--   a fast temporal solver written in order to use the sparsity of the
+- a fast temporal solver written in order to use the sparsity of the
     finite difference method to reduce the memory and CPU usage during
     the solving
 
@@ -84,10 +79,10 @@ Model writing
 All the models are written as function generating the F vector and the
 Jacobian matrix of the model defined as
 
-$$\\frac{\\partial U}{\\partial t} = F(U)$$
+![\frac{\partial U}{\partial t} = F(U)](https://latex.codecogs.com/svg.download?%5Cfrac%7B%5Cpartial%20U%7D%7B%5Cpartial%20t%7D%20%3D%20F%28U%29)
 
 The symbolic model is written as a simple mathematic equation. For
-exemple, a diffusion advection model can be written as:
+example, a diffusion advection model can be written as:
 
 ``` {.sourceCode .python}
 from triflow import Model
@@ -161,10 +156,52 @@ v0.4.12:
 
 v0.5.0:
 - move schemes from plugins to core
+- compilers: remove tensorflow, add numpy
+- displays and containers are connected to the simulation via `streamz`
+- add post-processing.
+- real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility will be ensured until 0.8.0, but you are encouraged to quickly update your files.
 
+ROADMAP / TODO LIST
+-------------------
 
-[ROADMAP / TODO LIST](ROADMAP.md)
----------------------------------
+The following items are linked to a better use of solid external libs:
+
+- change all the display and container workflow:
+  - use streamz to allow pipeline like way to add display / probing / post-process
+  - use holoviews as main way to do real-time plotting
+  - use xarray multi netcdf files to reduce IO lack of performance
+- better use of external solving lib:
+  - merge triflow.plugins.schemes and scipy.integrate.OdeSolver API
+  - use scipy.integrate.solve_ivp for triflow temporal scheme solving (making it more robust)
+  - main goal is to have better two-way integration with scipy
+
+These are linked to the triflow core
+
+- build a robust boundary condition API
+- work on dimension extension, allowing 2D resolution and more
+- allow auxiliary function to make some complex model easier to write
+- allow a choice on the finite difference scheme, on a global way or term by term
+- test and propose other compilers (Cython, numba, pythran?)
+- work on adaptive spatial and temporal mesh
+
+These are far away but can be very interesting:
+
+- implement continuation algorithm working with triflow (separate project?)
+- try other kind of discretisation scheme (separate project each?)
+  - Finite volume
+  - Finite element?
+
+The final (and very ambitious goal) is to provide a robust framework allowing
+to link the mathematical language (and a natural way to write the model,
+as natural as possible) with a high performance and robust solving of
+the numerical system. There is a trade-off between the ease of use and the
+performance, for this software, all mandatory dependencies have to be
+pip-installable (as opposite to dedalus project or fenics project), even if
+some non-mandatory dependencies can be harder to install.
+
+If we go that further, it may be interesting to split the project with the
+triflow language, the different spatial discretisation and so on...
+
 
 
 License
