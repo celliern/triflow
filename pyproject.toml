@@ -1,4 +1,4 @@
-[tool.poetry.triflow]
+[tool.poetry]
 name = "triflow"
 version = "0.5.0"
 description = "Automatic finite difference discretization for 1D PDE with fast temporal solvers."
@@ -17,9 +17,30 @@ documentation = "https://locie.github.io/triflow"
 keywords = ['PDE', 'finite-difference', 'physic',
             'modelling', 'interactive']
 
-[tool.poetry.triflow.dependencies]
+[tool.poetry.dependencies]
 python = "^3.6"  # Compatible python versions must be declared here
 
-# [tool.triflow.dev-dependencies]
+# core computation
+numpy = "^1"
+scipy = "^1"
+sympy = "^1"
+theano = "^1"
 
-[tool.poetry.triflow.extras]
+# plugins: displays and containers
+streamz = "^0.3"
+xarray = "^0.10"
+holoviews = "^1.1"
+bokeh = "^0.12"
+
+# misc: simul name generation and path management
+coolname = "^1.0"
+"path.py" = "^11.0"
+pendulum = "^1.5"
+
+[tool.poetry.dev-dependencies]
+jupyter = "^1.0"
+pylama = "^7.4"
+pytest = "^3.5"
+isort = "^4.3"
+pytest-cov = "^2.5"
+pytest-pep8 = "^1.0"
