@@ -77,9 +77,7 @@ Model writing
 -------------
 
 All the models are written as function generating the F vector and the
-Jacobian matrix of the model defined as
-
-![\frac{\partial U}{\partial t} = F(U)](https://latex.codecogs.com/svg.download?%5Cfrac%7B%5Cpartial%20U%7D%7B%5Cpartial%20t%7D%20%3D%20F%28U%29)
+Jacobian matrix of the model defined as `dtU = F(U)`.
 
 The symbolic model is written as a simple mathematic equation. For
 example, a diffusion advection model can be written as:
