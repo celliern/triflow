@@ -1,0 +1,25 @@
+[tool.poetry.triflow]
+name = "triflow"
+version = "0.5.0"
+description = "Automatic finite difference discretization for 1D PDE with fast temporal solvers."
+
+license = "MIT"
+
+authors = [
+    "Nicolas Cellier <contact@nicolas-cellier.net>"
+]
+
+readme = 'README.md'  # Markdown files are supported
+
+repository = "http://github.com/locie/triflow"
+documentation = "https://locie.github.io/triflow"
+
+keywords = ['PDE', 'finite-difference', 'physic',
+            'modelling', 'interactive']
+
+[tool.poetry.triflow.dependencies]
+python = "^3.6"  # Compatible python versions must be declared here
+
+# [tool.triflow.dev-dependencies]
+
+[tool.poetry.triflow.extras]
