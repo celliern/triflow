@@ -158,6 +158,7 @@ v0.5.0:
 - displays and containers are connected to the simulation via `streamz`
 - add post-processing.
 - real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility will be ensured until 0.8.0, but you are encouraged to quickly update your files.
+- [TODO]: use poetry to manage dependencies.
 
 ROADMAP / TODO LIST
 -------------------
