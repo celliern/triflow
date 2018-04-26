@@ -1,22 +1,28 @@
 .PHONY: update
 
+get_poetry:
+	pip install poetry --user
+
 update:
-	poetry update
+	$(HOME)/.local/bin/poetry update
 
 test:
-	pytest
+	$(HOME)/.local/bin/poetry run pytest
 
 lint:
-	pylama
+	$(HOME)/.local/bin/poetry run pylama
 
 isort:
-	sh -c "isort --recursive . "
+	$(HOME)/.local/bin/poetry run "sh -c 'isort --recursive . '"
+
+dev: get_poetry update
+	$(HOME)/.local/bin/poetry run pip install -e .
 
 build: doc
-	poetry build
+	$(HOME)/.local/bin/poetry build
 
 publish: doc
-	poetry publish
+	$(HOME)/.local/bin/poetry publish
 
 doc:
 	$(MAKE) -C source_doc notebooks
