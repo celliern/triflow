@@ -31,7 +31,8 @@ if INTERACTIVE:
 
 class TriflowDisplay:
     def __init__(self, skel_data, plot_function,
-                 on_disk=None, **renderer_args):
+                 on_disk=None, on_disk_folder="./plots/",
+                 **renderer_args):
 
         self.on_disk = None
         self._plot_pipe = streams.Pipe(data=skel_data)
@@ -40,13 +41,13 @@ class TriflowDisplay:
                         .opts("Curve [width=600] {+framewise}"))
 
         if on_disk:
-            self.on_disk = Path(on_disk)
             self._renderer = MPLRenderer.instance()
+            target_dir = Path(on_disk_folder)
 
             def save_curves(data):
+                target_file = target_dir / "%s_%i" % (on_disk, data.i)
                 process = mp.Process(target=self._renderer.save,
-                                     args=(self.hv_curve,
-                                           "%s_%i" % (on_disk, data.i)),
+                                     args=(self.hv_curve, target_file),
                                      kwargs=renderer_args)
                 process.start()
 
@@ -73,7 +74,9 @@ class TriflowDisplay:
         self._dynmap * other
 
     @staticmethod
-    def display_fields(simul, keys="all", on_disk=None, **renderer_args):
+    def display_fields(simul, keys="all",
+                       on_disk=None, on_disk_folder="./plots/",
+                       **renderer_args):
         def plot_function(data):
             curves = []
             for var in (data.fields.data_vars if keys == "all" else keys):
@@ -83,14 +86,17 @@ class TriflowDisplay:
                 curves.append(Curve((displayed_field.squeeze())))
             return Layout(curves).cols(1)
         display = TriflowDisplay(simul, plot_function,
-                                 on_disk=on_disk, **renderer_args)
+                                 on_disk=on_disk,
+                                 on_disk_folder=on_disk_folder,
+                                 **renderer_args)
         display.connect(simul.stream)
         return display
 
     @staticmethod
     def display_probe(simul, function,
                       xlabel=None, ylabel=None, buffer=None,
-                      on_disk=None, **renderer_args):
+                      on_disk=None, on_disk_folder="./plots/",
+                      **renderer_args):
         history = deque([], buffer)
         if not xlabel:
             xlabel = coolname.generate_slug(2)
@@ -105,6 +111,8 @@ class TriflowDisplay:
             history.append(function(simul))
             return Curve(history, kdims=xlabel, vdims=ylabel)
         display = TriflowDisplay(simul, plot_function,
-                                 on_disk=on_disk, **renderer_args)
+                                 on_disk=on_disk,
+                                 on_disk_folder=on_disk_folder,
+                                 **renderer_args)
         display.connect(simul.stream)
         return display
