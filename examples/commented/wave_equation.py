@@ -27,9 +27,8 @@ parameters = dict(k=1e-1, c=40, periodic=True)
 
 
 # We initialize the simulation
-t = 0
-simulation = Simulation(model, t, fields, parameters, dt=5, tol=1E-1, tmax=50)
+simulation = Simulation(model, fields, parameters, dt=5, tol=1E-1, tmax=50)
 
 # We iterate on the simulation until the end.
 for t, fields in simulation:
-    print(f"t: {t:g}, mean value of U: {np.mean(fields.U):g}")
+    print("t: %g, mean value of U: %g" % (t, fields.U.mean().values))
