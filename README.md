@@ -149,12 +149,12 @@ v0.5.0:
 
 - WARNING: some part of the API has changed:
   - Simulation signature has changed. `t` arg is now optional (with t=0) as default and `physical_parameters` is now `parameters`.
-  - The displays have been completely rewritten, and the previous API will be quickly depreciated. Proxy function will ensure the continuity for some minor version bumps, but users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
+  - The displays have been completely rewritten, and the previous API is depreciated. Users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
 - move schemes from plugins to core
 - compilers: remove tensorflow, add numpy which is way slower but has no compilation overhead.
 - displays and containers are connected to the simulation via `streamz`
 - add post-processing.
-- real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility will be ensured until 0.8.0, but you are encouraged to quickly update your files.
+- real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility for display is broken and users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
 - [TODO]: use poetry to manage dependencies.
 
 ### ROADMAP / TODO LIST
