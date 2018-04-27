@@ -249,7 +249,7 @@ class Simulation(object):
 
         except RuntimeError:
             self.status = 'failed'
-
+            raise
     def _end_simulation(self):
         if self.container:
             self.container.flush()
