@@ -5,25 +5,25 @@ poetry := $(HOME)/.local/bin/poetry
 get_poetry:
 	pip install poetry --user
 
-update:
-	$(poetry) update
+install:
+	$(poetry) install
 
-test:
-	$(poetry) run pytest --cov=triflow
+test: dev
+	$(poetry) run pytest --cov=triflow --cov-report=html
 
-lint:
+lint: dev
 	$(poetry) run pylama
 
-isort:
+isort: dev
 	$(poetry) run "sh -c 'isort --recursive . '"
 
-dev: get_poetry update
+dev: get_poetry install
 	$(poetry) run pip install -e .
 
-build: doc
+build: dev doc
 	$(poetry) build
 
-publish: doc
+publish: dev doc
 	$(poetry) publish
 
 doc:
