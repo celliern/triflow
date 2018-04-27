@@ -62,7 +62,6 @@ def test_runtime_error(heat_model):
     T = np.cos(x * 2 * np.pi / 10)
     initial_fields = heat_model.fields_template(x=x, T=T)
     parameters = dict(periodic=True, k=1)
-    t0 = 0
 
     simul = Simulation(heat_model, initial_fields, parameters,
                        dt=1, tol=1E-1, max_iter=2)
