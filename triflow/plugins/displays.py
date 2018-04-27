@@ -5,26 +5,61 @@ import logging
 import warnings
 from collections import deque
 from uuid import uuid4
+import multiprocessing as mp
+import threading
 
+from path import Path
 import coolname
 from holoviews import Curve, DynamicMap, Layout, streams
+from holoviews.plotting.mpl import MPLRenderer
 
 log = logging.getLogger(__name__)
 log.handlers = []
 log.addHandler(logging.NullHandler())
 
 
+def is_interactive():
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
+
+INTERACTIVE = is_interactive()
+if INTERACTIVE:
+    from holoviews import notebook_extension
+    notebook_extension("bokeh")
+
+
 class TriflowDisplay:
-    def __init__(self, skel_data, plot_function):
+    def __init__(self, skel_data, plot_function,
+                 on_disk=None, **renderer_args):
+
+        self.on_disk = None
         self._plot_pipe = streams.Pipe(data=skel_data)
         self._dynmap = (DynamicMap(plot_function,
                                    streams=[self._plot_pipe])
                         .opts("Curve [width=600] {+framewise}"))
 
+        if on_disk:
+            self.on_disk = Path(on_disk)
+            self._renderer = MPLRenderer.instance()
+
+            def save_curves(data):
+                process = mp.Process(target=self._renderer.save,
+                                     args=(self.hv_curve,
+                                           "%s_%i" % (on_disk, data.i)),
+                                     kwargs=renderer_args)
+                process.start()
+
+            self._plot_pipe.add_subscriber(save_curves)
+
+    def _repr_mimebundle_(self, *args, **kwargs):
+        return self.hv_curve._repr_mimebundle_(*args, **kwargs)
+
     def connect(self, stream):
         stream.sink(self._plot_pipe.send)
 
-    def show(self):
+    @property
+    def hv_curve(self):
         return self._dynmap.collate()
 
     def __add__(self, other):
@@ -38,7 +73,7 @@ class TriflowDisplay:
         self._dynmap * other
 
     @staticmethod
-    def display_fields(simul, keys="all"):
+    def display_fields(simul, keys="all", on_disk=None, **renderer_args):
         def plot_function(data):
             curves = []
             for var in (data.fields.data_vars if keys == "all" else keys):
@@ -47,12 +82,15 @@ class TriflowDisplay:
                     continue
                 curves.append(Curve((displayed_field.squeeze())))
             return Layout(curves).cols(1)
-        display = TriflowDisplay(simul, plot_function)
+        display = TriflowDisplay(simul, plot_function,
+                                 on_disk=on_disk, **renderer_args)
         display.connect(simul.stream)
         return display
 
     @staticmethod
-    def display_probe(simul, function, xlabel=None, ylabel=None, buffer=None):
+    def display_probe(simul, function,
+                      xlabel=None, ylabel=None, buffer=None,
+                      on_disk=None, **renderer_args):
         history = deque([], buffer)
         if not xlabel:
             xlabel = coolname.generate_slug(2)
@@ -66,6 +104,7 @@ class TriflowDisplay:
         def plot_function(data):
             history.append(function(simul))
             return Curve(history, kdims=xlabel, vdims=ylabel)
-        display = TriflowDisplay(simul, plot_function)
+        display = TriflowDisplay(simul, plot_function,
+                                 on_disk=on_disk, **renderer_args)
         display.connect(simul.stream)
         return display
