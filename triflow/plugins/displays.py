@@ -39,7 +39,7 @@ class TriflowDisplay:
         self._dynmap = (DynamicMap(plot_function,
                                    streams=[self._plot_pipe])
                         .opts("Curve [width=600] {+framewise}"))
-
+        self._writers = []
         if on_disk:
             self._renderer = MPLRenderer.instance()
             target_dir = Path(on_disk_folder)
@@ -50,6 +50,7 @@ class TriflowDisplay:
                 process = mp.Process(target=self._renderer.save,
                                      args=(self.hv_curve, target_file),
                                      kwargs=renderer_args)
+                self._writers.append(process)
                 process.start()
 
             self._plot_pipe.add_subscriber(save_curves)
