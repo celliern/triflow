@@ -1,10 +1,8 @@
-[![image](https://zenodo.org/badge/DOI/10.5281/zenodo.584101.svg)](https://doi.org/10.5281/zenodo.584101)
+# Triflow
 
-Installation
-============
+## Installation
 
-External requirements
----------------------
+### External requirements
 
 This library is written for python &gt;= 3.6.
 
@@ -15,8 +13,7 @@ C compiler are needed, see Theano install page for extra informations:
 
 On v0.5.0, it is possible to choose between theano and numpy (which provide similar features). numpy will be slower but with no compilation time, which is handy for testing and prototyping.
 
-via PyPI
---------
+### via PyPI
 
 ``` {.sourceCode .bash}
 pip install triflow
@@ -37,8 +34,7 @@ the root privileges:
 pip install --user triflow
 ```
 
-via github
-----------
+### via github
 
 You can install the last version of the library using pip and the github
 repository:
@@ -47,11 +43,9 @@ repository:
 pip install git+git://github.com/locie/triflow.git
 ```
 
-Introduction
-============
+## Introduction
 
-Motivation
-----------
+### Motivation
 
 The aim of this library is to have a (relatively) easy way to write
 transient dynamic systems with 1D finite difference discretization, with
@@ -73,8 +67,7 @@ The library fits well with an interactive usage (in a jupyter notebook).
 The dependency list is actually larger, but on-going work target a
 reduction of the stack complexity.
 
-Model writing
--------------
+### Model writing
 
 All the models are written as function generating the F vector and the
 Jacobian matrix of the model defined as `dtU = F(U)`.
@@ -92,8 +85,7 @@ physical_parameters = ["k", "c"]
 model = Model(equation_diff, dependent_var, physical_parameters)
 ```
 
-Example
--------
+### Example
 
 ``` {.sourceCode .python}
 import numpy as np
@@ -136,8 +128,7 @@ legend = pl.legend(loc='best')
 pl.show()
 ```
 
-NEWS
-----
+### NEWS
 
 v0.4.7:
 - adding tensor flow support with full testing
@@ -163,8 +154,7 @@ v0.5.0:
 - real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility will be ensured until 0.8.0, but you are encouraged to quickly update your files.
 - [TODO]: use poetry to manage dependencies.
 
-ROADMAP / TODO LIST
--------------------
+### ROADMAP / TODO LIST
 
 The following items are linked to a better use of solid external libs:
 
@@ -206,7 +196,8 @@ triflow language, the different spatial discretisation and so on...
 
 
 
-License
--------
+### License
 
 This project is licensed under the term of the [MIT license](LICENSE)
+
+[![image](https://zenodo.org/badge/DOI/10.5281/zenodo.584101.svg)](https://doi.org/10.5281/zenodo.584101)
