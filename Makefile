@@ -7,7 +7,7 @@ update:
 	$(HOME)/.local/bin/poetry update
 
 test:
-	$(HOME)/.local/bin/poetry run pytest
+	$(HOME)/.local/bin/poetry run pytest --cov=triflow
 
 lint:
 	$(HOME)/.local/bin/poetry run pylama
