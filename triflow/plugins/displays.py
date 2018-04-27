@@ -43,6 +43,7 @@ class TriflowDisplay:
         if on_disk:
             self._renderer = MPLRenderer.instance()
             target_dir = Path(on_disk_folder)
+            target_dir.makedirs_p()
 
             def save_curves(data):
                 target_file = target_dir / "%s_%i" % (on_disk, data.i)
