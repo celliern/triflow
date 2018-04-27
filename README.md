@@ -169,22 +169,22 @@ ROADMAP / TODO LIST
 The following items are linked to a better use of solid external libs:
 
 - change all the display and container workflow:
-  - use streamz to allow pipeline like way to add display / probing / post-process
-  - use holoviews as main way to do real-time plotting
-  - use xarray multi netcdf files to reduce IO lack of performance
+  - use streamz to allow pipeline like way to add display / probing / post-process :done:
+  - use holoviews as main way to do real-time plotting :done:
+  - use xarray multi netcdf files to reduce IO lack of performance :done:
 - better use of external solving lib:
-  - merge triflow.plugins.schemes and scipy.integrate.OdeSolver API
-  - use scipy.integrate.solve_ivp for triflow temporal scheme solving (making it more robust)
-  - main goal is to have better two-way integration with scipy
+  - merge triflow.plugins.schemes and scipy.integrate.OdeSolver API :todo:
+  - use scipy.integrate.solve_ivp for triflow temporal scheme solving (making it more robust) :todo:
+  - main goal is to have better two-way integration with scipy :todo:
 
 These are linked to the triflow core
 
-- build a robust boundary condition API
-- work on dimension extension, allowing 2D resolution and more
-- allow auxiliary function to make some complex model easier to write
-- allow a choice on the finite difference scheme, on a global way or term by term
-- test and propose other compilers (Cython, numba, pythran?)
-- work on adaptive spatial and temporal mesh
+- build a robust boundary condition API :todo:
+- work on dimension extension, allowing 2D resolution and more :todo:
+- allow auxiliary function to make some complex model easier to write :todo:
+- allow a choice on the finite difference scheme, on a global way or term by term :todo:
+- test and propose other compilers (Cython, numba, pythran?) :todo:
+- work on adaptive spatial and temporal mesh :todo:
 
 These are far away but can be very interesting:
 
