@@ -6,8 +6,8 @@
 
 This library is written for python &gt;= 3.6.
 
-The library is based on Theano, thus extra dependecies like fortran and
-C compiler are needed, see Theano install page for extra informations:
+The library is based on Theano, thus extra dependencies like fortran and
+C compiler are needed, see Theano install page for extra information:
 
 <http://deeplearning.net/software/theano/install.html>
 
@@ -131,10 +131,12 @@ pl.show()
 ### NEWS
 
 v0.4.7:
+
 - adding tensor flow support with full testing
 - adding post-processing in bokeh fields display
 
 v0.4.12:
+
 - give user choice of compiler
   - get out tensorflow compiler (not really efficient, lot of maintenance trouble)
   - give access to theano and numpy compiler
@@ -144,6 +146,7 @@ v0.4.12:
 - adding repr string to all major classes
 
 v0.5.0:
+
 - WARNING: some part of the API has changed:
   - Simulation signature has changed. `t` arg is now optional (with t=0) as default and `physical_parameters` is now `parameters`.
   - The displays have been completely rewritten, and the previous API will be quickly depreciated. Proxy function will ensure the continuity for some minor version bumps, but users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
@@ -179,7 +182,7 @@ These are linked to the triflow core
 These are far away but can be very interesting:
 
 - implement continuation algorithm working with triflow (separate project?)
-- try other kind of discretisation scheme (separate project each?)
+- try other kind of discretization scheme (separate project each?)
   - Finite volume
   - Finite element?
 
@@ -192,9 +195,7 @@ pip-installable (as opposite to dedalus project or fenics project), even if
 some non-mandatory dependencies can be harder to install.
 
 If we go that further, it may be interesting to split the project with the
-triflow language, the different spatial discretisation and so on...
-
-
+triflow language, the different spatial discretization and so on...
 
 ### License
 
