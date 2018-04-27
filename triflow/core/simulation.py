@@ -5,6 +5,7 @@ import inspect
 import logging
 import pprint
 from collections import namedtuple
+import warnings
 
 import time
 import streamz
@@ -250,10 +251,19 @@ class Simulation(object):
         except RuntimeError:
             self.status = 'failed'
             raise
+
     def _end_simulation(self):
         if self.container:
             self.container.flush()
             self.container.merge()
+
+    def run(self):
+        for t, fields in self:
+            pass
+        try:
+            return t, fields
+        except UnboundLocalError:
+            warnings.warn("Simulation already ended")
 
     def __repr__(self):
         repr = """
