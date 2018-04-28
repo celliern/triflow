@@ -392,7 +392,7 @@ Hook function
     def remove_post_process(self, name):
         self._pprocesses = [post_process
                             for post_process in self._pprocesses
-                            if post_process.name != post_process]
+                            if post_process.name != name]
 
     def __iter__(self):
         return self.compute()
