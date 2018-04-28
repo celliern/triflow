@@ -377,9 +377,11 @@ parameters:     {pars}"""
                 if order == 0:
                     unknowns[i, j] = Symbol(var)
                 if order < 0:
-                    unknowns[i, j] = Symbol(f'{var}_m{np.abs(order)}')
+                    unknowns[i, j] = Symbol(
+                        '{}_m{}'.format(var, np.abs(order)))
                 if order > 0:
-                    unknowns[i, j] = Symbol(f'{var}_p{np.abs(order)}')
+                    unknowns[i, j] = Symbol(
+                        '{}_p{}'.format(var, np.abs(order)))
         return unknowns
 
     def _finite_diff_scheme(self, U, order):

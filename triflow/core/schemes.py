@@ -201,12 +201,12 @@ class ROW_general:
                 dt = self._internal_dt = (self._safety_factor *
                                           dt * np.sqrt(self._tol / self._err))
 
-            logging.debug(f'dt computed after err below tol: {dt}')
-            logging.debug(f'ROS_vart, t {t}')
+            logging.debug('dt computed after err below tol: %g' % dt)
+            logging.debug('ROS_vart, t %g' % t)
             if new_t >= self._next_time_step:
                 target_dt = self._next_time_step - t
                 logging.debug('new t more than next expected time step, '
-                              f'compute with proper timestep {target_dt}')
+                              'compute with proper timestep %g' % target_dt)
                 if self._recompute_target:
                     t, fields, self._err = self._fixed_step(
                         t, fields,

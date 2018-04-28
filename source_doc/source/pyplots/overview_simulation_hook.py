@@ -21,7 +21,7 @@ t = 0
 dt = 5E-1
 tmax = 2.5
 
-pl.plot(fields.x, fields.U, label=f't: {t:g}')
+pl.plot(fields.x, fields.U, label='t: %g' % t)
 
 
 def dirichlet_condition(t, fields, pars):
@@ -36,7 +36,7 @@ simul = Simulation(model, t, fields, parameters, dt,
 for i, (t, fields) in enumerate(simul):
     print("iteration: %i\t" % i,
           "t: %g" % t, end='\r')
-    pl.plot(fields.x, fields.U, label=f't: {t:g}')
+    pl.plot(fields.x, fields.U, label='t: %g' % t)
 
 pl.xlim(0, 1)
 legend = pl.legend(loc='best')
