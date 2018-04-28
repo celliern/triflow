@@ -1,6 +1,6 @@
 .PHONY: update
 
-poetry := $(HOME)/.local/bin/poetry
+poetry := poetry
 
 get_poetry:
 	pip install poetry
@@ -9,6 +9,7 @@ update:
 	$(poetry) update
 
 install:
+	echo $(poetry)
 	$(poetry) install
 
 test: dev
