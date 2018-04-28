@@ -4,7 +4,8 @@
 import numpy as np
 import pytest
 import path
-
+import matplotlib
+matplotlib.use('Agg')  # noqa
 from triflow import Model, Simulation, display_fields, display_probe
 
 
