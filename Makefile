@@ -30,7 +30,8 @@ publish: dev doc
 	$(poetry) publish
 
 doc:
-	$(MAKE) -C source_doc notebooks
-	$(MAKE) -C source_doc epub
-	$(MAKE) -C source_doc latexpdf
-	sphinx-build -b html source_doc/source docs
+	$(poetry) run pip install ipython jupyter-contrib-nbextensions
+	$(poetry) run $(MAKE) -C source_doc notebooks
+	$(poetry) run $(MAKE) -C source_doc epub
+	$(poetry) run $(MAKE) -C source_doc latexpdf
+	$(poetry) run sphinx-build -b html source_doc/source docs
