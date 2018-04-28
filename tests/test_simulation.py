@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import functools as ft
 import numpy as np
 import pytest
 
@@ -18,7 +19,9 @@ def heat_model():
 
 @pytest.mark.parametrize("scheme",
                          [schemes.ROS2, schemes.ROS3PRL, schemes.ROS3PRw,
-                          schemes.RODASPR, schemes.Theta, schemes.scipy_ode])
+                          schemes.RODASPR, schemes.Theta, schemes.scipy_ode,
+                          ft.partial(schemes.scipy_ode,
+                                     integrator="vode", method="bdf")])
 def test_simul_heat_eq(heat_model, scheme):
     x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
     T = np.cos(x * 2 * np.pi / 10)
@@ -57,7 +60,7 @@ def test_simul_heat_eq_dirichlet(heat_model, scheme):
     assert np.isclose(fields["T"], 1, atol=1E-1).all()
 
 
-def test_runtime_error(heat_model):
+def test_simul_runtime_error(heat_model):
     x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
     T = np.cos(x * 2 * np.pi / 10)
     initial_fields = heat_model.fields_template(x=x, T=T)
@@ -74,3 +77,45 @@ def test_runtime_error(heat_model):
     with pytest.raises(RuntimeError):
         for t, fields in simul:
             pass
+
+
+def test_simul_repr(heat_model):
+    x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+    T = np.cos(x * 2 * np.pi / 10)
+    initial_fields = heat_model.fields_template(x=x, T=T)
+    parameters = dict(periodic=True, k=1)
+
+    simul = Simulation(heat_model, initial_fields, parameters,
+                       dt=1, tol=1E-1, tmax=10)
+    str(simul)
+
+
+def test_simul_already_ended(heat_model):
+    x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+    T = np.cos(x * 2 * np.pi / 10)
+    initial_fields = heat_model.fields_template(x=x, T=T)
+    parameters = dict(periodic=True, k=1)
+
+    simul = Simulation(heat_model, initial_fields, parameters,
+                       dt=1, tol=1E-1, tmax=10)
+    simul.run()
+    simul.run()
+
+
+def test_simul_pprocess(heat_model):
+    x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+    T = np.cos(x * 2 * np.pi / 10)
+    initial_fields = heat_model.fields_template(x=x, T=T)
+    parameters = dict(periodic=True, k=1)
+
+    simul = Simulation(heat_model, initial_fields, parameters,
+                       dt=1, tol=1E-1, tmax=10)
+
+    def compute_grad(simul):
+        simul.fields["grad"] = np.gradient(simul.fields["T"].values)
+        return simul
+
+    simul.add_post_process("grad", compute_grad)
+    simul.run()
+    simul.remove_post_process("grad")
+    assert simul.post_processes == []
