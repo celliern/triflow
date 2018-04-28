@@ -60,11 +60,11 @@ class TriflowContainer:
             path.rmtree_p()
 
         if self._mode == "w" and not force and path.exists():
-            raise IOError("Directory %s exists, set force=True to override it"
-                          % path)
+            raise FileExistsError(
+                "Directory %s exists, set force=True to override it" % path)
 
         if self._mode == "r" and not path.exists():
-            raise IOError("Container not found.")
+            raise FileNotFoundError("Container not found.")
         path.makedirs_p()
 
         with open(self.path / 'metadata.yml', 'w') as yaml_file:
@@ -103,12 +103,18 @@ class TriflowContainer:
         def expand_fields(inps):
             return self._expand_fields(*inps)
 
+        def get_last(list_fields):
+            return list_fields[-1]
+
         accumulation_stream = (stream
                                .map(get_t_fields)
                                .map(expand_fields))
 
         self._collector = collect(accumulation_stream)
-        self._collector.map(self._concat_fields).sink(self._write)
+        if self.save == "all":
+            self._collector.map(self._concat_fields).sink(self._write)
+        else:
+            self._collector.map(get_last).sink(self._write)
 
         (accumulation_stream
          .partition(self._nbuffer)
@@ -121,10 +127,10 @@ class TriflowContainer:
             self._collector.flush()
 
     def _write(self, concatenated_fields):
-        if concatenated_fields is not None and self.path:
+        if concatenated_fields and self.path:
             target_file = self.path / "data_%i.nc" % uuid1()
             concatenated_fields.to_netcdf(target_file)
-            self._cached_data = []
+            self._cached_data = deque([], self._n_save)
             if self.save == "last":
                 [file.remove()
                  for file in self.path.glob("data_*.nc")
@@ -229,7 +235,7 @@ path:   {path}
                                                     override=override)
 
     @staticmethod
-    def merge_datafiles(path, override=True):
+    def merge_datafiles(path, override=False):
         path = Path(path)
 
         if (path / "data.nc").exists() and not override:
