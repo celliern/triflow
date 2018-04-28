@@ -34,8 +34,8 @@ simul = Simulation(model, t, fields, parameters, dt,
                    hook=dirichlet_condition, tmax=tmax)
 
 for i, (t, fields) in enumerate(simul):
-    print(f"iteration: {i}\t",
-          f"t: {t:g}", end='\r')
+    print("iteration: %i\t" % i,
+          "t: %g" % t, end='\r')
     pl.plot(fields.x, fields.U, label=f't: {t:g}')
 
 pl.xlim(0, 1)

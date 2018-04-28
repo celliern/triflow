@@ -216,7 +216,8 @@ class Model:
             self._symb_indep_vars,
             self._symb_dep_vars,
             self._symb_help_funcs)
-        logging.debug(f"approximated equations: {approximated_diff_eqs}")
+        logging.debug("approximated equations: {}".format(
+            approximated_diff_eqs))
 
         # We compute the size of the the ghost area at the limit of
         # the spatial domain
@@ -519,7 +520,7 @@ parameters:     {pars}"""
             afunc = func
             for derivative in func.find(Derivative):
                 var = Symbol(str(derivative.args[0].func))
-                logging.debug(f"{derivative}, {var}")
+                logging.debug("{}, {}".format(derivative, var))
                 order = len(derivative.args) - 1
                 afunc = afunc.replace(
                     derivative,

@@ -197,7 +197,7 @@ class ROW_general:
                                                                 dt,
                                                                 pars,
                                                                 hook)
-                logging.debug(f"error: {self._err}")
+                logging.debug("error: {}".format(self._err))
                 dt = self._internal_dt = (self._safety_factor *
                                           dt * np.sqrt(self._tol / self._err))
 

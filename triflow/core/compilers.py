@@ -71,8 +71,9 @@ def theano_compiler(model):
         map_extended[varname] = extended_var
         for order in range(pad_left, pad_right + 1):
             if order != 0:
-                var = (f"{varname}_{'m' if order < 0 else 'p'}"
-                       f"{np.abs(order)}")
+                var = ("{}_{}{}").format(varname,
+                                         'm' if order < 0 else 'p',
+                                         np.abs(order))
             else:
                 var = varname
             new_var = extended_var[order - pad_left:
@@ -231,8 +232,9 @@ def numpy_compiler(model):
             map_extended[varname] = extended_var
             for order in range(pad_left, pad_right + 1):
                 if order != 0:
-                    var = (f"{varname}_{'m' if order < 0 else 'p'}"
-                           f"{np.abs(order)}")
+                    var = ("{}_{}{}").format(varname,
+                                            'm' if order < 0 else 'p',
+                                            np.abs(order))
                 else:
                     var = varname
                 new_var = extended_var[order - pad_left:

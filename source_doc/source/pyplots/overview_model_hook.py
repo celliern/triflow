@@ -36,8 +36,8 @@ def dirichlet_condition(t, fields, pars):
 
 for i in it.count():
     t, fields = scheme(t, fields, dt, parameters, hook=dirichlet_condition)
-    print(f"iteration: {i}\t",
-          f"t: {t:g}", end='\r')
+    print("iteration: %i\t" % i,
+          "t: %g" % t, end='\r')
     pl.plot(fields.x, fields.U, label=f't: {t:g}')
     if t >= tmax:
         break
