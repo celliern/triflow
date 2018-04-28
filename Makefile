@@ -3,7 +3,7 @@
 poetry := $(HOME)/.local/bin/poetry
 
 get_poetry:
-	pip install poetry --user
+	pip install poetry
 
 update:
 	$(poetry) update
