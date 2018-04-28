@@ -154,11 +154,13 @@ class ROW_general:
                           sum([self._alpha[i, j] * ks[j]
                                for j in range(i)]))
             F = self._model.F(fields_i, pars)
-            ks.append(luf(dt * F + dt * (np.dot(J, sum([self._gamma[i, j] *
-                                                        ks[j]
-                                                        for j
-                                                        in range(i)]))
-                                         if i > 0 else 0)))
+            ks.append(luf(dt * F + dt * (J.dot(sum([self._gamma[i, j] *
+                                                    ks[j]
+                                                    for j
+                                                    in range(i)]))
+                                         if i > 0 else 0)
+                          )
+                      )
         U = fields.uflat.copy()
         U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
@@ -548,7 +550,7 @@ class Theta:
         F = self._model.F(fields, pars)
         J = self._model.J(fields, pars)
         U = fields.uflat
-        B = dt * (F - self._theta * np.dot(J, U)) + U
+        B = dt * (F - self._theta * J.dot(U)) + U
         J = (sps.identity(U.size,
                           format='csc') -
              self._theta * dt * J)
