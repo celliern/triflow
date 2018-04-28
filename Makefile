@@ -9,7 +9,7 @@ install:
 	$(poetry) install
 
 test: dev
-	$(poetry) run pytest --cov=triflow --cov-report=html
+	$(poetry) run pytest --cov=triflow --cov-report=html -p no:warnings
 
 lint: dev
 	$(poetry) run pylama
