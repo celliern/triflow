@@ -94,6 +94,28 @@ def test_finite_diff(args):
                        rtol=1E-4, atol=1E-4).all())
 
 
+def test_jac_simpl():
+    model = Model("dxxU", "U")
+    model_simp = Model("dxxU", "U", simplify=True)
+    x = np.linspace(0, 2 * np.pi, 50, endpoint=False)
+    U = np.cos(x)
+    assert np.isclose(model.J(model.fields_template(x=x, U=U),
+                              dict(periodic=True)).todense(),
+                      model.J(model_simp.fields_template(x=x, U=U),
+                              dict(periodic=True)).todense()).all()
+
+
+def test_jac_fdiff_approx():
+    model = Model("dxxU", "U")
+    model_approx = Model("dxxU", "U", fdiff_jac=True)
+    x = np.linspace(0, 2 * np.pi, 50, endpoint=False)
+    U = np.cos(x)
+    assert np.isclose(model.J(model.fields_template(x=x, U=U),
+                              dict(periodic=True)).todense(),
+                      model.J(model_approx.fields_template(x=x, U=U),
+                              dict(periodic=True)).todense()).all()
+
+
 @pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
 @pytest.mark.parametrize("periodic", [True, False])
 def test_model_api(compiler, periodic):
@@ -108,6 +130,26 @@ def test_model_api(compiler, periodic):
         Model('dxxxxxU', 'U')
     with pytest.raises(ValueError):
         Model('dxxx(dx)', 'U')
+    x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
+    U = np.cos(x * 2 * np.pi / 10)
+    s = np.zeros_like(x)
+    fields = model.fields_template(x=x, U=U, s=s)
+    parameters = dict(periodic=periodic, k=1)
+    model.F(fields, parameters)
+    model.J(fields, parameters)
+
+
+@pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
+@pytest.mark.parametrize("uporder", [1, 2, 3])
+@pytest.mark.parametrize("vel", ["1", "U"])
+@pytest.mark.parametrize("periodic", [True, False])
+def test_upwind(compiler, uporder, vel, periodic):
+    model = Model(differential_equations=["upwind(%s, U, %i)" %
+                                          (vel, uporder)],
+                  dependent_variables="U",
+                  parameters='k', help_functions='s',
+                  compiler=compiler)
+
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
     U = np.cos(x * 2 * np.pi / 10)
     s = np.zeros_like(x)
