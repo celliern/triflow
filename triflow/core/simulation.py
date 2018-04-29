@@ -258,8 +258,17 @@ class Simulation(object):
             self.container.merge()
 
     def run(self):
+        """Compute all steps of the simulation. Be careful: if tmax is not set,
+        this function will result in an infinit loop.
+
+        Returns
+        -------
+
+        (t, fields):
+            last time and result fields.
+        """
         for t, fields in self:
-            pass
+            logging.info("%s running: t: %g" % (self.id, t))
         try:
             return t, fields
         except UnboundLocalError:
@@ -341,6 +350,9 @@ Hook function
             wait until nbuffer data in the Queue before save on disk.
         timeout : int, optional
             wait until timeout since last flush before save on disk.
+        force : bool, optional (default False)
+            if True, remove the target folder if not empty. if False, raise an
+            error.
         """
         self._container = TriflowContainer("%s/%s" % (path, self.id)
                                            if path else None,
@@ -367,7 +379,7 @@ Hook function
         return Timer(self._last_running, self._total_running)
 
     def add_post_process(self, name, post_process, description=""):
-        """add a post-processing
+        """add a post-process
 
         Parameters
         ----------
@@ -390,6 +402,13 @@ Hook function
         self._pprocesses[-1].function(self)
 
     def remove_post_process(self, name):
+        """remove a post-process
+
+        Parameters
+        ----------
+        name : str
+            name of the post-process to remove.
+        """
         self._pprocesses = [post_process
                             for post_process in self._pprocesses
                             if post_process.name != name]

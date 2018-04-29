@@ -6,6 +6,19 @@ import numpy as np
 
 
 def theano_compiler(model):
+    """Take a triflow model and return optimized theano routines.
+
+    Parameters
+    ----------
+    model: triflow.Model:
+        Model to compile
+
+    Returns
+    -------
+    (theano function, theano_function):
+        Optimized routine that compute the evolution equations and their
+        jacobian matrix.
+    """
     from theano import tensor as T
     from theano.ifelse import ifelse
     import theano.sparse as ths
@@ -163,6 +176,19 @@ def theano_compiler(model):
 
 
 def numpy_compiler(model):
+    """Take a triflow model and return optimized numpy routines.
+
+    Parameters
+    ----------
+    model: triflow.Model:
+        Model to compile
+
+    Returns
+    -------
+    (numpy function, numpy function):
+        Optimized routine that compute the evolution equations and their
+        jacobian matrix.
+    """
     from scipy.sparse import csc_matrix
 
     def np_Min(args):
