@@ -34,7 +34,7 @@ def fields(heat_model):
 @pytest.fixture
 def simul(heat_model, fields):
     parameters = dict(periodic=True, k=1)
-    simul = Simulation(heat_model, fields, parameters,
+    simul = Simulation(heat_model, fields.copy(), parameters,
                        dt=.5, tmax=2, tol=1E-1,
                        id="test_triflow_containers")
     return simul
