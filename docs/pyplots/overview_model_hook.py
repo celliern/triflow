@@ -23,7 +23,7 @@ t = 0
 dt = 5E-1
 tmax = 2.5
 
-pl.plot(fields.x, fields.U, label=f't: {t:g}')
+pl.plot(fields.x, fields.U, label='t: %g' % t)
 
 scheme = schemes.RODASPR(model)
 
@@ -36,9 +36,9 @@ def dirichlet_condition(t, fields, pars):
 
 for i in it.count():
     t, fields = scheme(t, fields, dt, parameters, hook=dirichlet_condition)
-    print(f"iteration: {i}\t",
-          f"t: {t:g}", end='\r')
-    pl.plot(fields.x, fields.U, label=f't: {t:g}')
+    print("iteration: %i\t" % i,
+          "t: %g" % t, end='\r')
+    pl.plot(fields.x, fields.U, label='t: %g' % t)
     if t >= tmax:
         break
 

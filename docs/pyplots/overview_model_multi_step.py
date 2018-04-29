@@ -23,14 +23,14 @@ t = 0
 dt = 1E-2
 tmax = 5
 
-pl.plot(fields.x, fields.U, label=f't: {t:g}')
+pl.plot(fields.x, fields.U, label='t: %g' % t)
 
 scheme = schemes.Theta(model, theta=.5)  # Crank-Nicolson scheme
 
 for i in it.count():
     t, fields = scheme(t, fields, dt, parameters)
     if (i + 1) % 100 == 0:
-        pl.plot(fields.x, fields.U, label=f't: {t:g}')
+        pl.plot(fields.x, fields.U, label='t: %g' % t)
     if t >= tmax:
         break
 
