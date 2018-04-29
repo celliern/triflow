@@ -105,7 +105,7 @@ todo_include_todos = True
 # a list of builtin themes.
 
 html_theme = 'sphinx_rtd_theme'
-html_logo = '_static/logo_locie.svg'
+html_logo = '_static/images/triflow.png'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -116,6 +116,8 @@ html_logo = '_static/logo_locie.svg'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
+html_extra_path = ['index.html']
+
 html_static_path = ['_static']
 
 
