@@ -30,9 +30,9 @@
 			<div class="content">
 				<div class="inner">
 					<h1>Triflow</h1>
-					<p>PDE solver with natural equation language and symbolic discretization
-						written in python, powered by theano and released for free under the MIT
-						license.</p>
+					<p>PDE solver with natural equation language and symbolic discretization written in python, powered by theano and released
+						for free under the MIT license.
+					</p>
 				</div>
 			</div>
 			<nav>
@@ -72,12 +72,11 @@
 				<p>The main two parts of the library are:
 					<ul>
 						<li>symbolic tools defining the spatial discretisation, with boundary taking into account in a separated part</li>
-						<li>a fast temporal solver written in order to use the sparsity of the finite difference method to reduce the memory and CPU
-						usage during the solving</li>
+						<li>a fast temporal solver written in order to use the sparsity of the finite difference method to reduce the memory and
+							CPU usage during the solving</li>
 					</ul>
-					Moreover, extra tools are provided and the library is written
-					in a modular way, allowing an easy extension of these different parts (see the plug-in module of the library.) The library
-					fits well with an interactive usage (in a jupyter notebook).</p>
+					Moreover, extra tools are provided and the library is written in a modular way, allowing an easy extension of these different
+					parts (see the plug-in module of the library.) The library fits well with an interactive usage (in a jupyter notebook).</p>
 
 				<h3>News</h3>
 
@@ -86,15 +85,15 @@
 					<li>WARNING: some part of the API has changed</li>
 					<ul>
 						<li>Simulation signature has changed. t arg is now optional (with t=0) as default and physical_parameters is now parameters.</li>
-						<li>The displays have been completely rewritten, and the previous API is depreciated. Users are encouraged to modify their scripts
-						or to stick to the ^0.4 triflow versions.</li>
+						<li>The displays have been completely rewritten, and the previous API is depreciated. Users are encouraged to modify their
+							scripts or to stick to the ^0.4 triflow versions.</li>
 					</ul>
 					<li>move schemes from plugins to core</li>
 					<li>compilers: remove tensorflow, add numpy which is way slower but has no compilation overhead.</li>
 					<li>displays and containers are connected to the simulation via streamz.</li>
 					<li>add post-processing.</li>
-					<li>real-time display is now based on Holoviews. Backward compatibility for display is broken and users are encouraged to modify
-					their scripts or to stick to the ^0.4 triflow versions.</li>
+					<li>real-time display is now based on Holoviews. Backward compatibility for display is broken and users are encouraged to
+						modify their scripts or to stick to the ^0.4 triflow versions.</li>
 					<li>use poetry to manage dependencies</li>
 					<li>use travis for CI (continuous integration).</li>
 				</ul>
@@ -151,7 +150,9 @@
 			<!-- Contact -->
 			<article id="contact">
 				<h2 class="major">Contact</h2>
-				You can contact us via <a href="https://github.com/celliern">github</a> or by <a href="mailto:contact@nicolas-cellier.net">email</a>.
+				You can contact us via
+				<a href="https://github.com/celliern">github</a> or by
+				<a href="mailto:contact@nicolas-cellier.net">email</a>.
 
 				<ul class="icons">
 					<li>
@@ -413,6 +414,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 		<!-- Footer -->
 		<footer id="footer">
+			<p>Background:
+				<a href="https://en.wikipedia.org/wiki/Kuramoto%E2%80%93Sivashinsky_equation">Kuramoto–Sivashinsky equation</a> simulation made with Triflow.</p>
 			<p class="copyright">&copy; Nicolas Cellier. Design:
 				<a href="https://html5up.net">HTML5 UP</a>.</p>
 		</footer>
