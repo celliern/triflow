@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="python" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="python" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to triflow&#39;s documentation! &mdash; triflow 0.5.0rc documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> triflow
+          
+
+          
+            
+            <img src="_static/triflow.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribution guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">triflow</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">triflow</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to triflow's documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/doc.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="welcome-to-triflow-s-documentation">
+<h1>Welcome to triflow's documentation!<a class="headerlink" href="#welcome-to-triflow-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#external-requirements">External requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#via-pypi">via PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#via-github">via github</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#motivation">Motivation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#model-writing">Model writing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#optional-arguments-helpers-function-and-parameters">optional arguments : helpers function and parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#model-compilation">Model compilation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#fields-containers">Fields containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#numerical-scheme-temporal-solver">Numerical scheme, temporal solver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#hook-and-boundary-conditions">hook and boundary conditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#time-stepping">Time Stepping</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#simulation-class-higher-level-control">Simulation class: higher level control</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#probes">Probes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#container">Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html#displays">Displays</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="schemes.html">Temporal schemes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="schemes.html#list-of-available-schemes">List of available schemes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="schemes.html#schemes-theta">schemes.Theta</a></li>
+<li class="toctree-l3"><a class="reference internal" href="schemes.html#schemes-scipy-ode">schemes.scipy_ode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="schemes.html#schemes-row-general">schemes.ROW_general</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="schemes.html#internal-structure-of-a-scheme">Internal structure of a scheme</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/displays.html">Displays</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/displays.html#displays-objects">displays objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/displays.html#built-in-displays">built-in displays</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cookbook/displays.html#bokeh-displays">bokeh displays</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="cookbook/displays.html#field-display">field display</a></li>
+<li class="toctree-l4"><a class="reference internal" href="cookbook/displays.html#probe-display">probe display</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/advection_diffusion.html">The convection diffusion equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/burger_equation.html">The burger equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/burger_kdv_equation.html">The burger - kdv equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/wave_equation.html">Wave equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cookbook/so_wavy.html">Coupled burger’s-like equations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contribution guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#minor-contribution">Minor Contribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#make">Make</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#style-guide">Style guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#roadmap">Roadmap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">triflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="triflow.html">triflow package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="triflow.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="triflow.core.html">triflow.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="triflow.plugins.html">triflow.plugins package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="triflow.html#module-triflow">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.5.0rc',
+            LANGUAGE:'python',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
