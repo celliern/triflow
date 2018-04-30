@@ -5,12 +5,14 @@ Installation
 External requirements
 ---------------------
 
-This library is written for python >= 3.6, and I recommend to install it via Anaconda3_ : this is a full python distribution including a scientific-oriented IDE, the main scientific python libraries and the Jupyter project.
-
-The library is based on Theano, thus extra dependecies like fortran and C compiler are needed, see Theano install page for extra informations:
+This library is written for python >= 3.5, and the library is based on Theano,
+thus extra dependencies like fortran and C compiler are needed, see Theano
+install page for extra informations:
 
 http://deeplearning.net/software/theano/install.html
 
+Because of these compiled-based dependencies, it can be useful to use
+`Anaconda3`_ to install Theano.
 
 via PyPI
 ---------
@@ -27,7 +29,8 @@ will install the package and
 
 will update an old version of the library.
 
-use sudo if needed, and the user flag if you want to install it without the root privileges:
+use sudo if needed, and the user flag if you want to install it without the
+root privileges:
 
 .. code:: bash
 
@@ -36,7 +39,8 @@ use sudo if needed, and the user flag if you want to install it without the root
 via github
 -----------
 
-You can install the last version of the library using pip and the `github repository`_:
+You can install the last version of the library using pip and the
+`github repository`_:
 
 .. code:: bash
 
