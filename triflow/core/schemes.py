@@ -30,7 +30,7 @@ def null_hook(t, fields, pars):
     return fields, pars
 
 
-def time_stepping(scheme, tol=1E-2, ord=2, m=10, reject_factor=2):
+def time_stepping(scheme, tol=1E-1, ord=2, m=10, reject_factor=2):
     internal_dt = None
 
     def one_step(t, fields, dt, pars, hook):
@@ -275,7 +275,7 @@ class ROS3PRw(ROW_general):
           if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
-    def __init__(self, model, tol=1E-2, time_stepping=True,
+    def __init__(self, model, tol=1E-1, time_stepping=True,
                  max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
@@ -319,7 +319,7 @@ class ROS3PRL(ROW_general):
           if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
-    def __init__(self, model, tol=1E-2, time_stepping=True,
+    def __init__(self, model, tol=1E-1, time_stepping=True,
                  max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
@@ -372,7 +372,7 @@ class RODASPR(ROW_general):
           if True a new computation is done when the target time is exceeded, interpolation used otherwise.
       """  # noqa
 
-    def __init__(self, model, tol=1E-2, time_stepping=True,
+    def __init__(self, model, tol=1E-1, time_stepping=True,
                  max_iter=None, dt_min=None, recompute_target=True):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
