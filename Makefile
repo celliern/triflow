@@ -3,7 +3,7 @@
 poetry := poetry
 
 get_poetry:
-	pip install poetry
+	pip install poetry ${PIPARG}
 
 update:
 	$(poetry) update
