@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>triflow.plugins.signals &mdash; triflow 0.5.0rc documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="triflow 0.5.0rc documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../doc.html" class="icon icon-home"> triflow
+          
+
+          
+            
+            <img src="../../../_static/logo_locie.svg" class="logo" />
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schemes.html">Temporal schemes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook/displays.html">Displays</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute.html">Contribution guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">triflow</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../doc.html">triflow</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../doc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>triflow.plugins.signals</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for triflow.plugins.signals</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># coding=utf8</span>
+<span class="sd">&quot;&quot;&quot;This module provides a Signal class usefull for time variable boundary</span>
+<span class="sd">conditions.</span>
+
+<span class="sd">Available signals:</span>
+<span class="sd">    * ConstantSignal: just an offset signal</span>
+<span class="sd">    * ForcedSignal: a sinusoidal wave</span>
+<span class="sd">    * WhiteNoise: a noisy signal</span>
+<span class="sd">    * BrownNoise: a noisy signal with Fourrier modes set to 0 for a fraction of the available modes.</span>
+<span class="sd">&quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="k">import</span> <span class="n">convolve</span><span class="p">,</span> <span class="n">firwin</span><span class="p">,</span> <span class="n">periodogram</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">captureWarnings</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Signal"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.Signal">[docs]</a><span class="k">class</span> <span class="nc">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for signal object.</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      signal_period : float</span>
+<span class="sd">          period of the signal.</span>
+<span class="sd">      n : int, optional</span>
+<span class="sd">          sampling number of the signal.</span>
+<span class="sd">      **kwargs</span>
+<span class="sd">          extra arguments provided to the custom signal template.</span>
+
+<span class="sd">      Raises</span>
+<span class="sd">      ------</span>
+<span class="sd">      NotImplementedError</span>
+<span class="sd">      this class is not supposed to be used by the user. If initialized directly, it will raise a NotImplementedError.</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_period</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{(signal_period, n, kwargs)}&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_signal_period</span> <span class="o">=</span> <span class="n">signal_period</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_period</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">,</span> <span class="n">retstep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_template</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_signal_template</span><span class="p">(</span><span class="n">signal_period</span><span class="p">,</span>
+                                                        <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interp_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_wave_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">_template</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method has to be overrided by child class with a function which</span>
+<span class="sd">          return the signal as a numpy.ndarray. The __call__ method use this</span>
+<span class="sd">          array and an interpolation function to construct the signal.</span>
+
+<span class="sd">          Returns</span>
+<span class="sd">          -------</span>
+<span class="sd">          np.ndarray</span>
+<span class="sd">              template signal.</span>
+
+<span class="sd">          Raises</span>
+<span class="sd">          ------</span>
+<span class="sd">          NotImplementedError</span>
+<span class="sd">              is raised if the child class do not override this method.</span>
+
+<span class="sd">          Parameters</span>
+<span class="sd">          ----------</span>
+<span class="sd">          *args</span>
+<span class="sd">              Description</span>
+<span class="sd">          **kwargs</span>
+<span class="sd">              Description</span>
+<span class="sd">          &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_generate_wave_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+                                <span class="n">template</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interp_function</span><span class="p">(</span><span class="n">t</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">signal</span>
+
+<div class="viewcode-block" id="Signal.__call__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.Signal.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the signal value for the time t.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : float</span>
+<span class="sd">            time where the signal is evaluated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            amplitude of the signal a the time t.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wave</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.__add__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.Signal.__add__">[docs]</a>    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_signal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">          Parameters</span>
+<span class="sd">          ----------</span>
+<span class="sd">          other_signal : triflow.plugins.signal.Signal</span>
+<span class="sd">              second signal to which this one will be added.</span>
+
+<span class="sd">          Returns</span>
+<span class="sd">          -------</span>
+<span class="sd">          triflow.plugins.signal.AdditiveSignal</span>
+<span class="sd">              added signal.</span>
+
+<span class="sd">          &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+        <span class="k">return</span> <span class="n">AdditiveSignal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_signal</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Signal.__sub__"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.Signal.__sub__">[docs]</a>    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_signal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">          Parameters</span>
+<span class="sd">          ----------</span>
+<span class="sd">          other_signal : triflow.plugins.signal.Signal</span>
+<span class="sd">              second signal to which this one will be added.</span>
+
+<span class="sd">          Returns</span>
+<span class="sd">          -------</span>
+<span class="sd">          triflow.plugins.signal.AdditiveSignal</span>
+<span class="sd">              added signal.</span>
+
+<span class="sd">          &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+        <span class="k">return</span> <span class="n">AdditiveSignal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_signal</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fourrier_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">          Parameters</span>
+<span class="sd">          ----------</span>
+<span class="sd">          *args, **kwargs</span>
+<span class="sd">              extra arguments provided to the periodogram function.</span>
+
+<span class="sd">          Returns</span>
+<span class="sd">          -------</span>
+<span class="sd">          tuple of numpy.ndarray: fourrier modes and power density obtained with the scipy.signal.periodogram function.</span>
+<span class="sd">          &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+        <span class="n">freq</span><span class="p">,</span> <span class="n">ampl</span> <span class="o">=</span> <span class="n">periodogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_template</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">freq</span><span class="p">,</span> <span class="n">ampl</span></div>
+
+
+<div class="viewcode-block" id="AdditiveSignal"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.AdditiveSignal">[docs]</a><span class="k">class</span> <span class="nc">AdditiveSignal</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Additive signal. Proxy the different signals and sum their interpolation functions.</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_a</span><span class="p">,</span> <span class="n">signal_b</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">signal</span> <span class="ow">in</span> <span class="n">signal_a</span><span class="p">,</span> <span class="n">signal_b</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">AdditiveSignal</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span> <span class="o">+=</span> <span class="n">signal</span><span class="o">.</span><span class="n">_signal_list</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">signal</span><span class="p">,</span> <span class="n">op</span><span class="p">))</span>
+        <span class="n">signal_period</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">signal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_signal_period</span>
+                             <span class="k">for</span> <span class="n">signal</span> <span class="ow">in</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span><span class="p">])</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">signal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_size</span>
+                 <span class="k">for</span> <span class="n">signal</span> <span class="ow">in</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span><span class="p">])</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">signal_period</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_period</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_generate_wave_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+                                <span class="n">template</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">total_signal</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">signal</span><span class="p">,</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_list</span><span class="p">:</span>
+            <span class="n">total_signal</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">total_signal</span><span class="p">,</span>
+                              <span class="n">signal</span><span class="o">.</span><span class="n">_interp_function</span><span class="p">(</span><span class="n">t</span> <span class="o">%</span> <span class="n">signal</span><span class="o">.</span><span class="n">_time</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">total_signal</span></div>
+
+
+<div class="viewcode-block" id="ConstantSignal"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.ConstantSignal">[docs]</a><span class="k">class</span> <span class="nc">ConstantSignal</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Offset signal</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    offset : float</span>
+<span class="sd">        Value of the offset</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Set an offset to a white noise:</span>
+
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from triflow.plugins import signals</span>
+<span class="sd">    &gt;&gt;&gt; t = np.linspace(0, 1, 1000)</span>
+<span class="sd">    &gt;&gt;&gt; noisy = signals.GaussianWhiteNoise(frequency_sampling=200)</span>
+<span class="sd">    &gt;&gt;&gt; offset = signals.ConstantSignal(offset=1)</span>
+<span class="sd">    &gt;&gt;&gt; noise_with_offset = noisy + offset</span>
+<span class="sd">    &gt;&gt;&gt; noise_without_offset = noise_with_offset - offset</span>
+<span class="sd">    &gt;&gt;&gt; np.isclose(noisy(t), noise_without_offset(t)).all()</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                         <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_period</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                         <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">+</span> <span class="n">offset</span></div>
+
+
+<div class="viewcode-block" id="GaussianWhiteNoise"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.GaussianWhiteNoise">[docs]</a><span class="k">class</span> <span class="nc">GaussianWhiteNoise</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gaussian White noise signal, seeded with numpy.random.randn</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      frequency_sampling : float</span>
+<span class="sd">          Frequency sampling (the highest frequency of the white signal spectrum).</span>
+<span class="sd">      mean : int, optional, default 1000</span>
+<span class="sd">          sampling number of the signal.</span>
+<span class="sd">      n : int, optional, default 1000</span>
+<span class="sd">          sampling number of the signal.</span>
+<span class="sd">      seed : int or None, optional</span>
+<span class="sd">          pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</span>
+
+<span class="sd">      Examples</span>
+<span class="sd">      --------</span>
+<span class="sd">      Simple white signal with a 200 Hz frequency sampling:</span>
+
+<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
+<span class="sd">      &gt;&gt;&gt; signal = signals.GaussianWhiteNoise(frequency_sampling=200)</span>
+
+<span class="sd">      Forcing the pseudo-random-number generator seed for reproductible signal:</span>
+
+<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
+<span class="sd">      &gt;&gt;&gt; t = np.linspace(0, 10, 1000)</span>
+<span class="sd">      &gt;&gt;&gt; signal1 = signals.GaussianWhiteNoise(frequency_sampling=200, seed=50)</span>
+<span class="sd">      &gt;&gt;&gt; signal2 = signals.GaussianWhiteNoise(frequency_sampling=200, seed=50)</span>
+<span class="sd">      &gt;&gt;&gt; np.isclose(signal1(t) - signal2(t), 0).all()</span>
+<span class="sd">      True</span>
+<span class="sd">      &gt;&gt;&gt; signal3 = signals.GaussianWhiteNoise(frequency_sampling=200)</span>
+<span class="sd">      &gt;&gt;&gt; np.isclose(signal1(t) - signal3(t), 0).all()</span>
+<span class="sd">      False</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">frequency_sampling</span><span class="p">,</span>
+                 <span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">std</span><span class="o">=.</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">n</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">frequency_sampling</span><span class="p">),</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partial_signal_template</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_signal_template</span><span class="p">,</span>
+                                                <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">frequency_sampling</span><span class="p">),</span>
+                                                <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">signal_period</span><span class="p">,</span>
+                         <span class="n">mean</span><span class="p">,</span>
+                         <span class="n">std</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">randgen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">noisy</span> <span class="o">=</span> <span class="n">randgen</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">noisy</span>
+
+    <span class="k">def</span> <span class="nf">_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ids_iter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_period</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interp_function</span><span class="p">(</span><span class="n">t</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_period</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">id_iter</span> <span class="ow">in</span> <span class="n">ids_iter</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">interp_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">id_iter</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;noisy signal outside of the range &quot;</span>
+                              <span class="n">f</span><span class="s2">&quot;(iter </span><span class="si">{id_iter}</span><span class="s2">), reseed.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">id_iter</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_wave_function</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_partial_signal_template</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed</span> <span class="o">+</span> <span class="n">id_iter</span><span class="p">)))</span>
+                <span class="n">interp_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">id_iter</span><span class="p">]</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="n">ids_iter</span> <span class="o">==</span> <span class="n">id_iter</span>
+            <span class="n">signal</span><span class="p">[</span><span class="n">flag</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp_function</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">flag</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_period</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">signal</span></div>
+
+
+<div class="viewcode-block" id="GaussianBrownNoise"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.GaussianBrownNoise">[docs]</a><span class="k">class</span> <span class="nc">GaussianBrownNoise</span><span class="p">(</span><span class="n">GaussianWhiteNoise</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gaussian Brown noise signal, seeded with numpy.random.randn and with frequency cut at specific value.</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      frequency_sampling : float</span>
+<span class="sd">          Frequency sampling (the highest frequency of the white signal spectrum).</span>
+<span class="sd">      frequency_cut : float</span>
+<span class="sd">          Filter frequency cut.</span>
+<span class="sd">      mean : int, optional, default 1000</span>
+<span class="sd">          sampling number of the signal.</span>
+<span class="sd">      n : int, optional, default 1000</span>
+<span class="sd">          sampling number of the signal.</span>
+<span class="sd">      seed : int or None, optional</span>
+<span class="sd">          pseudo-random number generator seed. Signals with same signal_period, sampling number and seed will be similar.</span>
+
+<span class="sd">      Examples</span>
+<span class="sd">      --------</span>
+<span class="sd">      White signal with frequencies cut after 50 Hz:</span>
+
+<span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
+<span class="sd">      &gt;&gt;&gt; brown_signal = signals.GaussianBrownNoise(frequency_sampling=200,</span>
+<span class="sd">      ...                                           frequency_cut=50)</span>
+<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density = brown_signal.fourrier_spectrum</span>
+<span class="sd">      &gt;&gt;&gt; np.isclose(spectrum_density[spectrum_frequencies &gt; 50], 0, atol=1E-3).all()</span>
+<span class="sd">      True</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">frequency_sampling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">frequency_cut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">std</span><span class="o">=.</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">n</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">filter_std</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+                 <span class="n">filter_window_size</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GaussianWhiteNoise</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">frequency_sampling</span><span class="p">),</span>
+            <span class="n">frequency_sampling</span><span class="o">=</span><span class="n">frequency_sampling</span><span class="p">,</span> <span class="n">frequency_cut</span><span class="o">=</span><span class="n">frequency_cut</span><span class="p">,</span>
+            <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">filter_std</span><span class="o">=</span><span class="n">filter_std</span><span class="p">,</span>
+            <span class="n">filter_window_size</span><span class="o">=</span><span class="n">filter_window_size</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_partial_signal_template</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_signal_template</span><span class="p">,</span>
+            <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">frequency_sampling</span><span class="p">),</span>
+            <span class="n">frequency_sampling</span><span class="o">=</span><span class="n">frequency_sampling</span><span class="p">,</span>
+            <span class="n">frequency_cut</span><span class="o">=</span><span class="n">frequency_cut</span><span class="p">,</span>
+            <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">filter_std</span><span class="o">=</span><span class="n">filter_std</span><span class="p">,</span>
+            <span class="n">filter_window_size</span><span class="o">=</span><span class="n">filter_window_size</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">signal_period</span><span class="p">,</span>
+                         <span class="n">frequency_sampling</span><span class="p">,</span>
+                         <span class="n">frequency_cut</span><span class="p">,</span>
+                         <span class="n">mean</span><span class="p">,</span>
+                         <span class="n">std</span><span class="p">,</span>
+                         <span class="n">filter_std</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+                         <span class="n">filter_window_size</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">randgen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">noisy</span> <span class="o">=</span> <span class="n">randgen</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+        <span class="n">high_band_filter</span> <span class="o">=</span> <span class="n">firwin</span><span class="p">(</span><span class="n">filter_window_size</span><span class="p">,</span> <span class="n">frequency_cut</span><span class="p">,</span>
+                                  <span class="n">nyq</span><span class="o">=</span><span class="n">frequency_sampling</span><span class="p">,</span>
+                                  <span class="n">window</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">filter_std</span><span class="p">))</span>
+        <span class="n">filtered_noisy</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">noisy</span><span class="p">,</span> <span class="n">high_band_filter</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filtered_noisy</span></div>
+
+
+<div class="viewcode-block" id="SinusoidalSignal"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.signals.SinusoidalSignal">[docs]</a><span class="k">class</span> <span class="nc">SinusoidalSignal</span><span class="p">(</span><span class="n">Signal</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple sinusoidal signal</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      frequency : float</span>
+<span class="sd">          frequency of the signal</span>
+<span class="sd">      amplitude : float</span>
+<span class="sd">          amplitude of the signal</span>
+<span class="sd">      phase : float, optional</span>
+<span class="sd">          phase of the signam</span>
+<span class="sd">      n : int, optional</span>
+<span class="sd">          number of sample for 2 period of the signal</span>
+
+<span class="sd">      Examples</span>
+<span class="sd">      --------</span>
+<span class="sd">      We generate a 5 Hz signal with an amplitude of 0.5, and we check the signal.</span>
+
+<span class="sd">      &gt;&gt;&gt; from triflow.plugins import signals</span>
+<span class="sd">      &gt;&gt;&gt; t = np.linspace(0, 100, 10000)</span>
+<span class="sd">      &gt;&gt;&gt; signal = signals.SinusoidalSignal(frequency=5, amplitude=.5)</span>
+<span class="sd">      &gt;&gt;&gt; spectrum_frequencies, spectrum_density = signal.fourrier_spectrum</span>
+<span class="sd">      &gt;&gt;&gt; print(f&quot;Amplitude: {signal(t).max():g}&quot;)</span>
+<span class="sd">      Amplitude: 0.499999</span>
+<span class="sd">      &gt;&gt;&gt; print(f&quot;main mode: {spectrum_frequencies[spectrum_density.argmax()]:g} Hz&quot;)</span>
+<span class="sd">      main mode: 4.995 Hz</span>
+
+<span class="sd">      The class give a warning if the number of sample is too low and lead to aliasing. You can try it with</span>
+
+<span class="sd">      &gt;&gt;&gt; import logging</span>
+<span class="sd">      &gt;&gt;&gt; logger = logging.getLogger(&#39;triflow.plugins.signals&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; logger.handlers = []</span>
+<span class="sd">      &gt;&gt;&gt; logger.addHandler(logging.StreamHandler())</span>
+<span class="sd">      &gt;&gt;&gt; logger.setLevel(&#39;INFO&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; aliased_signal = signals.SinusoidalSignal(5, 1, n=30)</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">amplitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">phase</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+
+        <span class="c1"># we take a period = 2 sinusoidal period to avoid aliasing.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                         <span class="n">frequency</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="n">phase</span><span class="p">)</span>
+        <span class="n">freq</span><span class="p">,</span> <span class="n">ampl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourrier_spectrum</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ampl</span><span class="p">)],</span>
+                          <span class="n">rtol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1E-5</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;There is difference between &#39;</span>
+                          <span class="s1">&#39;chosen frequency (</span><span class="si">%.5e</span><span class="s1">) and &#39;</span>
+                          <span class="s1">&#39;main frequency of the fourrier &#39;</span>
+                          <span class="s1">&#39;spectrum (</span><span class="si">%.5e</span><span class="s1">)</span><span class="se">\n</span><span class="s1">&#39;</span>
+                          <span class="s1">&#39;They may have some aliasing, &#39;</span>
+                          <span class="s1">&#39;you should increase the number of samples &#39;</span>
+                          <span class="s1">&#39;(n parameter, see signal doc)&#39;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ampl</span><span class="p">)]))</span>
+
+    <span class="k">def</span> <span class="nf">_signal_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal_period</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>
+                         <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">amplitude</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span>
+                                  <span class="n">frequency</span> <span class="o">+</span> <span class="n">phase</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.5.0rc',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
