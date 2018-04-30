@@ -286,22 +286,116 @@ and we write the previous advection-diffusion example as:
 .. plot:: pyplots/overview_simulation_hook.py
    :include-source:
 
-Probes
-^^^^^^
+Post-processing
+^^^^^^^^^^^^^^^
+
+It is possible to add one or more post-process to the simulation. They will be
+called juste after the simulation step : if extra variables are add to
+the fields, they will be accessible for display and be saved on disk if a
+container is attached to the simulation.
 
 
 Container
 ^^^^^^^^^
 
+Containers are special data structure meant to keep the simulation history.
+They are in-memory by default, but can be persistent if a path is provided by
+the user.
+
+The two main attributes are :python3: `container.data` and
+:python3: `container.metadata`, which contains the content of the simulation
+fields for each timestep and the simulation parameters.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
+    >>> simul.attach_container()  # doctest: +SKIP
+    >>> simul.run()  # doctest: +SKIP
+    >>> simul.container  # doctest: +SKIP
+    path:   None
+    <xarray.Dataset>
+    Dimensions:  (t: 502, x: 100)
+    Coordinates:
+    * x        (x) float64 0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 ...
+    * t        (t) float64 0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 ...
+    Data variables:
+        U        (t, x) float64 1.0 0.9511 0.809 0.5878 0.309 6.123e-17 -0.309 ...
+    Attributes:
+        c:         0.03
+        k:         0.001
+        periodic:  1
+
+If a persistent container is requested, the data live in
+:python3: `path / simulation.id / "data.nc"` and the metadata in
+:python3: `path / simulation.id / "metadata.yml"`. They can be easily imported
+with :python3: `trf.retrieve_container("path/to/container/folder")`.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
+    >>> simul.attach_container(my_directory)  # doctest: +SKIP
+    >>> simul.run()  # doctest: +SKIP
+    >>> trf.retrieve_container("%s/%s" % (my_directory, simul.id))  # doctest: +SKIP
+
 
 Displays
 ^^^^^^^^
 
+Triflow allows real-time display of the simulations. It rely on Holoviews_ with
+Bokeh_ if the user is within a jupyter lab or notebook, or  matplotlib_ if
+it run on a non-interactive way.
+
+For an interactive usage, see `this beautiful example`_.
+
+If it's for a non-interactive usage, triflow can save the plots on disk for
+each timestep.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
+    >>> trf.display_fields(simul, on_disk="plot/output/")
+    >>> simul.run()  # doctest: +SKIP
+
+
+Post-processing
+^^^^^^^^^^^^^^^
+
+It is possible to add one or more post-process to the simulation. They will be
+called juste after the simulation step : if extra variables are add to
+the fields, they will be accessible for display and be saved on disk if a
+container is attached to the simulation.
+
+.. code-block:: python3
+
+    >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
+    >>> def compute_gradient(simul):
+    ...     simul.fields["grad"] = "x", (np.gradient(simul.fields["U"]) /
+                                        np.gradient(simul.fields["x"]))
+    >>> simul.add_post_process("grad", compute_gradient)
+    >>> simul.attach_container()
+    >>> trf.display_fields(simul, "grad")
+    >>> simul.run()  # doctest: +SKIP
+    >>> simul.container.data["grad"]  # doctest: +SKIP
+
+    <xarray.DataArray 'grad' (t: 21, x: 200)>
+    array([[-2.462332, -4.894348, -9.668182, ..., 14.203952,  9.668182,  7.326365],
+        [ 0.435707, -1.791205, -6.19556 , ..., 15.182621, 11.249958,  9.201766],
+        [ 2.808271,  0.787149, -3.239902, ..., 15.731606, 12.360189, 10.587481],
+        ...,
+        [ 5.326002,  5.309953,  5.212679, ...,  4.415704,  4.823781,  4.999205],
+        [ 4.787014,  4.808028,  4.790602, ...,  3.732835,  4.162767,  4.35328 ],
+        [ 4.264091,  4.315188,  4.363626, ...,  3.109441,  3.550107,  3.749816]])
+    Coordinates:
+    * x        (x) float64 0.0 0.005 0.01 0.015 0.02 0.025 0.03 0.035 0.04 ...
+    * t        (t) float64 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 ...
 
 .. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html
 .. _NumPy: http://www.sympy.org/en/index.html
 .. _Bokeh: https://bokeh.pydata.org/en/latest/
+.. _Holoviews: https://holoviews.org/
+.. _`this beautiful example`: https://
+.. _matplotlib: https://matplotlib.org/
 .. _xarray: http://xarray.pydata.org/en/stable/
 .. _Dataset: http://xarray.pydata.org/en/stable/generated/xarray.Dataset.html?highlight=dataset
 .. _scipy sparse column matrix format: https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.sparse.csc_matrix.html

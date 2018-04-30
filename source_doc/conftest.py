@@ -1,6 +1,7 @@
 # content of conftest.py
 import numpy
 import pytest
+
 import triflow
 
 
