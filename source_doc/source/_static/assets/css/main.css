@@ -1592,21 +1592,7 @@
 		body.is-loading #footer {
 			opacity: 0;
 		}
-	.img-wrap {
-	width: 200px;
-	height: 150px;
-	position: relative;
-	display: inline-block;
-	overflow: hidden;
-	margin: 0;
-	}
 
-	div > img {
-	display: block;
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	min-height: 100%;
-	min-width: 100%;
-	transform: translate(-50%, -50%);
+	.img-wrap {
+	max-width: 80%
 	}
