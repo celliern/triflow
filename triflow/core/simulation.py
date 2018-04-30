@@ -332,15 +332,16 @@ Hook function
                                       else "None"))
         return repr
 
-    def attach_container(self, path="output/", save="all",
+    def attach_container(self, path=None, save="all",
                          mode="w", nbuffer=50, force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
         Parameters
         ----------
-        path : str
-            path for the container
+        path : str or None (default: None)
+            path for the container. If None (the default), the data lives only
+            in memory (and are available with `simulation.container`)
         mode : str, optional
             "a" or "w" (default "w")
         save : str, optional
