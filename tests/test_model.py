@@ -7,7 +7,7 @@ import pytest
 from path import tempdir
 
 from triflow import Model
-from triflow.core.compilers import theano_compiler, numpy_compiler
+from triflow.core.compilers import numpy_compiler, theano_compiler
 
 
 @pytest.fixture

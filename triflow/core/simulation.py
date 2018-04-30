@@ -4,16 +4,16 @@
 import inspect
 import logging
 import pprint
-from collections import namedtuple
-import warnings
-
 import time
-import streamz
+import warnings
+from collections import namedtuple
+
 import pendulum
+import streamz
 from coolname import generate_slug
+
 from . import schemes
 from ..plugins.container import TriflowContainer
-
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)

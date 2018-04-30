@@ -2,20 +2,21 @@
 # coding=utf8
 
 import logging
+import multiprocessing as mp
+import os
 import warnings
 from collections import deque
 from uuid import uuid4
-import multiprocessing as mp
 
-from path import Path
 import coolname
-from holoviews import Curve, DynamicMap, Layout, streams
-import os
 import matplotlib as mpl
+from holoviews import Curve, DynamicMap, Layout, streams
+from holoviews.plotting.mpl import MPLRenderer  # noqa
+from path import Path
+
 if os.environ.get('DISPLAY', '') == '':
     print('no display found. Using non-interactive Agg backend')
     mpl.use('Agg')
-from holoviews.plotting.mpl import MPLRenderer  # noqa
 
 log = logging.getLogger(__name__)
 log.handlers = []

@@ -2,14 +2,14 @@
 # coding=utf8
 
 import copy
-import pickle
 import json
+import pickle
 
 import numpy as np
 import pytest
-from path import Path, tempdir
 import xarray as xr
 import yaml
+from path import Path, tempdir
 
 from triflow import Container, Model, Simulation, retrieve_container
 

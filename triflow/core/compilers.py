@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from sympy import lambdify
 import numpy as np
+from sympy import lambdify
 
 
 def theano_compiler(model):

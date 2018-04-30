@@ -9,11 +9,12 @@ from pickle import dump, load
 from pprint import pformat
 
 import numpy as np
-from sympy import (Derivative, Function, Symbol,
-                   SympifyError, symbols, sympify, Max, Min)
+from sympy import (Derivative, Function, Max, Min, Symbol, SympifyError,
+                   symbols, sympify)
+
+from .compilers import numpy_compiler, theano_compiler
 from .fields import BaseFields
 from .routines import F_Routine, J_Routine
-from .compilers import theano_compiler, numpy_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)

@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import functools as ft
+
 import numpy as np
 import pytest
 
-from triflow import Model, Simulation
-from triflow import schemes
+from triflow import Model, Simulation, schemes
 
 
 @pytest.fixture

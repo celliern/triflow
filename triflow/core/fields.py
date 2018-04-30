@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding=utf8
 
+from copy import copy, deepcopy
+
 import numpy as np
 import pandas as pd
 from xarray import Dataset
-from copy import copy, deepcopy
 
 
 def reduce_fields(coords,

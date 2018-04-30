@@ -12,13 +12,14 @@ install:
 	$(poetry) install
 
 test: dev
+	rm -Rf **/__pycache__
 	$(poetry) run pytest --cov=triflow --cov-report=html -p no:warnings
 
 lint: dev
 	$(poetry) run pylama
 
 isort: dev
-	$(poetry) run "sh -c 'isort --recursive . '"
+	$(poetry) run isort --recursive .
 
 dev: get_poetry install
 	$(poetry) run pip install -e .

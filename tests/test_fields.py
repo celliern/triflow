@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 import pytest
 from path import Path
-from pandas.io.clipboard.exceptions import PyperclipException
 
 from triflow import Model
 from triflow.core.fields import BaseFields
@@ -82,8 +81,6 @@ def test_fields_exports(fields_dict):
     fields = BaseFields.factory1D(["U1", "U2"], ["s"])(**fields_dict)
     fields.to_csv("/tmp/test_triflow.csv")
     assert Path("/tmp/test_triflow.csv").exists()
-    with pytest.raises(PyperclipException):
-        fields.to_clipboard()
 
 
 def test_fields2D_exports(fields2D_dict):

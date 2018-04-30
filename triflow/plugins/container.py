@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import json
 import logging
 import warnings
-from collections import namedtuple, deque
+from collections import deque, namedtuple
 from uuid import uuid1
 
 import yaml
-import json
 from path import Path
 from streamz import collect
 from xarray import concat, open_dataset, open_mfdataset
