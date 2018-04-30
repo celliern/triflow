@@ -9,7 +9,6 @@ update:
 	$(poetry) update
 
 install:
-	echo $(poetry)
 	$(poetry) install
 
 test: dev
