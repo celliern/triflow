@@ -233,9 +233,6 @@ class Simulation(object):
 
         try:
             while True:
-                if self.tmax and (self.t >= self.tmax):
-                    self._end_simulation()
-                    return
                 t, fields, pars = self._compute_one_step(t, fields, pars)
 
                 self.i += 1
@@ -245,7 +242,9 @@ class Simulation(object):
                 for pprocess in self.post_processes:
                     pprocess.function(self)
                 self.stream.emit(self)
-
+                if self.tmax and (self.t >= self.tmax):
+                    self._end_simulation()
+                    return
                 yield self.t, self.fields
 
         except RuntimeError:
