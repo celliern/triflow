@@ -9,14 +9,9 @@ from collections import deque
 from uuid import uuid4
 
 import coolname
-import matplotlib as mpl
 from holoviews import Curve, DynamicMap, Layout, streams
-from holoviews.plotting.mpl import MPLRenderer  # noqa
-from path import Path
+from path import Path  # noqa
 
-if os.environ.get('DISPLAY', '') == '':
-    print('no display found. Using non-interactive Agg backend')
-    mpl.use('Agg')
 
 log = logging.getLogger(__name__)
 log.handlers = []
@@ -27,11 +22,20 @@ def is_interactive():
     import __main__ as main
     return not hasattr(main, '__file__')
 
+def manage_display_import():
+    import matplotlib as mpl
+    if os.environ.get('DISPLAY', '') == '':
+        log.info('no display found. Using non-interactive Agg backend')
+        mpl.use('Agg')
 
-INTERACTIVE = is_interactive()
-if INTERACTIVE:
-    from holoviews import notebook_extension
-    notebook_extension("bokeh")
+    from holoviews.plotting.mpl import MPLRenderer  # noqa
+
+    if is_interactive():
+        from holoviews import notebook_extension
+        notebook_extension("bokeh")
+
+
+manage_display_import()
 
 
 class TriflowDisplay:
