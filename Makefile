@@ -22,6 +22,9 @@ test: clean dev
 lint: dev
 	$(poetry) run pylama
 
+notebook: dev
+	$(poetry) run jupyter notebook
+
 isort: dev
 	$(poetry) run isort --recursive .
 
@@ -38,7 +41,7 @@ publish: check build
 
 doc:
 	$(poetry) run pip install ipython jupyter-contrib-nbextensions
-	$(poetry) run sphinx-apidoc -f -o source_doc/source triflow/
+	$(poetry) run sphinx-apidoc -f -H "Module API" -o source_doc/source triflow/
 	$(poetry) run $(MAKE) -C source_doc notebooks
 	$(poetry) run $(MAKE) -C source_doc epub
 	$(poetry) run $(MAKE) -C source_doc latexpdf
