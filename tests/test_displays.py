@@ -35,14 +35,13 @@ def simul(heat_model):
 
 
 def test_display_fields(simul):
-    display_fields(simul,
-                   on_disk="test", on_disk_folder="/tmp/triflow_test_fields")
+    display_fields(simul)
     simul.run()
 
 
 def test_display_probes(simul):
-    display_probe(simul, function=lambda simul: simul.timer.total,
-                  on_disk="test", on_disk_folder="/tmp/triflow_test_probes")
+    with path.tempdir() as d:
+        display_probe(simul, function=lambda simul: simul.timer.total)
     simul.run()
 
 
@@ -58,13 +57,24 @@ def test_display_add(simul):
 
 @pytest.mark.parametrize("fmt",
                          ["png", "svg", "pdf"])
-def test_display_on_disk(simul, fmt):
-    display = display_fields(simul, on_disk="test",
-                             on_disk_folder="/tmp/triflow_test",
-                             fmt=fmt)
-    simul.run()
-    [process.join() for process in display._writers]
-    assert len(path.Path("/tmp/triflow_test/").glob("test_*.%s" % fmt)) == 5
+def test_display_fields_on_disk(simul, fmt):
+    with path.tempdir() as d:
+        display = display_fields(simul, on_disk=d, fmt=fmt)
+        simul.run()
+        [process.join() for process in display._writers]
+        assert len(d.glob("*.%s" % fmt)) == 5
+
+
+@pytest.mark.parametrize("fmt",
+                         ["png", "svg", "pdf"])
+def test_display_probles_on_disk(simul, fmt):
+    with path.tempdir() as d:
+        display = display_probe(simul,
+                                function=lambda simul: simul.timer.total,
+                                on_disk=d, fmt=fmt)
+        simul.run()
+        [process.join() for process in display._writers]
+        assert len(d.glob("*.%s" % fmt)) == 5
 
 
 def test_display_api(simul):
