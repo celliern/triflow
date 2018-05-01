@@ -1,29 +1,21 @@
-triflow\.plugins package
-========================
+triflow.plugins package
+=======================
 
 Submodules
 ----------
 
-triflow\.plugins\.displays module
----------------------------------
+triflow.plugins.container module
+--------------------------------
+
+.. automodule:: triflow.plugins.container
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+triflow.plugins.displays module
+-------------------------------
 
 .. automodule:: triflow.plugins.displays
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-triflow\.plugins\.schemes module
---------------------------------
-
-.. automodule:: triflow.plugins.schemes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-triflow\.plugins\.signals module
---------------------------------
-
-.. automodule:: triflow.plugins.signals
     :members:
     :undoc-members:
     :show-inheritance:
