@@ -23,7 +23,7 @@ lint: dev
 	$(poetry) run pylama
 
 notebook: dev
-	$(poetry) run jupyter notebook
+	$(poetry) run jupyter notebook --notebook-dir=examples/notebooks
 
 isort: dev
 	$(poetry) run isort --recursive .
