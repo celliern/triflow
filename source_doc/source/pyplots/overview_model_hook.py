@@ -6,6 +6,8 @@ import pylab as pl
 
 from triflow import Model, schemes
 
+pl.style.use("./publication.mplstyle")
+
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])
 
@@ -39,5 +41,4 @@ for i in it.count():
 
 pl.xlim(0, 1)
 legend = pl.legend(loc='best')
-pl.title(path.Path(".").abspath())
 pl.show()

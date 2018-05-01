@@ -1,15 +1,11 @@
 import itertools as it
 
 import numpy as np
-import path
 import pylab as pl
 
 from triflow import Model, schemes
 
-matplotlib.use('Agg')  # noqa
-import pylab as pl  # isort:skip
-
-pl.style.use('seaborn-whitegrid')
+pl.style.use("./publication.mplstyle")
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])

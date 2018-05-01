@@ -1,10 +1,9 @@
-import itertools as it
-
 import numpy as np
-import path
 import pylab as pl
 
 from triflow import Model, schemes
+
+pl.style.use("./publication.mplstyle")
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])

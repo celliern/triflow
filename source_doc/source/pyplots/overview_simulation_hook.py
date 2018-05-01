@@ -4,9 +4,9 @@
 import numpy as np
 import pylab as pl
 
-from triflow import Model
+from triflow import Model, Simulation
 
-pl.style.use('seaborn-whitegrid')
+pl.style.use("./publication.mplstyle")
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])
@@ -30,7 +30,7 @@ def dirichlet_condition(t, fields, pars):
     return fields, pars
 
 
-simul = Simulation(model, t, fields, parameters, dt,
+simul = Simulation(model, fields, parameters, dt,
                    hook=dirichlet_condition, tmax=tmax)
 
 for i, (t, fields) in enumerate(simul):
