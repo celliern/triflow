@@ -55,11 +55,11 @@
 
 
 
-.. image:: test_dropplet_spread_files/test_dropplet_spread_2_2.png
+.. image:: dropplet_spread_files/dropplet_spread_2_2.png
 
 
 
-.. image:: test_dropplet_spread_files/test_dropplet_spread_2_3.png
+.. image:: dropplet_spread_files/dropplet_spread_2_3.png
 
 
 .. code:: ipython3

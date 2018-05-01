@@ -29,7 +29,7 @@
 
 
 
-.. image:: test_kuramoto_files/test_kuramoto_2_0.png
+.. image:: kuramoto_files/kuramoto_2_0.png
 
 
 .. code:: ipython3
@@ -79,7 +79,7 @@
 
 
 
-.. image:: test_kuramoto_files/test_kuramoto_5_0.png
+.. image:: kuramoto_files/kuramoto_5_0.png
 
 
 .. code:: ipython3
