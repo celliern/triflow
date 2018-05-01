@@ -275,7 +275,7 @@ class Simulation(object):
         (t, fields):
             last time and result fields.
         """
-        total_iter = int(self.tmax // self.user_dt + 1 if self.tmax else None)
+        total_iter = int(self.tmax // self.user_dt if self.tmax else None)
         log = logging.info if verbose else logging.debug
         if progress:
             with tqdm(initial=(self.i if self.i < total_iter else total_iter),
