@@ -944,6 +944,15 @@ python-versions = ">= 2.7, !=3.0.*, !=3.1.*, !=3.2.*, != 3.3.*"
 platform = "*"
 
 [[package]]
+name = "tqdm"
+version = "4.23.1"
+description = "Fast, Extensible Progress Meter"
+category = "main"
+optional = false
+python-versions = "*"
+platform = "any"
+
+[[package]]
 name = "traitlets"
 version = "4.3.2"
 description = "Traitlets Python config system"
@@ -1024,7 +1033,7 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "db8b1bb0967aa673f587b148eec76849d8d4cb85eb01b5ebe51341df0911f109"
+content-hash = "f12e1333ce996e9b5318cc190446b5e33b408cdd310a9351107606296d1aa466"
 
 [metadata.hashes]
 alabaster = [ "2eef172f44e8d301d25aff8068fddd65f767a3f04b5f15b0f4922f113aa1c732", "37cdcb9e9954ed60912ebc1ca12a9d12178c26637abdf124e3cde2341c257fe0",]
@@ -1114,6 +1123,7 @@ testpath = [ "039fa6a6c9fd3488f8336d23aebbfead5fa602c4a47d49d83845f55a595ec1b4",
 theano = [ "88d8aba1fe2b6b75eacf455d01bc7e31e838c5a0fb8c13dde2d9472495ff4662",]
 toolz = [ "929f0a7ea7f61c178bd951bdae93920515d3fbdbafc8e6caf82d752b9b3b31c9",]
 tornado = [ "88ce0282cce70df9045e515f578c78f1ebc35dcabe1d70f800c3583ebda7f5f5", "ba9fbb249ac5390bff8a1d6aa4b844fd400701069bda7d2e380dfe2217895101", "408d129e9d13d3c55aa73f8084aa97d5f90ed84132e38d6932e63a67d5bec563", "c050089173c2e9272244bccfb6a8615fb9e53b79420a5551acfa76094ecc3111", "1b83d5c10550f2653380b4c77331d6f8850f287c4f67d7ce1e1c639d9222fbc7",]
+tqdm = [ "22c760d05b2eb6e96a91ad7ed1b03c9c97e6256fb7716410c27c2cb3265a5913", "d7bfa112a55290a5e2d0c3263a09b17b24240686fbf20d1ef7c5e8edfbb71ad0",]
 traitlets = [ "c6cb5e6f57c5a9bdaa40fa71ce7b4af30298fbab9ece9815b5d995ab6217c7d9", "9c4bd2d267b7153df9152698efb1050a5d84982d3384a37b2c1f7723ba3e7835",]
 typing = [ "b2c689d54e1144bbcfd191b0832980a21c2dbcf7b5ff7a66248a60c90e951eb8", "3a887b021a77b292e151afb75323dea88a7bc1b3dfa92176cff8e44c8b68bddf", "d400a9344254803a2368533e4533a4200d21eb7b6b729c173bc38201a74db3f2",]
 tzlocal = [ "4ebeb848845ac898da6519b9b31879cf13b6626f7184c496037b818e238f2c4e",]

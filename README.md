@@ -155,7 +155,8 @@ v0.5.0:
 - displays and containers are connected to the simulation via `streamz`
 - add post-processing.
 - real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility for display is broken and users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
-- [TODO]: use poetry to manage dependencies.
+- use poetry to manage dependencies.
+- use `tqdm` to display simulation update.
 
 ### ROADMAP / TODO LIST
 

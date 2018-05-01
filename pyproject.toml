@@ -37,6 +37,7 @@ coolname = "^1.0"
 "path.py" = "^11.0"
 pendulum = "^1.5"
 dask = "^0.17.2"
+tqdm = "^4.23"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0"

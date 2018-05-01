@@ -8,16 +8,25 @@ import time
 import warnings
 from collections import namedtuple
 
-from numpy import isclose
 import pendulum
 import streamz
+import tqdm
 from coolname import generate_slug
+from numpy import isclose
 
 from . import schemes
 from ..plugins.container import TriflowContainer
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+
+def is_interactive():
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
+
+tqdm = tqdm.tqdm_notebook if is_interactive() else tqdm.tqdm
 
 
 class Timer:
@@ -169,7 +178,7 @@ class Simulation(object):
         self.parameters = parameters
         self.fields = model.fields_template(**fields)
         self.t = t
-        self.dt = dt
+        self.user_dt = self.dt = dt
         self.tmax = tmax
         self.i = 0
         self._stream = streamz.Stream()
@@ -256,7 +265,7 @@ class Simulation(object):
             self.container.flush()
             self.container.merge()
 
-    def run(self):
+    def run(self, progress=True, verbose=False):
         """Compute all steps of the simulation. Be careful: if tmax is not set,
         this function will result in an infinit loop.
 
@@ -266,12 +275,24 @@ class Simulation(object):
         (t, fields):
             last time and result fields.
         """
-        for t, fields in self:
-            logging.info("%s running: t: %g" % (self.id, t))
-        try:
-            return t, fields
-        except UnboundLocalError:
-            warnings.warn("Simulation already ended")
+        total_iter = int(self.tmax // self.user_dt + 1 if self.tmax else None)
+        log = logging.info if verbose else logging.debug
+        if progress:
+            with tqdm(initial=(self.i if self.i < total_iter else total_iter),
+                      total=total_iter) as pbar:
+                for t, fields in self:
+                    pbar.update(1)
+                    log("%s running: t: %g" % (self.id, t))
+                try:
+                    return t, fields
+                except UnboundLocalError:
+                    warnings.warn("Simulation already ended")
+            for t, fields in self:
+                log("%s running: t: %g" % (self.id, t))
+            try:
+                return t, fields
+            except UnboundLocalError:
+                warnings.warn("Simulation already ended")
 
     def __repr__(self):
         repr = """{simulation_name:=^30}
