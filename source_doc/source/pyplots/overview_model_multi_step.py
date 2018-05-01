@@ -1,7 +1,8 @@
 import itertools as it
 
-import matplotlib
 import numpy as np
+import path
+import pylab as pl
 
 from triflow import Model, schemes
 

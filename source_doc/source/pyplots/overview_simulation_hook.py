@@ -1,10 +1,10 @@
-import matplotlib
+#!/usr/bin/env python
+# coding=utf8
+
 import numpy as np
+import pylab as pl
 
-from triflow import Model, Simulation
-
-matplotlib.use('Agg')  # noqa
-import pylab as pl  # isort:skip
+from triflow import Model
 
 pl.style.use('seaborn-whitegrid')
 
