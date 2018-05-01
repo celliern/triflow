@@ -1,12 +1,4 @@
-#!/usr/bin/env python
-# coding=utf8
-
-import numpy as np
-import pylab as pl
-
 from triflow import Model, Simulation
-
-pl.style.use("./publication.mplstyle")
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])
