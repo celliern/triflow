@@ -13,7 +13,6 @@ Welcome to triflow's documentation!
    installation
    overview
    schemes
-   cookbook/displays
    cookbook
    contribute
    modules
