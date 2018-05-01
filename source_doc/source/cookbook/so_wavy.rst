@@ -4,16 +4,10 @@ Coupled burger’s-like equations
 
 .. code:: ipython3
 
-    import functools as ft
-    import multiprocessing as mp
-    import logging
-    
     import numpy as np
-    from scipy.signal import gaussian
-    
     import pylab as pl
-    
-    from triflow import Model, Simulation
+    import triflow as trf
+    from scipy.signal import gaussian
     
     %matplotlib inline
 
@@ -231,8 +225,9 @@ We initialize the model with a coupled burger-like system of equations
 
 .. code:: ipython3
 
-    model = Model(["k * dxxU - c * U * dxV", "k * dxxV - c * V * dxU"],
-                   ["U", "V"], ["k", "c"])
+    model = trf.Model(["k * dxxU - c * U * dxV",
+                       "k * dxxV - c * V * dxU"],
+                      ["U", "V"], ["k", "c"])
 
 We discretize our spatial domain. ``retstep=True`` ask to return the
 spatial step. We want periodic condition, so ``endpoint=True`` exclude
@@ -262,59 +257,57 @@ We initialize the simulation
 
 .. code:: ipython3
 
-    t = 0
-    simulation = Simulation(model, fields, parameters,
-                            dt=.1, tmax=4, tol=1E-2)
+    %%opts Curve [show_grid=True, width=800] {+framewise}
+    simulation = trf.Simulation(model, fields, parameters,
+                                dt=.1, tmax=4, tol=1E-2)
+    simulation = trf.Simulation(model, fields, parameters, dt=.1, tmax=30)
+    container = simulation.attach_container()
+    trf.display_fields(simulation)
+
+
+
+
+.. raw:: html
+
+    <div id='f38afaa7-adf5-465d-8426-bca0c33a1727' style='display: table; margin: 0 auto;'>
+        <div id="fig_f38afaa7-adf5-465d-8426-bca0c33a1727">
+          
+    <div class="bk-root">
+        <div class="bk-plotdiv" id="ba06f053-693f-4219-aef1-423fad820c78"></div>
+    </div>
+        </div>
+        </div>
+
+
 
 We iterate on the simulation until the end.
 
 .. code:: ipython3
 
-    pl.figure(figsize=(20, 12))
-    for i, (t, fields) in enumerate(simulation):
-        if i % 2 == 0:
-            pl.fill_between(fields.x, fields.U + .1 * (2 * i),
-                            fields.U.min() - 1,
-                            color='darkred', zorder=-4 * i, alpha=.7)
-            pl.plot(fields.x, fields.U + .1 * (2 * i), 
-                    color='white',
-                    zorder=-4 * i + 1)
-            pl.fill_between(fields.x, fields.V + .1 * (2 * i + 1),
-                            fields.V.min() - 1,
-                            color='lightsteelblue', zorder=-4 * i + 2, alpha=.7)
-            pl.plot(fields.x, fields.V + .1 * (2 * i + 1), 
-                    color='white',
-                    zorder=-4 * i + 3)
-        print(f"t: {t:g}".ljust(80), end='\r')
-    pl.xlim(0, fields.x.max())
-    pl.grid("off")
-    pl.axis("off")
-
-
-.. parsed-literal::
-
-    t: 4                                                                            
-
-.. parsed-literal::
-
-    /home/nicolas/.cache/pypoetry/virtualenvs/triflow-py3.6/lib/python3.6/site-packages/matplotlib/cbook/deprecation.py:107: MatplotlibDeprecationWarning: Passing one of 'on', 'true', 'off', 'false' as a boolean is deprecated; use an actual boolean (True/False) instead.
-      warnings.warn(message, mplDeprecation, stacklevel=1)
-
+    result = simulation.run()
 
 
 
 .. parsed-literal::
 
-    (0.0, 99.80000000000001, -1.0752450034552148, 9.432868328691955)
-
+    HBox(children=(IntProgress(value=0, max=300), HTML(value='')))
 
 
 .. parsed-literal::
 
-    /home/nicolas/.cache/pypoetry/virtualenvs/triflow-py3.6/lib/python3.6/site-packages/matplotlib/font_manager.py:1328: UserWarning: findfont: Font family ['serif'] not found. Falling back to DejaVu Sans
-      (prop.get_family(), self.defaultFamily[fontext]))
+    
+
+
+.. code:: ipython3
+
+    fig, axs = pl.subplots(1, 2, figsize=(12, 5),
+                           sharex="all", sharey="all")
+    pl.sca(axs[0])
+    container.data.U.plot()
+    pl.sca(axs[1])
+    container.data.V.plot();
 
 
 
-.. image:: so_wavy_files/so_wavy_13_4.png
+.. image:: so_wavy_files/so_wavy_14_0.png
 
