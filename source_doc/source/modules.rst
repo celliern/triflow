@@ -1,5 +1,5 @@
-triflow
-=======
+Module API
+==========
 
 .. toctree::
    :maxdepth: 4
