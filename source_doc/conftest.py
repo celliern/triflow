@@ -10,6 +10,7 @@ import path
 def add_np(doctest_namespace):
     doctest_namespace['np'] = numpy
 
+
 @pytest.fixture(autouse=True)
 def add_triflow(doctest_namespace):
     doctest_namespace['trf'] = triflow
