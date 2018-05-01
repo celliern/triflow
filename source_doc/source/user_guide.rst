@@ -11,9 +11,7 @@ difference discretisation, with fast temporal solvers.
 The main two parts of the library are:
 
 * symbolic tools defining the spatial discretisation.
-* a fast temporal solver written to use the sparsity
-    of the finite difference method to reduce the memory
-    and CPU usage during the computation. Theano_ make this part easy.
+* a fast temporal solver written to use the sparsity of the finite difference method to reduce the memory and CPU usage during the computation. Theano_ make this part easy.
 
 Moreover, we provide extra tools and we write the library in a
 modular way, allowing an easy extension of these different
@@ -94,10 +92,8 @@ the second the name of the dependant variables.
 It can take two optional arguments :
 
 
-* parameters, a list of parameters name. They can be scalar or vector with the
-    same dimension as the dependant variables.
-* help_functions, a list of outside variables : they have to be vector
-    with the same dimension of the dependant variable.
+* parameters, a list of parameters name. They can be scalar or vector with the same dimension as the dependant variables.
+* help_functions, a list of outside variables : they have to be vector with the same dimension of the dependant variable.
 
 So, what is main difference between them? The difference is that you
 have the possibility to use spatial derivative of the fields in the model.
@@ -250,6 +246,7 @@ new scheme.
 
 schemes.ROW_general
 ^^^^^^^^^^^^^^^^^^^
+
 http://www.digibib.tu-bs.de/?docid=00055262
 Rang, Joachim: Improved traditional Rosenbrock-Wanner methods for stiff odes
  and daes / Joachim Rang.
@@ -297,7 +294,7 @@ be prefered.
 
 
 Internal structure of a scheme
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A temporal scheme can be written as any callable object initiated with a model
 attribute (which will give access to the system of differential equation to

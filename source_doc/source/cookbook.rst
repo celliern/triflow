@@ -1,7 +1,8 @@
 Cookbook
 ========
 
-All the notebooks are available via nbviewer_
+All the notebooks are available via nbviewer_. Because they are generated via
+a jupyter notebook, some of the outputs are not well rendered here.
 
 .. toctree::
 
