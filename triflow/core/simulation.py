@@ -8,6 +8,7 @@ import time
 import warnings
 from collections import namedtuple
 
+from numpy import isclose
 import pendulum
 import streamz
 from coolname import generate_slug
@@ -240,7 +241,9 @@ class Simulation(object):
                 for pprocess in self.post_processes:
                     pprocess.function(self)
                 self.stream.emit(self)
-                if self.tmax and (self.t >= self.tmax):
+                yield self.t, self.fields
+
+                if self.tmax and (isclose(self.t, self.tmax)):
                     self._end_simulation()
                     return
                 yield self.t, self.fields
