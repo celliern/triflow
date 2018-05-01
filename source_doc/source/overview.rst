@@ -174,8 +174,8 @@ the xarray Dataset_ thus have the same API for most methods and attributes.
 
 .. code-block:: python3
 
-    >>> initial_fields.U[:] = 5
-    >>> print(initial_fields.U)
+    >>> fields.U[:] = 5
+    >>> print(fields.U)
     <xarray.DataArray 'U' (x: ...)>
     array([5., 5., ..., 5., 5.])
     Coordinates:
@@ -266,7 +266,7 @@ The loop snippet
     >>> scheme = trf.schemes.RODASPR(model)
     >>> t = t0
     >>> fields = initial_fields.copy()
-    >>> for i in it.count():  # doctest: +SKIP
+    >>> for i in it.count():
     ...     t, fields = scheme(t, fields, dt, parameters)
     ...     if t > tmax:
     ...         break
@@ -279,7 +279,8 @@ It is an iterable and we can write the snippet as:
 .. code-block:: python3
 
     >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
-    >>> simul.run()  # doctest: +SKIP
+    >>> simul.run()  # doctest: +ELLIPSIS
+    (...)
 
 and we write the previous advection-diffusion example as:
 
@@ -309,21 +310,15 @@ fields for each timestep and the simulation parameters.
 .. code-block:: python3
 
     >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
-    >>> simul.attach_container()  # doctest: +SKIP
-    >>> simul.run()  # doctest: +SKIP
-    >>> simul.container  # doctest: +SKIP
+    >>> simul.attach_container()
+    path:   None
+    None
+    >>> simul.run()  # doctest: +ELLIPSIS
+    (...)
+    >>> simul.container  # doctest: +ELLIPSIS
     path:   None
     <xarray.Dataset>
-    Dimensions:  (t: 502, x: 100)
-    Coordinates:
-    * x        (x) float64 0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 ...
-    * t        (t) float64 0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 ...
-    Data variables:
-        U        (t, x) float64 1.0 0.9511 0.809 0.5878 0.309 6.123e-17 -0.309 ...
-    Attributes:
-        c:         0.03
-        k:         0.001
-        periodic:  1
+    ...
 
 If a persistent container is requested, the data live in
 :python3: `path / simulation.id / "data.nc"` and the metadata in
@@ -333,9 +328,9 @@ with :python3: `trf.retrieve_container("path/to/container/folder")`.
 .. code-block:: python3
 
     >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
-    >>> simul.attach_container(my_directory)  # doctest: +SKIP
-    >>> simul.run()  # doctest: +SKIP
-    >>> trf.retrieve_container("%s/%s" % (my_directory, simul.id))  # doctest: +SKIP
+    ... simul.attach_container(my_directory)  # doctest: +SKIP
+    ... simul.run()  # doctest: +SKIP
+    ... trf.retrieve_container("%s/%s" % (my_directory, simul.id))  # doctest: +SKIP
 
 
 Displays
@@ -353,8 +348,10 @@ each timestep.
 .. code-block:: python3
 
     >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
-    >>> trf.display_fields(simul, on_disk="plot/output/")
-    >>> simul.run()  # doctest: +SKIP
+    >>> trf.display_fields(simul, on_disk=plot_dir)  # doctest: +ELLIPSIS
+    <triflow.plugins.displays.TriflowDisplay ...>
+    >>> simul.run()  # doctest: +ELLIPSIS
+    (...)
 
 
 Post-processing
@@ -370,24 +367,18 @@ container is attached to the simulation.
     >>> simul = trf.Simulation(model, initial_fields, parameters, dt, tmax=tmax)
     >>> def compute_gradient(simul):
     ...     simul.fields["grad"] = "x", (np.gradient(simul.fields["U"]) /
-                                        np.gradient(simul.fields["x"]))
+    ...                                  np.gradient(simul.fields["x"]))
     >>> simul.add_post_process("grad", compute_gradient)
     >>> simul.attach_container()
-    >>> trf.display_fields(simul, "grad")
-    >>> simul.run()  # doctest: +SKIP
-    >>> simul.container.data["grad"]  # doctest: +SKIP
-
-    <xarray.DataArray 'grad' (t: 21, x: 200)>
-    array([[-2.462332, -4.894348, -9.668182, ..., 14.203952,  9.668182,  7.326365],
-        [ 0.435707, -1.791205, -6.19556 , ..., 15.182621, 11.249958,  9.201766],
-        [ 2.808271,  0.787149, -3.239902, ..., 15.731606, 12.360189, 10.587481],
-        ...,
-        [ 5.326002,  5.309953,  5.212679, ...,  4.415704,  4.823781,  4.999205],
-        [ 4.787014,  4.808028,  4.790602, ...,  3.732835,  4.162767,  4.35328 ],
-        [ 4.264091,  4.315188,  4.363626, ...,  3.109441,  3.550107,  3.749816]])
-    Coordinates:
-    * x        (x) float64 0.0 0.005 0.01 0.015 0.02 0.025 0.03 0.035 0.04 ...
-    * t        (t) float64 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 ...
+    path:   None
+    None
+    >>> trf.display_fields(simul, "grad")  # doctest: +ELLIPSIS
+    <triflow.plugins.displays.TriflowDisplay ...>
+    >>> simul.run()  # doctest: +ELLIPSIS
+    (...)
+    >>> simul.container.data["grad"]  # doctest: +ELLIPSIS
+    <xarray.DataArray 'grad' (t: ..., x: ...)>
+    ...
 
 .. _Theano: http://deeplearning.net/software/theano/
 .. _Sympy: http://www.sympy.org/en/index.html
