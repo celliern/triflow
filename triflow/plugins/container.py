@@ -127,7 +127,7 @@ class TriflowContainer:
             self._collector.flush()
 
     def _write(self, concatenated_fields):
-        if concatenated_fields and self.path:
+        if concatenated_fields is not None and self.path:
             target_file = self.path / "data_%i.nc" % uuid1()
             concatenated_fields.to_netcdf(target_file)
             self._cached_data = deque([], self._n_save)
