@@ -11,10 +11,9 @@ Welcome to triflow's documentation!
    :caption: Contents:
 
    installation
-   overview
-   schemes
+   user_guide
    cookbook
-   contribute
+   dev_guide
    modules
 
 
