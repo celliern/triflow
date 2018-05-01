@@ -78,11 +78,8 @@ class TriflowDisplay:
 
     def __add__(self, other):
         if isinstance(other, TriflowDisplay):
-            # TODO: synchronise the stream emit.
-            add_dyn = self._dynmap.collate() + other._dynmap.collate()
-        else:
-            add_dyn = self._dynmap.collate() + other.collate()
-        return add_dyn.cols(1)
+            return self._dynmap + other._dynmap
+        return self._dynmap + other
 
     def __mul__(self, other):
         if isinstance(other, TriflowDisplay):
