@@ -246,7 +246,6 @@ class Simulation(object):
                 if self.tmax and (isclose(self.t, self.tmax)):
                     self._end_simulation()
                     return
-                yield self.t, self.fields
 
         except RuntimeError:
             self.status = 'failed'
