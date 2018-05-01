@@ -323,8 +323,7 @@ class Model:
             dump(self, f)
 
     def __repr__(self):
-        repr = """
-{equations}
+        repr = """{equations}
 
 Variables
 ---------

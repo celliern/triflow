@@ -25,10 +25,8 @@ class Timer:
         self.total = total
 
     def __repr__(self):
-        repr = """
-last:   {last}
-total:  {total}
-"""
+        repr = """last:   {last}
+total:  {total}"""
         return repr.format(last=(pendulum.now()
                                  .subtract(
             seconds=self.last)
@@ -274,8 +272,7 @@ class Simulation(object):
             warnings.warn("Simulation already ended")
 
     def __repr__(self):
-        repr = """
-{simulation_name:=^30}
+        repr = """{simulation_name:=^30}
 
 created:      {created_date}
 started:      {started_date}
@@ -297,9 +294,7 @@ Hook function
 {hook_source}
 
 =========== Model ===========
-{model_repr}
-
-"""
+{model_repr}"""
         repr = repr.format(simulation_name=" %s " % self.id,
                            parameters="\n\t".join(
                                [("%s:" % key).ljust(12) +

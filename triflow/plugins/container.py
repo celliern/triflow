@@ -137,10 +137,8 @@ class TriflowContainer:
                  if file != target_file]
 
     def __repr__(self):
-        repr = """
-path:   {path}
-{data}
-""".format(path=self.path, data=self.data)
+        repr = """path:   {path}
+{data}""".format(path=self.path, data=self.data)
         return repr
 
     def __del__(self):
