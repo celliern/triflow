@@ -287,12 +287,12 @@ class Simulation(object):
                     return t, fields
                 except UnboundLocalError:
                     warnings.warn("Simulation already ended")
-            for t, fields in self:
-                log("%s running: t: %g" % (self.id, t))
-            try:
-                return t, fields
-            except UnboundLocalError:
-                warnings.warn("Simulation already ended")
+        for t, fields in self:
+            log("%s running: t: %g" % (self.id, t))
+        try:
+            return t, fields
+        except UnboundLocalError:
+            warnings.warn("Simulation already ended")
 
     def __repr__(self):
         repr = """{simulation_name:=^30}
