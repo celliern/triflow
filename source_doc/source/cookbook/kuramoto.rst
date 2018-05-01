@@ -1,4 +1,7 @@
 
+Kuramoto–Sivashinsky equation
+=============================
+
 .. code:: ipython3
 
     import triflow as trf
@@ -26,7 +29,7 @@
 
 
 
-.. image:: kuramoto_files/kuramoto_2_0.png
+.. image:: kuramoto_files/kuramoto_3_0.png
 
 
 .. code:: ipython3
@@ -91,7 +94,7 @@
 
 
 
-.. image:: kuramoto_files/kuramoto_7_0.png
+.. image:: kuramoto_files/kuramoto_8_0.png
 
 
 .. code:: ipython3
