@@ -7,8 +7,7 @@ from triflow import Model, schemes
 
 matplotlib.use('Agg')  # noqa
 import pylab as pl  # isort:skip
-
-pl.style.use('seaborn-whitegrid')
+import path
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])
@@ -36,13 +35,12 @@ def dirichlet_condition(t, fields, pars):
 
 for i in it.count():
     t, fields = scheme(t, fields, dt, parameters, hook=dirichlet_condition)
-    print("iteration: %i\t" % i,
-          "t: %g" % t, end='\r')
+    print("iteration: %i, t: %g" % (i, t), end='\r')
     pl.plot(fields.x, fields.U, label='t: %g' % t)
     if t >= tmax:
         break
 
 pl.xlim(0, 1)
 legend = pl.legend(loc='best')
-
+pl.title(path.Path(".").abspath())
 pl.show()

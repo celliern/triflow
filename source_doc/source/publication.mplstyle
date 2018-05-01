@@ -1,0 +1,28 @@
+figure.dpi                      : 300
+
+savefig.dpi                     : 300
+savefig.format                  : pdf
+savefig.transparent             : True
+
+font.family                     : serif
+font.size                       : 11
+text.usetex                     : False
+
+lines.linewidth                 : 1
+lines.antialiased               : True
+
+axes.spines.left                : True
+axes.spines.bottom              : True
+axes.spines.top                 : False
+axes.spines.right               : False
+axes.xmargin                    : 0.05
+axes.ymargin                    : 0.05
+axes.facecolor                  : white
+
+axes.grid                       : True
+grid.color                      : black
+grid.linestyle                  : --
+grid.linewidth                  : 0.8
+grid.alpha                      : .5
+
+legend.fancybox                 : False
