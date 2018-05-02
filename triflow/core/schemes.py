@@ -155,9 +155,9 @@ class ROW_general:
                                for j in range(i)]))
             F = self._model.F(fields_i, pars)
             ks.append(luf(dt * F + dt * (J @ sum([self._gamma[i, j] *
-                                                    ks[j]
-                                                    for j
-                                                    in range(i)])
+                                                  ks[j]
+                                                  for j
+                                                  in range(i)])
                                          if i > 0 else 0)
                           )
                       )
