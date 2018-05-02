@@ -28,7 +28,9 @@ def manage_display_import():
     import matplotlib as mpl
     if os.environ.get('DISPLAY', '') == '':
         log.info('no display found. Using non-interactive Agg backend')
-        mpl.use('Agg')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            mpl.use('Agg')
 
     from holoviews.plotting.mpl import MPLRenderer  # noqa
 
