@@ -150,11 +150,11 @@ class Simulation(object):
       >>> V = np.sin(x * 2 * np.pi / 100)
       >>> fields = model.fields_template(x=x, U=U, V=V)
       >>> pars = {'k1': 1, 'k2': 1, 'periodic': True}
-      >>> simulation = triflow.Simulation(model, fields, pars, dt=5, tmax=50)
+      >>> simulation = triflow.Simulation(model, fields, pars, dt=5., tmax=50.)
       >>> for t, fields in simulation:
       ...    pass
       >>> print(t)
-      50
+      50.0
       """  # noqa
 
     def __init__(self, model, fields, parameters, dt, t=0, tmax=None,
