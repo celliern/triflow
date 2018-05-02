@@ -1,5 +1,8 @@
 from triflow import Model, schemes
 
+import numpy as np
+import pylab as pl
+
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])
 
