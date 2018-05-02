@@ -1,10 +1,13 @@
 # Triflow
 
+[![Build Status](https://travis-ci.org/locie/triflow.svg?branch=master)](https://travis-ci.org/locie/triflow)
+[![Build Status](https://travis-ci.org/locie/triflow.svg?branch=dev)](https://travis-ci.org/locie/triflow)
+
 ## Installation
 
 ### External requirements
 
-This library is written for python &gt;= 3.6.
+This library is written for python &gt;= 3.5.
 
 The library is based on Theano, thus extra dependencies like fortran and
 C compiler are needed, see Theano install page for extra information:
