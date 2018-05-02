@@ -12,7 +12,6 @@ import coolname
 from holoviews import Curve, DynamicMap, Layout, streams
 from path import Path  # noqa
 
-
 log = logging.getLogger(__name__)
 log.handlers = []
 log.addHandler(logging.NullHandler())

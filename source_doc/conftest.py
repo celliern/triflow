@@ -1,9 +1,9 @@
 # content of conftest.py
 import numpy
+import path
 import pytest
 
 import triflow
-import path
 
 
 @pytest.fixture(autouse=True)

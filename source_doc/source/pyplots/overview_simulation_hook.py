@@ -1,7 +1,7 @@
-from triflow import Model, Simulation
-
 import numpy as np
 import pylab as pl
+
+from triflow import Model, Simulation
 
 model = Model("k * dxxU - c * dxU",
               "U", ["k", "c"])

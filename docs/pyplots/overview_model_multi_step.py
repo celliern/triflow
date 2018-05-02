@@ -2,6 +2,7 @@ import itertools as it
 
 import numpy as np
 import pylab as pl
+
 from triflow import Model, schemes
 
 model = Model("k * dxxU - c * dxU",
