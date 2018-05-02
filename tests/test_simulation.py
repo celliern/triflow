@@ -88,6 +88,7 @@ def test_simul_repr(heat_model):
     simul = Simulation(heat_model, initial_fields, parameters,
                        dt=1, tol=1E-1, tmax=10)
     str(simul)
+    str(simul.timer)
 
 
 def test_simul_already_ended(heat_model):
@@ -100,6 +101,19 @@ def test_simul_already_ended(heat_model):
                        dt=1, tol=1E-1, tmax=10)
     simul.run()
     simul.run()
+
+
+@pytest.mark.parametrize("progress", [True, False])
+def test_simul_already_progress(heat_model, progress):
+    x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+    T = np.cos(x * 2 * np.pi / 10)
+    initial_fields = heat_model.fields_template(x=x, T=T)
+    parameters = dict(periodic=True, k=1)
+
+    simul = Simulation(heat_model, initial_fields, parameters,
+                       dt=1, tol=1E-1, tmax=3)
+    simul.run(progress=progress)
+    assert simul.t == 3
 
 
 def test_simul_pprocess(heat_model):
