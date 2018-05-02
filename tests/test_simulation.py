@@ -27,7 +27,6 @@ def test_simul_heat_eq(heat_model, scheme):
     T = np.cos(x * 2 * np.pi / 10)
     initial_fields = heat_model.fields_template(x=x, T=T)
     parameters = dict(periodic=True, k=1)
-    t0 = 0
     for i, (t, fields) in enumerate(Simulation(heat_model, initial_fields,
                                                parameters, scheme=scheme,
                                                dt=1, tmax=100, tol=1E-1)):
@@ -43,7 +42,6 @@ def test_simul_heat_eq_dirichlet(heat_model, scheme):
     T = np.cos(x * 2 * np.pi / 10)
     initial_fields = heat_model.fields_template(x=x, T=T)
     parameters = dict(periodic=False, k=1)
-    t0 = 0
 
     def dirichlet_bdc(t, fields, parameters):
         fields["T"][0] = 1

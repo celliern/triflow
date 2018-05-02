@@ -40,8 +40,7 @@ def test_display_fields(simul):
 
 
 def test_display_probes(simul):
-    with path.tempdir() as d:
-        display_probe(simul, function=lambda simul: simul.timer.total)
+    display_probe(simul, function=lambda simul: simul.timer.total)
     simul.run()
 
 

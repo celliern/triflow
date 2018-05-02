@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # coding=utf8
 
-import copy
 import json
-import pickle
 
 import numpy as np
 import pytest
 import xarray as xr
 import yaml
-from path import Path, tempdir
+from path import tempdir
 
 from triflow import Container, Model, Simulation, retrieve_container
 
