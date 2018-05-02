@@ -313,9 +313,9 @@
                                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)]))</span>
             <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="n">fields_i</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
             <span class="n">ks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">luf</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">F</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">J</span> <span class="o">@</span> <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_gamma</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span>
-                                                    <span class="n">ks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                                                    <span class="k">for</span> <span class="n">j</span>
-                                                    <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span>
+                                                  <span class="n">ks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                                                  <span class="k">for</span> <span class="n">j</span>
+                                                  <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span>
                                          <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
                           <span class="p">)</span>
                       <span class="p">)</span>

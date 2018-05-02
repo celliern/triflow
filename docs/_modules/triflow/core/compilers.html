@@ -159,7 +159,10 @@
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="c1"># coding=utf8</span>
 
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">csc_matrix</span>
 <span class="kn">from</span> <span class="nn">sympy</span> <span class="k">import</span> <span class="n">lambdify</span>
 
 
@@ -347,7 +350,6 @@
 <span class="sd">        Optimized routine that compute the evolution equations and their</span>
 <span class="sd">        jacobian matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">csc_matrix</span>
 
     <span class="k">def</span> <span class="nf">np_Min</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
         <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">args</span>
@@ -374,112 +376,118 @@
                                 <span class="s2">&quot;Heaviside&quot;</span><span class="p">:</span> <span class="n">np_Heaviside</span><span class="p">},</span>
                                <span class="s2">&quot;numpy&quot;</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">init_computation</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
-        <span class="n">mapargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">input_args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                   <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span>
-                   <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
-                                 <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
-                                 <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
-                                 <span class="o">*</span><span class="p">[</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="s2">&quot;periodic&quot;</span><span class="p">]])}</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
-        <span class="n">L</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">periodic</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="s2">&quot;periodic&quot;</span><span class="p">]</span>
-        <span class="n">middle_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-
-        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">key</span>
-                <span class="ow">in</span> <span class="p">[</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
-                    <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
-                    <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
-                    <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_pars</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">periodic</span><span class="p">]</span>
-
-        <span class="n">mapargs</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dx</span>
-
-        <span class="n">map_extended</span> <span class="o">=</span> <span class="n">mapargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">discretisation_tree</span><span class="p">)</span> <span class="ow">in</span> \
-                <span class="n">model</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_bounds</span>
-
-            <span class="n">arg</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">periodic</span><span class="p">:</span>
-                <span class="n">extended_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">arg</span><span class="p">[</span><span class="n">pad_left</span><span class="p">:],</span>
-                                               <span class="n">arg</span><span class="p">,</span>
-                                               <span class="n">arg</span><span class="p">[:</span><span class="n">pad_right</span><span class="p">]])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">extended_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">middle_point</span><span class="p">,</span>
-                                               <span class="n">arg</span><span class="p">,</span>
-                                               <span class="p">[</span><span class="n">arg</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="n">middle_point</span><span class="p">])</span>
-
-            <span class="n">map_extended</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">extended_var</span>
-            <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">order</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">var</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span>
-                                            <span class="s1">&#39;m&#39;</span> <span class="k">if</span> <span class="n">order</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;p&#39;</span><span class="p">,</span>
-                                            <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">var</span> <span class="o">=</span> <span class="n">varname</span>
-                <span class="n">new_var</span> <span class="o">=</span> <span class="n">extended_var</span><span class="p">[</span><span class="n">order</span> <span class="o">-</span> <span class="n">pad_left</span><span class="p">:</span>
-                                       <span class="n">extended_var</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span>
-                                       <span class="n">order</span> <span class="o">-</span> <span class="n">pad_right</span><span class="p">]</span>
-                <span class="n">map_extended</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_var</span>
-        <span class="k">return</span> <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span>
-
-    <span class="k">def</span> <span class="nf">compute_F</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
-        <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span> <span class="o">=</span> \
-            <span class="n">init_computation</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">)</span>
-        <span class="n">F</span> <span class="o">=</span> <span class="n">f_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">map_extended</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                     <span class="k">for</span> <span class="n">key</span>
-                     <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_args</span><span class="p">])</span>
-        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">F</span>
-
-    <span class="k">def</span> <span class="nf">compute_J</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
-        <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span> <span class="o">=</span> \
-            <span class="n">init_computation</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">)</span>
-        <span class="n">J</span> <span class="o">=</span> <span class="n">j_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">map_extended</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                     <span class="k">for</span> <span class="n">key</span>
-                     <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_args</span><span class="p">])</span>
-
-        <span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">J</span><span class="p">])</span>
-        <span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-
-        <span class="k">if</span> <span class="n">periodic</span><span class="p">:</span>
-            <span class="n">extended_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="n">middle_point</span><span class="p">:],</span>
-                                           <span class="n">idx</span><span class="p">,</span>
-                                           <span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="n">middle_point</span><span class="p">]],</span>
-                                          <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">extended_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">1</span><span class="p">],</span>
-                                                     <span class="n">middle_point</span><span class="p">,</span>
-                                                     <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                                           <span class="n">idx</span><span class="p">,</span>
-                                           <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
-                                                     <span class="n">middle_point</span><span class="p">,</span>
-                                                     <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span>
-                                          <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
-                       <span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
-                         <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[:,</span> <span class="n">model</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">extended_idx</span><span class="p">[</span><span class="n">cols</span><span class="p">][:,</span> <span class="n">model</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-        <span class="n">sparse_J</span> <span class="o">=</span> <span class="n">csc_matrix</span><span class="p">((</span><span class="n">J</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">)),</span>
-                              <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sparse_J</span>
+    <span class="n">compute_F</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">compute_F_numpy</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">f_func</span><span class="p">)</span>
+    <span class="n">compute_J</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">compute_J_numpy</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">j_func</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">compute_F</span><span class="p">,</span> <span class="n">compute_J</span></div>
+
+
+<div class="viewcode-block" id="init_computation_numpy"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.compilers.init_computation_numpy">[docs]</a><span class="k">def</span> <span class="nf">init_computation_numpy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
+    <span class="n">mapargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">input_args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+               <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span>
+               <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
+                             <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
+                             <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
+                             <span class="o">*</span><span class="p">[</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_pars</span><span class="p">,</span> <span class="s2">&quot;periodic&quot;</span><span class="p">]])}</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">periodic</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="s2">&quot;periodic&quot;</span><span class="p">]</span>
+    <span class="n">middle_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span>
+            <span class="ow">in</span> <span class="p">[</span><span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_indep_vars</span><span class="p">,</span>
+                <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_dep_vars</span><span class="p">,</span>
+                <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_help_funcs</span><span class="p">,</span>
+                <span class="o">*</span><span class="n">model</span><span class="o">.</span><span class="n">_pars</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">periodic</span><span class="p">]</span>
+
+    <span class="n">mapargs</span><span class="p">[</span><span class="s1">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dx</span>
+
+    <span class="n">map_extended</span> <span class="o">=</span> <span class="n">mapargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">varname</span><span class="p">,</span> <span class="n">discretisation_tree</span><span class="p">)</span> <span class="ow">in</span> \
+            <span class="n">model</span><span class="o">.</span><span class="n">_symb_vars_with_spatial_diff_order</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_bounds</span>
+
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">mapargs</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">periodic</span><span class="p">:</span>
+            <span class="n">extended_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">arg</span><span class="p">[</span><span class="n">pad_left</span><span class="p">:],</span>
+                                           <span class="n">arg</span><span class="p">,</span>
+                                           <span class="n">arg</span><span class="p">[:</span><span class="n">pad_right</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">extended_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="n">arg</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="n">middle_point</span><span class="p">,</span>
+                                           <span class="n">arg</span><span class="p">,</span>
+                                           <span class="p">[</span><span class="n">arg</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="n">middle_point</span><span class="p">])</span>
+
+        <span class="n">map_extended</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">extended_var</span>
+        <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pad_left</span><span class="p">,</span> <span class="n">pad_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">order</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span>
+                                         <span class="s1">&#39;m&#39;</span> <span class="k">if</span> <span class="n">order</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;p&#39;</span><span class="p">,</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="n">varname</span>
+            <span class="n">new_var</span> <span class="o">=</span> <span class="n">extended_var</span><span class="p">[</span><span class="n">order</span> <span class="o">-</span> <span class="n">pad_left</span><span class="p">:</span>
+                                   <span class="n">extended_var</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span>
+                                   <span class="n">order</span> <span class="o">-</span> <span class="n">pad_right</span><span class="p">]</span>
+            <span class="n">map_extended</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_var</span>
+    <span class="k">return</span> <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span></div>
+
+
+<div class="viewcode-block" id="compute_F_numpy"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.compilers.compute_F_numpy">[docs]</a><span class="k">def</span> <span class="nf">compute_F_numpy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f_func</span><span class="p">,</span> <span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
+    <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span> <span class="o">=</span> \
+        <span class="n">init_computation_numpy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">input_args</span><span class="p">)</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">f_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">map_extended</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                 <span class="k">for</span> <span class="n">key</span>
+                 <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_args</span><span class="p">])</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">F</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">F</span></div>
+
+
+<div class="viewcode-block" id="compute_J_numpy"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.compilers.compute_J_numpy">[docs]</a><span class="k">def</span> <span class="nf">compute_J_numpy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">j_func</span><span class="p">,</span> <span class="o">*</span><span class="n">input_args</span><span class="p">):</span>
+    <span class="n">args</span><span class="p">,</span> <span class="n">map_extended</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">middle_point</span><span class="p">,</span> <span class="n">periodic</span> <span class="o">=</span> \
+        <span class="n">init_computation_numpy</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">input_args</span><span class="p">)</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="n">j_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">map_extended</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                 <span class="k">for</span> <span class="n">key</span>
+                 <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_args</span><span class="p">])</span>
+
+    <span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">J</span><span class="p">])</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">periodic</span><span class="p">:</span>
+        <span class="n">extended_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="n">middle_point</span><span class="p">:],</span>
+                                       <span class="n">idx</span><span class="p">,</span>
+                                       <span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="n">middle_point</span><span class="p">]],</span>
+                                      <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extended_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">1</span><span class="p">],</span>
+                                                 <span class="n">middle_point</span><span class="p">,</span>
+                                                 <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                                       <span class="n">idx</span><span class="p">,</span>
+                                       <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
+                                                 <span class="n">middle_point</span><span class="p">,</span>
+                                                 <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)],</span>
+                                      <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
+                   <span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_window_range</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">),</span>
+                     <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[:,</span> <span class="n">model</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">extended_idx</span><span class="p">[</span><span class="n">cols</span><span class="p">][:,</span> <span class="n">model</span><span class="o">.</span><span class="n">_sparse_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">cols</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">sparse_J</span> <span class="o">=</span> <span class="n">csc_matrix</span><span class="p">((</span><span class="n">J</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">)),</span>
+                          <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">,</span> <span class="n">N</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">_nvar</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sparse_J</span></div>
 </pre></div>
 
            </div>

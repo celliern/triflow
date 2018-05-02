@@ -1,7 +1,10 @@
 # Triflow
 
 [![Build Status](https://travis-ci.org/locie/triflow.svg?branch=master)](https://travis-ci.org/locie/triflow)
+[![Coverage Status](https://coveralls.io/repos/github/locie/triflow/badge.svg?branch=dev)](https://coveralls.io/github/locie/triflow?branch=master)
+
 [![Build Status](https://travis-ci.org/locie/triflow.svg?branch=dev)](https://travis-ci.org/locie/triflow)
+[![Coverage Status](https://coveralls.io/repos/github/locie/triflow/badge.svg?branch=dev)](https://coveralls.io/github/locie/triflow?branch=dev)
 
 ## Installation
 

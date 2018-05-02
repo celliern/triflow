@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="python" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="python" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>triflow.core.simulation &mdash; triflow 0.5.0rc documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../doc.html" class="icon icon-home"> triflow
+          
+
+          
+            
+            <img src="../../../_static/logo_triflow_reduced.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev_guide.html">Contribution guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Module API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../doc.html">triflow</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../doc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>triflow.core.simulation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for triflow.core.simulation</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># coding=utf8</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">import</span> <span class="nn">pendulum</span>
+<span class="kn">import</span> <span class="nn">streamz</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">from</span> <span class="nn">coolname</span> <span class="k">import</span> <span class="n">generate_slug</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">isclose</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">schemes</span>
+<span class="kn">from</span> <span class="nn">..plugins.container</span> <span class="k">import</span> <span class="n">TriflowContainer</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+<span class="n">logging</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="is_interactive"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.is_interactive">[docs]</a><span class="k">def</span> <span class="nf">is_interactive</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">__main__</span> <span class="k">as</span> <span class="nn">main</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="s1">&#39;__file__&#39;</span><span class="p">)</span></div>
+
+
+<span class="n">tqdm</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm_notebook</span> <span class="k">if</span> <span class="n">is_interactive</span><span class="p">()</span> <span class="k">else</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span>
+
+
+<div class="viewcode-block" id="Timer"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Timer">[docs]</a><span class="k">class</span> <span class="nc">Timer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last</span> <span class="o">=</span> <span class="n">last</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total</span> <span class="o">=</span> <span class="n">total</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;last:   </span><span class="si">{last}</span><span class="s2"></span>
+<span class="s2">total:  </span><span class="si">{total}</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="p">(</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                                 <span class="o">.</span><span class="n">subtract</span><span class="p">(</span>
+            <span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">last</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">diff</span><span class="p">()),</span>
+            <span class="n">total</span><span class="o">=</span><span class="p">(</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">subtract</span><span class="p">(</span>
+                <span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">total</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">diff</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="null_hook"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.null_hook">[docs]</a><span class="k">def</span> <span class="nf">null_hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span></div>
+
+
+<span class="n">PostProcess</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;PostProcess&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="Simulation"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation">[docs]</a><span class="k">class</span> <span class="nc">Simulation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;High level container used to run simulation build on triflow Model.</span>
+<span class="sd">      This object is an iterable which will yield every time step until the</span>
+<span class="sd">      parameters &#39;tmax&#39; is reached if provided.</span>
+<span class="sd">      By default, the solver use a 6th order ROW solver, an implicit method</span>
+<span class="sd">      with integrated time-stepping.</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      model : triflow.Model</span>
+<span class="sd">          Contain finite difference approximation and routine of the dynamical</span>
+<span class="sd">          system</span>
+<span class="sd">      fields : triflow.BaseFields or dict (any mappable)</span>
+<span class="sd">          triflow container or mappable filled with initial conditions</span>
+<span class="sd">      parameters : dict</span>
+<span class="sd">          physical parameters of the simulation</span>
+<span class="sd">      dt : float</span>
+<span class="sd">          time stepping for output. if time_stepping is False, the internal</span>
+<span class="sd">          time stepping will be the same.</span>
+<span class="sd">      t : float, optional, default 0.</span>
+<span class="sd">          initial time</span>
+<span class="sd">      tmax : float, optional, default None</span>
+<span class="sd">          Control the end of the simulation. If None (the default), the com-</span>
+<span class="sd">          putation will continue until interrupted by the user (using Ctrl-C</span>
+<span class="sd">          or a SIGTERM signal).</span>
+<span class="sd">      id : None, optional</span>
+<span class="sd">          Name of the simulation. A 2 word slug will be generated if not</span>
+<span class="sd">          provided.</span>
+<span class="sd">      hook : callable, optional, default null_hook.</span>
+<span class="sd">          Any callable taking the actual time, fields and parameters and</span>
+<span class="sd">          return modified fields and parameters.</span>
+<span class="sd">          Will be called every internal time step and can be used to include</span>
+<span class="sd">          time dependent or conditionnal parameters, boundary conditions...</span>
+<span class="sd">          The default null_hook has no impact on the computation.</span>
+<span class="sd">      scheme : callable, optional, default triflow.schemes.RODASPR</span>
+<span class="sd">          An callable object which take the simulation state and return</span>
+<span class="sd">          the next step.</span>
+<span class="sd">          Its signature is scheme.__call__(fields, t, dt, pars, hook)</span>
+<span class="sd">          and it should return the next time and the updated fields.</span>
+<span class="sd">          It take the model and extra positional and named arguments.</span>
+<span class="sd">      time_stepping : boolean, default True</span>
+<span class="sd">          Indicate if the time step is controlled by an algorithm dependant of</span>
+<span class="sd">          the temporal scheme (see the doc on time stepping for extra info).</span>
+<span class="sd">      **kwargs</span>
+<span class="sd">          extra arguments passed to the scheme.</span>
+
+<span class="sd">      Attributes</span>
+<span class="sd">      ----------</span>
+<span class="sd">      dt : float</span>
+<span class="sd">        output time step</span>
+<span class="sd">      fields : triflow.Fields</span>
+<span class="sd">        triflow container filled with actual data</span>
+<span class="sd">      i : int</span>
+<span class="sd">        actual iteration</span>
+<span class="sd">      id : str</span>
+<span class="sd">        name of the simulation</span>
+<span class="sd">      model : triflow.Model</span>
+<span class="sd">        triflow Model used in the simulation</span>
+<span class="sd">      parameters : dict</span>
+<span class="sd">        physical parameters of the simulation</span>
+<span class="sd">      status : str</span>
+<span class="sd">        status of the simulation, one of the following one:</span>
+<span class="sd">        (&#39;created&#39;, &#39;running&#39;, &#39;finished&#39;, &#39;failed&#39;)</span>
+<span class="sd">      t : float</span>
+<span class="sd">        actual time</span>
+<span class="sd">      tmax : float or None, default None</span>
+<span class="sd">        stopping time of the simulation. Not stopping if set to None.</span>
+
+<span class="sd">      Properties</span>
+<span class="sd">      ----------</span>
+<span class="sd">      post_processes: list of triflow.core.simulation.PostProcess</span>
+<span class="sd">        contain all the post processing function attached to the simulation.</span>
+<span class="sd">      container: triflow.TriflowContainer</span>
+<span class="sd">        give access to the attached container, if any.</span>
+<span class="sd">      timer: triflow.core.simulation.Timer</span>
+<span class="sd">        return the cpu time of the previous step and the total running time of</span>
+<span class="sd">        the simulation.</span>
+<span class="sd">      stream: streamz.Stream</span>
+<span class="sd">        Streamz starting point, fed by the simulation state after each</span>
+<span class="sd">        time_step. This interface is used for post-processing, saving the data</span>
+<span class="sd">        on disk by the TriflowContainer and display the fields in real-time.</span>
+
+<span class="sd">      Examples</span>
+<span class="sd">      --------</span>
+<span class="sd">      &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">      &gt;&gt;&gt; import triflow</span>
+<span class="sd">      &gt;&gt;&gt; model = triflow.Model([&quot;k1 * dxxU&quot;,</span>
+<span class="sd">      ...                        &quot;k2 * dxxV&quot;],</span>
+<span class="sd">      ...                       [&quot;U&quot;, &quot;V&quot;],</span>
+<span class="sd">      ...                       [&quot;k1&quot;, &quot;k2&quot;])</span>
+<span class="sd">      &gt;&gt;&gt; x = np.linspace(0, 100, 1000, endpoint=False)</span>
+<span class="sd">      &gt;&gt;&gt; U = np.cos(x * 2 * np.pi / 100)</span>
+<span class="sd">      &gt;&gt;&gt; V = np.sin(x * 2 * np.pi / 100)</span>
+<span class="sd">      &gt;&gt;&gt; fields = model.fields_template(x=x, U=U, V=V)</span>
+<span class="sd">      &gt;&gt;&gt; pars = {&#39;k1&#39;: 1, &#39;k2&#39;: 1, &#39;periodic&#39;: True}</span>
+<span class="sd">      &gt;&gt;&gt; simulation = triflow.Simulation(model, fields, pars, dt=5., tmax=50.)</span>
+<span class="sd">      &gt;&gt;&gt; for t, fields in simulation:</span>
+<span class="sd">      ...    pass</span>
+<span class="sd">      &gt;&gt;&gt; print(t)</span>
+<span class="sd">      50.0</span>
+<span class="sd">      &quot;&quot;&quot;</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="n">null_hook</span><span class="p">,</span>
+                 <span class="n">scheme</span><span class="o">=</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">,</span>
+                 <span class="n">time_stepping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">intersection_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Inspect the function signature to identify the relevant keys</span>
+<span class="sd">            in a dictionary of named parameters.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">func_signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+            <span class="n">func_parameters</span> <span class="o">=</span> <span class="n">func_signature</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+                      <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
+                      <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">func_parameters</span><span class="p">}</span>
+            <span class="k">return</span> <span class="n">kwargs</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;time_stepping&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_stepping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">generate_slug</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">id</span> <span class="k">else</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fields_template</span><span class="p">(</span><span class="o">**</span><span class="n">fields</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">=</span> <span class="n">tmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stream</span> <span class="o">=</span> <span class="n">streamz</span><span class="o">.</span><span class="n">Stream</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span> <span class="o">=</span> <span class="n">scheme</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">intersection_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span>
+                                                    <span class="n">scheme</span><span class="o">.</span><span class="fm">__init__</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">time_stepping</span> <span class="ow">and</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">schemes</span><span class="o">.</span><span class="n">RODASPR</span><span class="p">,</span>
+                                 <span class="n">schemes</span><span class="o">.</span><span class="n">ROS3PRL</span><span class="p">,</span>
+                                 <span class="n">schemes</span><span class="o">.</span><span class="n">ROS3PRw</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span> <span class="o">=</span> <span class="n">schemes</span><span class="o">.</span><span class="n">time_stepping</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">intersection_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span>
+                                      <span class="n">schemes</span><span class="o">.</span><span class="n">time_stepping</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;created&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_total_running</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_created_timestamp</span> <span class="o">=</span> <span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started_timestamp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_timestamp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actual_timestamp</span> <span class="o">=</span> <span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hook</span> <span class="o">=</span> <span class="n">hook</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_compute_one_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute one step of the simulation, then update the timers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">-</span> <span class="n">t</span>
+                   <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="ow">and</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)</span>
+                   <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">before_compute</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                 <span class="n">pars</span><span class="p">,</span> <span class="n">hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">)</span>
+        <span class="n">after_compute</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span> <span class="o">=</span> <span class="n">after_compute</span> <span class="o">-</span> <span class="n">before_compute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_total_running</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_timestamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actual_timestamp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actual_timestamp</span> <span class="o">=</span> <span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span>
+
+<div class="viewcode-block" id="Simulation.compute"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation.compute">[docs]</a>    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator which yield the actual state of the system every dt.</span>
+
+<span class="sd">        Yields</span>
+<span class="sd">        ------</span>
+<span class="sd">        tuple : t, fields</span>
+<span class="sd">            Actual time and updated fields container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span>
+        <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_started_timestamp</span> <span class="o">=</span> <span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_one_step</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">pars</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">t</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">pars</span>
+                <span class="k">for</span> <span class="n">pprocess</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_processes</span><span class="p">:</span>
+                    <span class="n">pprocess</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="ow">and</span> <span class="p">(</span><span class="n">isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_end_simulation</span><span class="p">()</span>
+                    <span class="k">return</span>
+
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;failed&#39;</span>
+            <span class="k">raise</span></div>
+
+    <span class="k">def</span> <span class="nf">_end_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Simulation.run"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute all steps of the simulation. Be careful: if tmax is not set,</span>
+<span class="sd">        this function will result in an infinit loop.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        (t, fields):</span>
+<span class="sd">            last time and result fields.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_dt</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tmax</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">info</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">debug</span>
+        <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">total_iter</span> <span class="k">else</span> <span class="n">total_iter</span><span class="p">),</span>
+                      <span class="n">total</span><span class="o">=</span><span class="n">total_iter</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                    <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">log</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> running: t: </span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span>
+                <span class="k">except</span> <span class="ne">UnboundLocalError</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Simulation already ended&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">log</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> running: t: </span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span>
+        <span class="k">except</span> <span class="ne">UnboundLocalError</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Simulation already ended&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">{simulation_name:=^30}</span><span class="s2"></span>
+
+<span class="s2">created:      </span><span class="si">{created_date}</span><span class="s2"></span>
+<span class="s2">started:      </span><span class="si">{started_date}</span><span class="s2"></span>
+<span class="s2">last:         </span><span class="si">{last_date}</span><span class="s2"></span>
+
+<span class="s2">time:         </span><span class="si">{t:g}</span><span class="s2"></span>
+<span class="s2">iteration:    </span><span class="si">{iter:g}</span><span class="s2"></span>
+
+<span class="s2">last step:    </span><span class="si">{step_time}</span><span class="s2"></span>
+<span class="s2">total time:   </span><span class="si">{running_time}</span><span class="s2"></span>
+
+
+<span class="s2">Physical parameters</span>
+<span class="s2">-------------------</span>
+<span class="si">{parameters}</span><span class="s2"></span>
+
+<span class="s2">Hook function</span>
+<span class="s2">-------------</span>
+<span class="si">{hook_source}</span><span class="s2"></span>
+
+<span class="s2">=========== Model ===========</span>
+<span class="si">{model_repr}</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="nb">repr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">simulation_name</span><span class="o">=</span><span class="s2">&quot; </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                           <span class="n">parameters</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                               <span class="p">[(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="o">+</span>
+                                <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
+                                <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()]),</span>
+                           <span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span>
+                           <span class="nb">iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span>
+                           <span class="n">model_repr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                           <span class="n">hook_source</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hook</span><span class="p">),</span>
+                           <span class="n">step_time</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span> <span class="k">else</span>
+                                      <span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                                      <span class="o">.</span><span class="n">subtract</span><span class="p">(</span>
+                                          <span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span><span class="p">)</span>
+                                      <span class="o">.</span><span class="n">diff</span><span class="p">()),</span>
+                           <span class="n">running_time</span><span class="o">=</span><span class="p">(</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                                         <span class="o">.</span><span class="n">subtract</span><span class="p">(</span>
+                               <span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_total_running</span><span class="p">)</span>
+                               <span class="o">.</span><span class="n">diff</span><span class="p">()),</span>
+                           <span class="n">created_date</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_created_timestamp</span>
+                                         <span class="o">.</span><span class="n">to_cookie_string</span><span class="p">()),</span>
+                           <span class="n">started_date</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_started_timestamp</span>
+                                         <span class="o">.</span><span class="n">to_cookie_string</span><span class="p">()</span>
+                                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started_timestamp</span>
+                                         <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">),</span>
+                           <span class="n">last_date</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_timestamp</span>
+                                      <span class="o">.</span><span class="n">to_cookie_string</span><span class="p">()</span>
+                                      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_timestamp</span>
+                                      <span class="k">else</span> <span class="s2">&quot;None&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">repr</span>
+
+<div class="viewcode-block" id="Simulation.attach_container"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation.attach_container">[docs]</a>    <span class="k">def</span> <span class="nf">attach_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+                         <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">nbuffer</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;add a Container to the simulation which allows some</span>
+<span class="sd">        persistance to the simulation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str or None (default: None)</span>
+<span class="sd">            path for the container. If None (the default), the data lives only</span>
+<span class="sd">            in memory (and are available with `simulation.container`)</span>
+<span class="sd">        mode : str, optional</span>
+<span class="sd">            &quot;a&quot; or &quot;w&quot; (default &quot;w&quot;)</span>
+<span class="sd">        save : str, optional</span>
+<span class="sd">            &quot;all&quot; will save every time-step,</span>
+<span class="sd">            &quot;last&quot; will only get the last time step</span>
+<span class="sd">        nbuffer : int, optional</span>
+<span class="sd">            wait until nbuffer data in the Queue before save on disk.</span>
+<span class="sd">        timeout : int, optional</span>
+<span class="sd">            wait until timeout since last flush before save on disk.</span>
+<span class="sd">        force : bool, optional (default False)</span>
+<span class="sd">            if True, remove the target folder if not empty. if False, raise an</span>
+<span class="sd">            error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span> <span class="o">=</span> <span class="n">TriflowContainer</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                                           <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                                           <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">,</span>
+                                           <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                                           <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span> <span class="n">nbuffer</span><span class="o">=</span><span class="n">nbuffer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_container</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_container</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">post_processes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_container</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Timer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_running</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_running</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Simulation.add_post_process"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation.add_post_process">[docs]</a>    <span class="k">def</span> <span class="nf">add_post_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">post_process</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;add a post-process</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of the post-traitment</span>
+<span class="sd">        post_process : callback (function of a class with a __call__ method</span>
+<span class="sd">                                 or a streamz.Stream).</span>
+<span class="sd">            this callback have to accept the simulation state as parameter</span>
+<span class="sd">            and return the modifield simulation state.</span>
+<span class="sd">            if a streamz.Stream is provided, it will me plugged_in with the</span>
+<span class="sd">            previous streamz (and ultimately to the initial_stream). All these</span>
+<span class="sd">            stream accept and return the simulation state.</span>
+<span class="sd">        description : str, optional, Default is &quot;&quot;.</span>
+<span class="sd">            give extra information about the post-processing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PostProcess</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="n">function</span><span class="o">=</span><span class="n">post_process</span><span class="p">,</span>
+                                            <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Simulation.remove_post_process"><a class="viewcode-back" href="../../../triflow.core.html#triflow.core.simulation.Simulation.remove_post_process">[docs]</a>    <span class="k">def</span> <span class="nf">remove_post_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;remove a post-process</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of the post-process to remove.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span> <span class="o">=</span> <span class="p">[</span><span class="n">post_process</span>
+                            <span class="k">for</span> <span class="n">post_process</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pprocesses</span>
+                            <span class="k">if</span> <span class="n">post_process</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">name</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.5.0rc',
+            LANGUAGE:'python',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
