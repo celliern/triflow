@@ -16,7 +16,7 @@ setup(
     author_email="contact@nicolas-cellier.net",
     description="Python library for falling-films modeling",
 
-    license='BEERWARE',
+    license='MIT',
 
     # ext_modules=ext_modules,
     # Active la prise en compte du fichier MANIFEST.in
