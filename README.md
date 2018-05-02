@@ -140,21 +140,6 @@ pl.show()
 
 ### NEWS
 
-v0.4.7:
-
-- adding tensor flow support with full testing
-- adding post-processing in bokeh fields display
-
-v0.4.12:
-
-- give user choice of compiler
-  - get out tensorflow compiler (not really efficient, lot of maintenance trouble)
-  - give access to theano and numpy compiler
-- upwind scheme support
-- using xarray as fields backend, allowing easy post process and save
-- update display and containers
-- adding repr string to all major classes
-
 v0.5.0:
 
 - WARNING: some part of the API has changed:
@@ -167,6 +152,21 @@ v0.5.0:
 - real-time display is now based on [Holoviews](https://holoviews.org/). Backward compatibility for display is broken and users are encouraged to modify their scripts or to stick to the ^0.4 triflow versions.
 - use poetry to manage dependencies.
 - use `tqdm` to display simulation update.
+
+v0.4.12:
+
+- give user choice of compiler
+  - get out tensorflow compiler (not really efficient, lot of maintenance trouble)
+  - give access to theano and numpy compiler
+- upwind scheme support
+- using xarray as fields backend, allowing easy post process and save
+- update display and containers
+- adding repr string to all major classes
+
+v0.4.7:
+
+- adding tensor flow support with full testing
+- adding post-processing in bokeh fields display
 
 ### ROADMAP / TODO LIST
 
