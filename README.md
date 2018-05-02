@@ -1,5 +1,7 @@
 # Triflow
 
+[![DOI](https://zenodo.org/badge/71994260.svg)](https://zenodo.org/badge/latestdoi/71994260)
+
 |   Master   |  Dev   |
 |:----------:|:------:|
 |[![Build Status](https://travis-ci.org/locie/triflow.svg?branch=master)](https://travis-ci.org/locie/triflow) | [![Build Status](https://travis-ci.org/locie/triflow.svg?branch=dev)](https://travis-ci.org/locie/triflow)
