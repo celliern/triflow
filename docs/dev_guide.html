@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="python" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="python" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Contribution guide &mdash; triflow 0.5.0rc documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module API" href="modules.html" />
+    <link rel="prev" title="Kuramoto–Sivashinsky equation" href="cookbook/kuramoto.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="doc.html" class="icon icon-home"> triflow
+          
+
+          
+            
+            <img src="_static/logo_triflow_reduced.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contribution guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#minor-contribution">Minor Contribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#make">Make</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#style-guide">Style guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="doc.html">triflow</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="doc.html">Docs</a> &raquo;</li>
+        
+      <li>Contribution guide</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/dev_guide.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="contribution-guide">
+<h1>Contribution guide<a class="headerlink" href="#contribution-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="minor-contribution">
+<h2>Minor Contribution<a class="headerlink" href="#minor-contribution" title="Permalink to this headline">¶</a></h2>
+<p>Testing, issue reporting, new feature request are welcome
+(via the <a class="reference external" href="https://github.com/locie/triflow">github repository</a>).</p>
+</div>
+<div class="section" id="make">
+<h2>Make<a class="headerlink" href="#make" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">a makefile is provided, and</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt><cite>make dev</cite> install the requirement for triflow</dt>
+<dd>and triflow itself</dd>
+</dl>
+</li>
+<li><cite>make clean</cite> remove all the build artefacts</li>
+<li><cite>make test</cite> launch the test (doctest + pytest, with coverage)</li>
+<li><cite>make doc</cite> build the documentation</li>
+<li><cite>make build</cite> build the package (doc + python dist)</li>
+<li><cite>make publish</cite> publish the package on pypi.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>the master branch require good coverage of the code</dt>
+<dd>(good reason is required to ignore part of the code)</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>the doctest needs to pass the test too, making sure the</dt>
+<dd>examples are consistants.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>if the API change, the test will move to a file <cite>deprecated.py</cite></dt>
+<dd>in tests folder, a warning will be raised and the deprecated API will
+be removed at the next major version (after the 1.0).
+Exception can be made for the beta (before 1.0). In that case, these API
+change have to be documented on the changelog and the news.</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="style-guide">
+<h2>Style guide<a class="headerlink" href="#style-guide" title="Permalink to this headline">¶</a></h2>
+<p>The code is pep8 complient, and the tests is running with
+pytest-pep8 and pylama. The #noqa flag is allowed with comment that
+specify the reason of the pep8 exception.</p>
+<p>Docstring for public API and main methods are mandatory.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="modules.html" class="btn btn-neutral float-right" title="Module API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cookbook/kuramoto.html" class="btn btn-neutral" title="Kuramoto–Sivashinsky equation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.5.0rc',
+            LANGUAGE:'python',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

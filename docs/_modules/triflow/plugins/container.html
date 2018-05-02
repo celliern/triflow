@@ -1,0 +1,474 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="python" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="python" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>triflow.plugins.container &mdash; triflow 0.5.0rc documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../doc.html" class="icon icon-home"> triflow
+          
+
+          
+            
+            <img src="../../../_static/logo_triflow_reduced.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbook.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev_guide.html">Contribution guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Module API</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../doc.html">triflow</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../doc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>triflow.plugins.container</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for triflow.plugins.container</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># coding=utf8</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">deque</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="k">import</span> <span class="n">uuid1</span>
+
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">path</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">streamz</span> <span class="k">import</span> <span class="n">collect</span>
+<span class="kn">from</span> <span class="nn">xarray</span> <span class="k">import</span> <span class="n">concat</span><span class="p">,</span> <span class="n">open_dataset</span><span class="p">,</span> <span class="n">open_mfdataset</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+
+<span class="n">FieldsData</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;FieldsData&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="AttrDict"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.AttrDict">[docs]</a><span class="k">class</span> <span class="nc">AttrDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AttrDict</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">=</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="coerce_attr"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.coerce_attr">[docs]</a><span class="k">def</span> <span class="nf">coerce_attr</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="n">value_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value_type</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">for</span> <span class="n">cast</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Illegal netCDF type (</span><span class="si">{}</span><span class="s2">) of attribute for </span><span class="si">{}</span><span class="s2">, &quot;</span>
+                      <span class="s2">&quot;casted to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value_type</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cast</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Illegal netCDF type (</span><span class="si">{}</span><span class="s2">) of attribute for </span><span class="si">{}</span><span class="s2">, &quot;</span>
+                    <span class="s2">&quot;auto-casting failed, tried to cast to &quot;</span>
+                    <span class="s2">&quot;int, float and str&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TriflowContainer"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer">[docs]</a><span class="k">class</span> <span class="nc">TriflowContainer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+                 <span class="n">metadata</span><span class="o">=</span><span class="p">{},</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nbuffer</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nbuffer</span> <span class="o">=</span> <span class="n">nbuffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="o">=</span> <span class="n">save</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_data</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_save</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">and</span> <span class="n">force</span><span class="p">:</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">rmtree_p</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
+                <span class="s2">&quot;Directory </span><span class="si">%s</span><span class="s2"> exists, set force=True to override it&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">&quot;r&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;Container not found.&quot;</span><span class="p">)</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s1">&#39;metadata.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yaml_file</span><span class="p">:</span>
+            <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span>
+                      <span class="n">yaml_file</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;last&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_save</span> <span class="k">else</span> <span class="s2">&quot;all&quot;</span>
+
+    <span class="nd">@save</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_n_save</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;last&quot;</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_n_save</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;save argument accept only &quot;all&quot;, &quot;last&quot; or -1 &#39;</span>
+                             <span class="s1">&#39;as value, not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_expand_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">coerce_attr</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span>
+
+    <span class="k">def</span> <span class="nf">_concat_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">concat</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TriflowContainer.connect"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">get_t_fields</span><span class="p">(</span><span class="n">simul</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">simul</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">simul</span><span class="o">.</span><span class="n">fields</span>
+
+        <span class="k">def</span> <span class="nf">expand_fields</span><span class="p">(</span><span class="n">inps</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expand_fields</span><span class="p">(</span><span class="o">*</span><span class="n">inps</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_last</span><span class="p">(</span><span class="n">list_fields</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">list_fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">accumulation_stream</span> <span class="o">=</span> <span class="p">(</span><span class="n">stream</span>
+                               <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_t_fields</span><span class="p">)</span>
+                               <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">expand_fields</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span> <span class="o">=</span> <span class="n">collect</span><span class="p">(</span><span class="n">accumulation_stream</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_concat_fields</span><span class="p">)</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_last</span><span class="p">)</span><span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">accumulation_stream</span>
+         <span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nbuffer</span><span class="p">)</span>
+         <span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collector</span><span class="o">.</span><span class="n">flush</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span></div>
+
+<div class="viewcode-block" id="TriflowContainer.flush"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concatenated_fields</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">concatenated_fields</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">target_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data_</span><span class="si">%i</span><span class="s2">.nc&quot;</span> <span class="o">%</span> <span class="n">uuid1</span><span class="p">()</span>
+            <span class="n">concatenated_fields</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">target_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_data</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_save</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save</span> <span class="o">==</span> <span class="s2">&quot;last&quot;</span><span class="p">:</span>
+                <span class="p">[</span><span class="n">file</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+                 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;data_*.nc&quot;</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="n">file</span> <span class="o">!=</span> <span class="n">target_file</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">repr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;path:   </span><span class="si">{path}</span><span class="s2"></span>
+<span class="si">{data}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">repr</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">open_mfdataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data*.nc&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concat_fields</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s1">&#39;metadata.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yaml_file</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">return</span>
+
+    <span class="nd">@metadata</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s2">&quot;r&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s1">&#39;info.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yaml_file</span><span class="p">:</span>
+                <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="p">,</span>
+                          <span class="n">yaml_file</span><span class="p">,</span> <span class="n">default_flow_style</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TriflowContainer.retrieve"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.retrieve">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">retrieve</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">isel</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span>
+            <span class="n">lazy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">open_mfdataset</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data*.nc&quot;</span><span class="p">,</span>
+                                  <span class="n">concat_dim</span><span class="o">=</span><span class="s2">&quot;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;metadata.yml&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yaml_file</span><span class="p">:</span>
+                <span class="n">metadata</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="c1"># Ensure retro-compatibility with older version</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;Treant.*.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">metadata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s2">&quot;categories&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">isel</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">t</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">isel</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">isel</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="o">**</span><span class="n">isel</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">isel</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lazy</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FieldsData</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span>
+                              <span class="n">metadata</span><span class="o">=</span><span class="n">AttrDict</span><span class="p">(</span><span class="o">**</span><span class="n">metadata</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">FieldsData</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                          <span class="n">metadata</span><span class="o">=</span><span class="n">AttrDict</span><span class="p">(</span><span class="o">**</span><span class="n">metadata</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TriflowContainer.get_last"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.get_last">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_last</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;get_last method is deprecied and will be removed in a &quot;</span>
+            <span class="s2">&quot;future version. Please use retrieve(path, &#39;last&#39;) instead.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">TriflowContainer</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">isel</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">lazy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TriflowContainer.get_all"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.get_all">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;get_last method is deprecied and will be removed in a &quot;</span>
+            <span class="s2">&quot;future version. Please use retrieve(path) instead.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">TriflowContainer</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">isel</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TriflowContainer.merge"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.merge">[docs]</a>    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">TriflowContainer</span><span class="o">.</span><span class="n">merge_datafiles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                                                    <span class="n">override</span><span class="o">=</span><span class="n">override</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TriflowContainer.merge_datafiles"><a class="viewcode-back" href="../../../triflow.plugins.html#triflow.plugins.container.TriflowContainer.merge_datafiles">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">merge_datafiles</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">override</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">remove_p</span><span class="p">()</span>
+
+        <span class="n">split_data</span> <span class="o">=</span> <span class="n">open_mfdataset</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data*.nc&quot;</span><span class="p">,</span>
+                                    <span class="n">concat_dim</span><span class="o">=</span><span class="s2">&quot;t&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
+        <span class="n">split_data</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span>
+        <span class="n">merged_data</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="n">split_data</span><span class="o">.</span><span class="n">chunks</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">split_data</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">merged_data</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Unable to merge data &quot;</span><span class="p">)</span>
+
+        <span class="p">[</span><span class="n">file</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;data_*.nc&quot;</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;data.nc&quot;</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Nicolas Cellier.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.5.0rc',
+            LANGUAGE:'python',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
