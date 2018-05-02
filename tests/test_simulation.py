@@ -101,6 +101,17 @@ def test_simul_already_ended(heat_model):
     simul.run()
 
 
+def test_simul_no_tmax(heat_model):
+    x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
+    T = np.cos(x * 2 * np.pi / 10)
+    initial_fields = heat_model.fields_template(x=x, T=T)
+    parameters = dict(periodic=True, k=1)
+
+    simul = Simulation(heat_model, initial_fields, parameters,
+                       dt=1, tol=1E-1)
+    next(simul)
+
+
 @pytest.mark.parametrize("progress", [True, False])
 def test_simul_already_progress(heat_model, progress):
     x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
