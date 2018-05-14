@@ -94,8 +94,6 @@ class Model:
           list of the parameters. Can be feed with a scalar of an array with the same size
       help_functions : None, optional
           All fields which have not to be solved with the time derivative but will be derived in space.
-      double: bool, optional
-          Choose if the dtypes are float64 (the default) or float32
 
       Attributes
       ----------
@@ -137,11 +135,7 @@ class Model:
                  parameters=None,
                  help_functions=None,
                  bdc_conditions=None,
-                 compiler="theano",
-                 simplify=False,
-                 fdiff_jac=False,
-                 double=True,
-                 hold_compilation=False):
+                 compiler="theano"):
 
         if compiler == "theano":
             self.compiler = theano_compiler
@@ -151,7 +145,6 @@ class Model:
             self.compiler = compiler
 
         logging.debug('enter __init__ Model')
-        self._double = double
         self._symb_t = Symbol("t")
         indep_vars = ["x"]
 
@@ -248,35 +241,17 @@ class Model:
         # We expose a numpy.ndarray filled with the rhs of our approximated
         # dynamical system
         self.F_array = np.array(approximated_diff_eqs)
-        if simplify:
-            self.F_array = np.array([eq.simplify()
-                                     for eq
-                                     in self.F_array.tolist()])
-        # We compute the jacobian as the partial derivative of all equation of
-        # our system according to all the discrete variable in U.
-        if fdiff_jac:
-            self.J_array = np.array([
-                [(diff_eq.subs(u, u + EPS) - diff_eq) / EPS
-                 for u in U]
-                for diff_eq in approximated_diff_eqs]).flatten('F')
-        else:
-            self.J_array = np.array([
-                [diff_eq.diff(u)
-                 for u in U]
-                for diff_eq in approximated_diff_eqs]).flatten('F')
-        if simplify:
-            self.J_array = np.array([eq.expand().simplify()
-                                     for eq
-                                     in self.J_array.tolist()])
+
+        self.J_array = np.array([
+            [diff_eq.diff(u)
+                for u in U]
+            for diff_eq in approximated_diff_eqs]).flatten('F')
 
         # We flag and store the null entry of the Jacobian matrix
         self._sparse_indices = np.where(self.J_array != 0)
         # We drop all the null term of the Jacobian matrix, because we target
         # a sparse matrix storage for memory saving and efficient linalg ops.
         self._J_sparse_array = self.J_array[self._sparse_indices]
-
-        if hold_compilation:
-            return
 
         # We compile the math with a theano based compiler (default)
         self.compile(self.compiler)
