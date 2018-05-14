@@ -68,9 +68,10 @@ def _generate_sympify_namespace(independent_variables,
 
 
 def _reduce_model(eq_diffs, dep_vars, pars,
-                  help_functions, bdc_conditions):
+                  help_functions, bdc_conditions, compiler):
     model = Model(eq_diffs, dep_vars, pars,
-                  help_functions, bdc_conditions)
+                  help_functions, bdc_conditions,
+                  compiler=compiler)
 
     return model
 
@@ -143,9 +144,11 @@ class Model:
                  hold_compilation=False):
 
         if compiler == "theano":
-            compiler = theano_compiler
-        if compiler == "numpy":
-            compiler = numpy_compiler
+            self.compiler = theano_compiler
+        elif compiler == "numpy":
+            self.compiler = numpy_compiler
+        else:
+            self.compiler = compiler
 
         logging.debug('enter __init__ Model')
         self._double = double
@@ -276,7 +279,7 @@ class Model:
             return
 
         # We compile the math with a theano based compiler (default)
-        self.compile(compiler)
+        self.compile(self.compiler)
 
     def compile(self, compiler):
         F_function, J_function = compiler(self)
@@ -539,4 +542,4 @@ parameters:     {pars}"""
     def __reduce__(self):
         return (_reduce_model, (self._diff_eqs, self._dep_vars,
                                 self._pars, self._help_funcs,
-                                self._bdcs))
+                                self._bdcs, self.compiler))
