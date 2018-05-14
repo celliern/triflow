@@ -42,6 +42,20 @@ def coerce_attr(key, value):
                     "int, float and str")
 
 
+def _reduce_container(_nbuffer,
+                      _mode,
+                      _metadata,
+                      save,
+                      _cached_data,
+                      path):
+
+    container = TriflowContainer(path=path, save=save,
+                                 mode="a" if _mode in "aw" else _mode,
+                                 metadata=_metadata, nbuffer=_nbuffer)
+
+    return container
+
+
 class TriflowContainer:
     def __init__(self, path=None, mode='a', *, save="all",
                  metadata={}, force=False, nbuffer=50):
@@ -251,3 +265,14 @@ class TriflowContainer:
 
         [file.remove() for file in path.files("data_*.nc")]
         return path / "data.nc"
+
+    def __reduce__(self):
+        return (_reduce_container,
+                (self._nbuffer,
+                 self._mode,
+                 self._metadata,
+                 self.save,
+                 self._cached_data,
+                 self.path,
+                 )
+                )
