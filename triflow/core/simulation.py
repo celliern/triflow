@@ -324,6 +324,7 @@ Hook function
                                 pprint.pformat(value)
                                 for key, value
                                 in self.parameters.items()]),
+                           container=self.container,
                            t=self.t,
                            iter=self.i,
                            model_repr=self.model,
