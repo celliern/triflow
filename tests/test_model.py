@@ -94,17 +94,6 @@ def test_finite_diff(args):
                        rtol=1E-4, atol=1E-4).all())
 
 
-def test_jac_simpl():
-    model = Model("dxxU", "U")
-    model_simp = Model("dxxU", "U", simplify=True)
-    x = np.linspace(0, 2 * np.pi, 50, endpoint=False)
-    U = np.cos(x)
-    assert np.isclose(model.J(model.fields_template(x=x, U=U),
-                              dict(periodic=True)).todense(),
-                      model.J(model_simp.fields_template(x=x, U=U),
-                              dict(periodic=True)).todense()).all()
-
-
 def test_jac_fdiff_approx():
     model = Model("dxxU", "U")
     model_approx = Model("dxxU", "U", fdiff_jac=True)
