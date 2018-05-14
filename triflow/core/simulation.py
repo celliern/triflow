@@ -316,6 +316,10 @@ Hook function
 -------------
 {hook_source}
 
+Container
+---------
+{container}
+
 =========== Model ===========
 {model_repr}"""
         repr = repr.format(simulation_name=" %s " % self.id,
@@ -437,3 +441,6 @@ Hook function
 
     def __next__(self):
         return next(self._iterator)
+
+    # def save(self):
+    #
