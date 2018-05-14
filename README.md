@@ -137,6 +137,11 @@ pl.show()
 
 ### NEWS
 
+v0.5.1:
+
+- remove some model arguments (simplify, fdiff_jac) that was undocumented.
+- make Simulation, Fields, Container, Model pickables in order to improve multiprocessing usage of the library
+
 v0.5.0:
 
 - WARNING: some part of the API has changed:
