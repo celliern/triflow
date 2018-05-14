@@ -75,6 +75,15 @@ python-versions = "*"
 platform = "*"
 
 [[package]]
+name = "cloudpickle"
+version = "0.5.2"
+description = "Extended pickling support for Python objects"
+category = "main"
+optional = false
+python-versions = "*"
+platform = "*"
+
+[[package]]
 name = "colorama"
 version = "0.3.9"
 description = "Cross-platform colored terminal text."
@@ -952,6 +961,15 @@ numpy = ">= 1.9.1.0"
 scipy = ">= 0.14.0.0"
 six = ">= 1.9.0.0"
 [[package]]
+name = "toml"
+version = "0.9.4"
+description = "Python Library for Tom's Obvious, Minimal Language"
+category = "main"
+optional = false
+python-versions = "*"
+platform = "*"
+
+[[package]]
 name = "toolz"
 version = "0.9.0"
 description = "List processing tools and functional utilities"
@@ -1059,7 +1077,7 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "09239fc47f20e96e40f59b7b7f26c793eac013e24f5e8b297f4053a655aae441"
+content-hash = "979350a55aaf26ca34311dabbca41baa7ea921297e6af9610c6c9f66e9701a5b"
 
 [metadata.hashes]
 alabaster = [ "2eef172f44e8d301d25aff8068fddd65f767a3f04b5f15b0f4922f113aa1c732", "37cdcb9e9954ed60912ebc1ca12a9d12178c26637abdf124e3cde2341c257fe0",]
@@ -1069,6 +1087,7 @@ bleach = [ "b8fa79e91f96c2c2cd9fd1f9eda906efb1b88b483048978ba62fef680e962b34", "
 bokeh = [ "2891b883b30107dc610a7e963a21222f1fd096844d157c09db115179cfab6513",]
 certifi = [ "9fa520c1bacfb634fa7af20a76bcbd3d5fb390481724c597da32c719a7dca4b0", "13e698f54293db9f89122b0581843a782ad0934a4fe0172d2a980ba77fc61bb7",]
 chardet = [ "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691", "84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae",]
+cloudpickle = [ "604c1cb39c2043ba44f017444dd89b7f82541701dfa8a64f5ae72e6346755c0b", "b0e63dd89ed5285171a570186751bc9b84493675e99e12789e9a5dc5490ef554",]
 colorama = [ "463f8483208e921368c9f306094eb6f725c6ca42b0f97e313cb5d5512459feda", "48eb22f4f8461b1df5734a074b57042430fb06e1d61bd1e11b078c0fe6d7a1f1",]
 commonmark = [ "34d73ec8085923c023930dfc0bcd1c4286e28a2a82de094bb72fabcc0281cbe5",]
 configparser = [ "5308b47021bc2340965c371f0f058cc6971a04502638d4244225c49d80db273a",]
@@ -1149,6 +1168,7 @@ streamz = [ "89c9f10aadebad218878a150782ec030997eaf5a02afb555a5e7f994160af27d", 
 sympy = [ "ac5b57691bc43919dcc21167660a57cc51797c28a4301a6144eff07b751216a4",]
 testpath = [ "039fa6a6c9fd3488f8336d23aebbfead5fa602c4a47d49d83845f55a595ec1b4", "0d5337839c788da5900df70f8e01015aec141aa3fe7936cb0d0a2953f7ac7609",]
 theano = [ "88d8aba1fe2b6b75eacf455d01bc7e31e838c5a0fb8c13dde2d9472495ff4662",]
+toml = [ "8e86bd6ce8cc11b9620cb637466453d94f5d57ad86f17e98a98d1f73e3baab2d",]
 toolz = [ "929f0a7ea7f61c178bd951bdae93920515d3fbdbafc8e6caf82d752b9b3b31c9",]
 tornado = [ "88ce0282cce70df9045e515f578c78f1ebc35dcabe1d70f800c3583ebda7f5f5", "ba9fbb249ac5390bff8a1d6aa4b844fd400701069bda7d2e380dfe2217895101", "408d129e9d13d3c55aa73f8084aa97d5f90ed84132e38d6932e63a67d5bec563", "c050089173c2e9272244bccfb6a8615fb9e53b79420a5551acfa76094ecc3111", "1b83d5c10550f2653380b4c77331d6f8850f287c4f67d7ce1e1c639d9222fbc7",]
 tqdm = [ "22c760d05b2eb6e96a91ad7ed1b03c9c97e6256fb7716410c27c2cb3265a5913", "d7bfa112a55290a5e2d0c3263a09b17b24240686fbf20d1ef7c5e8edfbb71ad0",]
