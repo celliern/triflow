@@ -316,19 +316,18 @@ class Simulation(object):
             last time and result fields.
         """
         log = logging.info if verbose else logging.debug
+        if self.tmax:
+            total_iter = self.tmax // self.user_dt
+        else:
+            total_iter = None
+
+        if total_iter and self.i < total_iter:
+            initial = self.i
+        elif total_iter:
+            initial = total_iter
+        else:
+            initial = 0
         if progress:
-            if self.tmax:
-                total_iter = self.tmax // self.user_dt
-            else:
-                total_iter = None
-
-            if total_iter and self.i < total_iter:
-                initial = self.i
-            elif total_iter:
-                initial = total_iter
-            else:
-                initial = 0
-
             with tqdm(initial=initial,
                       total=total_iter) as pbar:
                 for t, fields in self:
