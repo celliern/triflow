@@ -8,6 +8,7 @@ import time
 import warnings
 from collections import namedtuple
 
+import cloudpickle
 import pendulum
 import streamz
 import tqdm
@@ -53,6 +54,45 @@ def null_hook(t, fields, pars):
 
 PostProcess = namedtuple(
     "PostProcess", ["name", "function", "description"])
+
+
+def _reduce_simulation(model,
+                       fields,
+                       parameters,
+                       dt,
+                       t,
+                       tmax,
+                       i,
+                       id,
+                       _pprocesses,
+                       _scheme,
+                       status,
+                       _total_running,
+                       _last_running,
+                       _created_timestamp,
+                       _started_timestamp,
+                       _last_timestamp,
+                       _actual_timestamp,
+                       _hook,
+                       _container,
+                       ):
+    simul = Simulation(model=model, fields=fields,
+                       parameters=parameters,
+                       dt=dt, t=t, tmax=tmax, id=id)
+    simul.i = i
+    simul._pprocesses = cloudpickle.loads(_pprocesses)
+    simul._scheme = cloudpickle.loads(_scheme)
+    simul.status = status
+    simul._total_running = _total_running
+    simul._last_running = _last_running
+    simul._created_timestamp = _created_timestamp
+    simul._started_timestamp = _started_timestamp
+    simul._last_timestamp = _last_timestamp
+    simul._actual_timestamp = _actual_timestamp
+    simul._hook = _hook
+    simul._container = _container
+
+    return simul
 
 
 class Simulation(object):
@@ -442,5 +482,26 @@ Container
     def __next__(self):
         return next(self._iterator)
 
-    # def save(self):
-    #
+    def __reduce__(self):
+        return (_reduce_simulation,
+                (self.model,
+                 self.fields,
+                 self.parameters,
+                 self.dt,
+                 self.t,
+                 self.tmax,
+                 self.i,
+                 self.id,
+                 cloudpickle.dumps(self._pprocesses),
+                 cloudpickle.dumps(self._scheme),
+                 self.status,
+                 self._total_running,
+                 self._last_running,
+                 self._created_timestamp,
+                 self._started_timestamp,
+                 self._last_timestamp,
+                 self._actual_timestamp,
+                 self._hook,
+                 self._container,
+                 )
+                )
