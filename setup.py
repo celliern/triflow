@@ -39,6 +39,8 @@ setup(
             'bokeh',
             'coolname',
             'path.py',
+            'dask',
+            'tqdm',
             'pendulum',
             ],
     download_url=('https://github.com/celliern/triflow/archive/v%s.tar.gz'
