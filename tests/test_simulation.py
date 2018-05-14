@@ -110,7 +110,6 @@ def test_simul_no_tmax(heat_model):
     simul = Simulation(heat_model, initial_fields, parameters,
                        dt=1, tol=1E-1)
     next(simul)
-    simul.run()
 
 
 @pytest.mark.parametrize("progress", [True, False])
