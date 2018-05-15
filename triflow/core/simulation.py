@@ -52,6 +52,20 @@ def null_hook(t, fields, pars):
     return fields, pars
 
 
+def get_total_iter(tmax, user_dt):
+    if tmax:
+        return tmax // user_dt
+    return None
+
+
+def get_initial(total_iter, i):
+    if total_iter and i < total_iter:
+        return i
+    if total_iter:
+        return total_iter
+    return 0
+
+
 PostProcess = namedtuple(
     "PostProcess", ["name", "function", "description"])
 
@@ -305,6 +319,24 @@ class Simulation(object):
             self.container.flush()
             self.container.merge()
 
+    def _run_with_progress(self, total_iter, initial, log):
+        with tqdm(initial=initial, total=total_iter) as pbar:
+            for t, fields in self:
+                pbar.update(1)
+                log("%s running: t: %g" % (self.id, t))
+            try:
+                return t, fields
+            except UnboundLocalError:
+                warnings.warn("Simulation already ended")
+
+    def _run_without_progress(self, log):
+        for t, fields in self:
+            log("%s running: t: %g" % (self.id, t))
+        try:
+            return t, fields
+        except UnboundLocalError:
+            warnings.warn("Simulation already ended")
+
     def run(self, progress=True, verbose=False):
         """Compute all steps of the simulation. Be careful: if tmax is not set,
         this function will result in an infinit loop.
@@ -315,35 +347,15 @@ class Simulation(object):
         (t, fields):
             last time and result fields.
         """
+
         log = logging.info if verbose else logging.debug
+
+        total_iter = get_total_iter(self.tmax, self.user_dt)
+        initial = get_initial(total_iter, self.i)
+
         if progress:
-            if self.tmax:
-                total_iter = self.tmax // self.user_dt
-            else:
-                total_iter = None
-
-            if total_iter and self.i < total_iter:
-                initial = self.i
-            elif total_iter:
-                initial = total_iter
-            else:
-                initial = 0
-
-            with tqdm(initial=initial,
-                      total=total_iter) as pbar:
-                for t, fields in self:
-                    pbar.update(1)
-                    log("%s running: t: %g" % (self.id, t))
-                try:
-                    return t, fields
-                except UnboundLocalError:
-                    warnings.warn("Simulation already ended")
-        for t, fields in self:
-            log("%s running: t: %g" % (self.id, t))
-        try:
-            return t, fields
-        except UnboundLocalError:
-            warnings.warn("Simulation already ended")
+            return self._run_with_progress(total_iter, initial, log)
+        return self._run_without_progress(log)
 
     def __repr__(self):
         repr = """{simulation_name:=^30}
