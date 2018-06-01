@@ -31,7 +31,7 @@ isort: dev
 check: clean dev lint isort test
 
 dev: get_poetry install
-	$(poetry) run pip install -e .
+	$(poetry) develop
 
 build: dev doc
 	$(poetry) build
