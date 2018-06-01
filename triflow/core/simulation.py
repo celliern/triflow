@@ -7,11 +7,11 @@ import pprint
 import time
 import warnings
 from collections import namedtuple
+from uuid import uuid1
 
 import pendulum
 import streamz
 import tqdm
-from coolname import generate_slug
 from numpy import isclose
 
 from . import schemes
@@ -173,7 +173,7 @@ class Simulation(object):
                       in kwargs.items() if key in func_parameters}
             return kwargs
         kwargs["time_stepping"] = time_stepping
-        self.id = generate_slug(2) if not id else id
+        self.id = str(uuid1())[:6] if not id else id
         self.model = model
         self.parameters = parameters
         self.fields = model.fields_template(**fields)

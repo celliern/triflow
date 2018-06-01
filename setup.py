@@ -3,7 +3,7 @@
 
 from setuptools import find_packages, setup
 
-version = "0.5.0"
+version = "0.5.1"
 
 setup(
     name='triflow',
@@ -37,7 +37,6 @@ setup(
             'xarray',
             'holoviews',
             'bokeh',
-            'coolname',
             'path.py',
             'pendulum',
             ],
