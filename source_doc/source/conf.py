@@ -65,8 +65,7 @@ project = 'triflow'
 copyright = '2017, Nicolas Cellier'
 author = 'Nicolas Cellier'
 
-version = '0.5.1'
-release = '0.5.1rc'
+version = '0.5.2'
 language = "python"
 
 exclude_patterns = ['_build', '**.ipynb_checkpoints']

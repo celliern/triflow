@@ -50,6 +50,12 @@ repository:
 pip install git+git://github.com/locie/triflow.git
 ```
 
+### via anaconda (strongly advised for windows users)
+
+``` {.sourceCode .bash}
+conda install -c conda-forge -c celliern triflow
+```
+
 ## Introduction
 
 ### Motivation

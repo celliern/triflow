@@ -1,8 +1,8 @@
 {% set name = "triflow" %}
-{% set version = "0.5.0" %}
+{% set version = "0.5.1" %}
 {% set file_ext = "tar.gz" %}
 {% set hash_type = "sha256" %}
-{% set hash_value = "39be397f37c967f8b30303bac8329841049b66a04c82b06f3c1a6d5c3fc5ec11" %}
+{% set hash_value = "c8475e0f97cca626446fab799eddf42f796d387b2462d629e7d1c4da895b5101" %}
 
 package:
   name: '{{ name|lower }}'

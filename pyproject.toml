@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "triflow"
-version = "0.5.1"
+version = "0.5.2"
 description = "Automatic finite difference discretization for 1D PDE with fast temporal solvers."
 
 license = "MIT"

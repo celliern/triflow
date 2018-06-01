@@ -52,5 +52,14 @@ and for the developpement branch:
 
     pip install git+git://github.com/locie/triflow@dev
 
+
+via anaconda (strongly advised for windows users)
+-------------------------------------------------
+
+.. code:: bash
+
+    conda install -c conda-forge -c celliern triflow
+
+
 .. _github repository: https://github.com/locie/triflow
 .. _Anaconda3: https://www.continuum.io/downloads

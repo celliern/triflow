@@ -8,7 +8,6 @@ import warnings
 from collections import deque
 from uuid import uuid4
 
-import coolname
 from holoviews import Curve, DynamicMap, Layout, streams
 from path import Path  # noqa
 
@@ -120,7 +119,7 @@ class TriflowDisplay:
                       **renderer_args):
         history = deque([], buffer)
         if not xlabel:
-            xlabel = coolname.generate_slug(2)
+            xlabel = str(uuid4())[:6]
         if not ylabel:
             ylabel = function.__name__
         if ylabel == '<lambda>':
