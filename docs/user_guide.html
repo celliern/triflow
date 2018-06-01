@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>User Guide &mdash; triflow 0.5.0rc documentation</title>
+  <title>User Guide &mdash; triflow 0.5.1rc documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.5
+                0.5.1
               </div>
             
           
@@ -376,10 +376,10 @@ and are called with the actual fields, time, time-step, parameters,
 and accept an optionnal hook modifying fields and parameters each
 time the solver compute the function or its jacobian.</p>
 <p>The following code compute juste one time-step with a Crank-Nicolson scheme.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
@@ -413,6 +413,7 @@ time the solver compute the function or its jacobian.</p>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+
 <span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">schemes</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
@@ -690,10 +691,10 @@ It is an iterable and we can write the snippet as:</p>
 </pre></div>
 </div>
 <p>and we write the previous advection-diffusion example as:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">pl</span>
+
+<span class="kn">from</span> <span class="nn">triflow</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Simulation</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;k * dxxU - c * dxU&quot;</span><span class="p">,</span>
               <span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
@@ -858,7 +859,7 @@ container is attached to the simulation.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.5.0rc',
+            VERSION:'0.5.1rc',
             LANGUAGE:'python',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',

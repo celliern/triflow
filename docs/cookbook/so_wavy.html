@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Coupled burger’s-like equations &mdash; triflow 0.5.0rc documentation</title>
+  <title>Coupled burger’s-like equations &mdash; triflow 0.5.1rc documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.5
+                0.5.1
               </div>
             
           
@@ -391,6 +391,12 @@ roTBs2RqAAAAAElFTkSuQmCC'
 
 
 </div><p>We initialize the model with a coupled burger-like system of equations</p>
+<dl class="docutils">
+<dt>:raw-latex:<a href="#id1"><span class="problematic" id="id2">`</span></a>begin{align}</dt>
+<dd>partial_{t}U &amp;= k partial_{xx} U - c U partial_{x} V \
+partial_{t}V &amp;= k partial_{xx} U - c V partial_{x} U</dd>
+</dl>
+<p>end{align}`</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Model</span><span class="p">([</span><span class="s2">&quot;k * dxxU - c * U * dxV&quot;</span><span class="p">,</span>
                    <span class="s2">&quot;k * dxxV - c * V * dxU&quot;</span><span class="p">],</span>
                   <span class="p">[</span><span class="s2">&quot;U&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
@@ -490,7 +496,7 @@ trf.display_fields(simulation)
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.5.0rc',
+            VERSION:'0.5.1rc',
             LANGUAGE:'python',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
