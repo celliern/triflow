@@ -38,6 +38,8 @@ pendulum = "^1.5"
 dask = "^0.17.2"
 tqdm = "^4.23"
 
+tornado = "^4.5"
+
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0"
 pylama = "^7.4"
