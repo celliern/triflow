@@ -36,6 +36,9 @@ dev: get_poetry install
 build: dev doc
 	$(poetry) build
 
+publish_test: check build
+	$(poetry) publish --repository=testpypi
+
 publish: check build
 	$(poetry) publish
 
