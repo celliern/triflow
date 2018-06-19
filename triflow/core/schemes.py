@@ -115,7 +115,10 @@ class ROW_general:
           pars : dict
               physical parameters of the model
           hook : callable, optional
-              any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+              any callable taking the actual time, fields and parameters and
+              return modified fields and parameters. Will be called every
+              internal time step and can be used to include time dependent or
+              conditionnal parameters, boundary conditions...
           container
 
           Returns
@@ -126,7 +129,8 @@ class ROW_general:
           Raises
           ------
           NotImplementedError
-              raised if a time stepping is requested but the scheme do not provide the b predictor coefficients.
+              raised if a time stepping is requested but the scheme do not
+              provide the b predictor coefficients.
           ValueError
               raised if time_stepping is True and tol is not provided.
           """  # noqa
@@ -264,15 +268,19 @@ class ROS3PRw(ROW_general):
       model : triflow.Model
           triflow Model
       tol : float, optional, default 1E-2
-          tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+          tolerance factor for the time stepping. The time step will adapt to
+          ensure that the maximum relative error on all fields stay under that
+          value.
       time_stepping : bool, optional, default True
-          allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+          allow a variable internal time-step to ensure good agreement between
+          computing performance and accuracy.
       max_iter : float or None, optional, default None
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
       recompute_target : bool, optional, default False
-          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
+          if True a new computation is done when the target time is exceeded,
+          interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-1, time_stepping=True,
@@ -308,15 +316,19 @@ class ROS3PRL(ROW_general):
       model : triflow.Model
           triflow Model
       tol : float, optional, default 1E-2
-          tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+          tolerance factor for the time stepping. The time step will adapt to
+          ensure that the maximum relative error on all fields stay under that
+          value.
       time_stepping : bool, optional, default True
-          allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+          allow a variable internal time-step to ensure good agreement between
+          computing performance and accuracy.
       max_iter : float or None, optional, default None
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
       recompute_target : bool, optional, default False
-          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
+          if True a new computation is done when the target time is exceeded,
+          interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-1, time_stepping=True,
@@ -361,15 +373,19 @@ class RODASPR(ROW_general):
       model : triflow.Model
           triflow Model
       tol : float, optional, default 1E-2
-          tolerance factor for the time stepping. The time step will adapt to ensure that the maximum relative error on all fields stay under that value.
+          tolerance factor for the time stepping. The time step will adapt to
+          ensure that the maximum relative error on all fields stay under that
+          value.
       time_stepping : bool, optional, default True
-          allow a variable internal time-step to ensure good agreement between computing performance and accuracy.
+          allow a variable internal time-step to ensure good agreement between
+          computing performance and accuracy.
       max_iter : float or None, optional, default None
           maximum internal iteration allowed
       dt_min : float or None, optional, default None
           minimum internal time step allowed
       recompute_target : bool, optional, default False
-          if True a new computation is done when the target time is exceeded, interpolation used otherwise.
+          if True a new computation is done when the target time is exceeded,
+          interpolation used otherwise.
       """  # noqa
 
     def __init__(self, model, tol=1E-1, time_stepping=True,
@@ -474,7 +490,10 @@ class scipy_ode:
           pars : dict
               physical parameters of the model
           hook : callable, optional
-              any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+              any callable taking the actual time, fields and parameters and
+              return modified fields and parameters. Will be called every
+              internal time step and can be used to include time dependent or
+              conditionnal parameters, boundary conditions...
           container
 
           Returns
@@ -512,7 +531,8 @@ class Theta:
       theta : int, optional, default 1
           weight of the theta-scheme
       solver : callable, optional, default scipy.sparse.linalg.spsolve
-          method able to solve a Ax = b linear equation with A a sparse matrix. Take A and b as argument and return x.
+          method able to solve a Ax = b linear equation with A a sparse matrix.
+          Take A and b as argument and return x.
       """  # noqa
 
     def __init__(self, model, theta=1, solver=sps.linalg.spsolve):
@@ -537,7 +557,10 @@ class Theta:
           pars : dict
               physical parameters of the model
           hook : callable, optional
-              any callable taking the actual time, fields and parameters and return modified fields and parameters. Will be called every internal time step and can be used to include time dependent or conditionnal parameters, boundary conditions...
+              any callable taking the actual time, fields and parameters and
+              return modified fields and parameters. Will be called every
+              internaltime step and can be used to include time dependent or
+              conditionnal parameters, boundary conditions...
 
           Returns
           -------
