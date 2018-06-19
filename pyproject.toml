@@ -39,6 +39,7 @@ pendulum = "^1.5"
 dask = "^0.17.2"
 tqdm = "^4.23"
 cloudpickle = "^0.5.2"
+attrs = "^18.1"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0"

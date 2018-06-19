@@ -9,9 +9,9 @@ platform = "UNKNOWN"
 
 [[package]]
 name = "attrs"
-version = "17.4.0"
+version = "18.1.0"
 description = "Classes Without Boilerplate"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 platform = "*"
@@ -26,7 +26,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-pytz = ">= 0.0.0.0a0"
+pytz = ">=0a"
 [[package]]
 name = "bleach"
 version = "2.1.3"
@@ -38,7 +38,7 @@ platform = "*"
 
 [package.dependencies]
 six = "*"
-html5lib = "!= 1.0.0.0b1, != 1.0.0.0b2, != 1.0.0.0b3, != 1.0.0.0b4, != 1.0.0.0b5, != 1.0.0.0b6, != 1.0.0.0b7, != 1.0.0.0b8, >= 0.99999999.0.0rc0"
+html5lib = ">=0.99999999pre,<1.0b1 || >1.0b1,<1.0b2 || >1.0b2,<1.0b3 || >1.0b3,<1.0b4 || >1.0b4,<1.0b5 || >1.0b5,<1.0b6 || >1.0b6,<1.0b7 || >1.0b7,<1.0b8 || >1.0b8"
 [[package]]
 name = "bokeh"
 version = "0.12.15"
@@ -49,13 +49,13 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-six = ">= 1.5.2.0"
-PyYAML = ">= 3.10.0.0"
-python-dateutil = ">= 2.1.0.0"
-Jinja2 = ">= 2.7.0.0"
-numpy = ">= 1.7.1.0"
-packaging = ">= 16.8.0.0"
-tornado = ">= 4.3.0.0"
+six = ">=1.5.2"
+PyYAML = ">=3.10"
+python-dateutil = ">=2.1"
+Jinja2 = ">=2.7"
+numpy = ">=1.7.1"
+packaging = ">=16.8"
+tornado = ">=4.3"
 [[package]]
 name = "certifi"
 version = "2018.4.16"
@@ -103,17 +103,6 @@ optional = false
 python-versions = "*"
 platform = "UNKNOWN"
 
-[[package]]
-name = "configparser"
-version = "3.5.0"
-description = "This library brings the updated configparser from Python 3.5 to Python 2.6-3.5."
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "any"
-
-[package.requirements]
-python = "~2.7"
 [[package]]
 name = "coolname"
 version = "1.0.4"
@@ -173,7 +162,7 @@ platform = "*"
 [package.dependencies]
 chardet = "*"
 docutils = "*"
-restructuredtext-lint = ">= 0.7.0.0"
+restructuredtext-lint = ">=0.7"
 six = "*"
 stevedore = "*"
 [[package]]
@@ -195,53 +184,7 @@ python-versions = ">=2.7"
 platform = "*"
 
 [package.dependencies]
-configparser = ">= 3.5.0.0"
-[[package]]
-name = "enum34"
-version = "1.1.6"
-description = "Python 3.4 Enum backported to 3.3, 3.2, 3.1, 2.7, 2.6, 2.5, and 2.4"
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "UNKNOWN"
-
-[package.requirements]
-python = "~2.7"
-[[package]]
-name = "funcsigs"
-version = "1.0.2"
-description = "Python function signatures from PEP362 for Python 2.6, 2.7 and 3.2+"
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "UNKNOWN"
-
-[package.dependencies]
-ordereddict = "*"
-[package.requirements]
-python = "<3.0"
-[[package]]
-name = "functools32"
-version = "3.2.3-2"
-description = "Backport of the functools module from Python 3.2.3 for use on 2.7 and PyPy."
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "UNKNOWN"
-
-[package.requirements]
-python = "~2.7"
-[[package]]
-name = "futures"
-version = "3.1.1"
-description = "Backport of the concurrent.futures package from Python 3.2"
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "UNKNOWN"
-
-[package.requirements]
-python = "~2.7"
+configparser = ">=3.5"
 [[package]]
 name = "heapdict"
 version = "1.0.0"
@@ -261,8 +204,8 @@ python-versions = "*"
 platform = "Windows"
 
 [package.dependencies]
-param = "< 2.0.0.0, >= 1.6.1.0"
-numpy = ">= 1.0.0.0"
+param = ">=1.6.1,<2.0"
+numpy = ">=1.0"
 [[package]]
 name = "html5lib"
 version = "1.0.1"
@@ -273,7 +216,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-six = ">= 1.9.0.0"
+six = ">=1.9"
 webencodings = "*"
 [[package]]
 name = "idna"
@@ -308,7 +251,7 @@ version = "4.3.4"
 description = "A Python utility / library to sort Python imports."
 category = "dev"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 platform = "*"
 
 [package.dependencies]
@@ -323,7 +266,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-MarkupSafe = ">= 0.23.0.0"
+MarkupSafe = ">=0.23"
 [[package]]
 name = "jsonschema"
 version = "2.6.0"
@@ -384,6 +327,14 @@ optional = false
 python-versions = "*"
 platform = "any"
 
+[package.dependencies]
+numpy = ">=1.7.1"
+cycler = ">=0.10"
+pyparsing = ">=2.0.1,<2.0.4 || >2.0.4,<2.1.2 || >2.1.2,<2.1.6 || >2.1.6"
+python-dateutil = ">=2.1"
+pytz = "*"
+six = ">=1.10"
+kiwisolver = ">=1.0.1"
 [[package]]
 name = "mccabe"
 version = "0.6.1"
@@ -412,7 +363,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-six = "< 2.0.0.0, >= 1.0.0.0"
+six = ">=1.0.0,<2.0.0"
 [[package]]
 name = "mpmath"
 version = "1.0.0"
@@ -433,15 +384,15 @@ platform = "Linux"
 
 [package.dependencies]
 bleach = "*"
-entrypoints = ">= 0.2.2.0"
+entrypoints = ">=0.2.2"
 jinja2 = "*"
 jupyter-core = "*"
-mistune = ">= 0.7.4.0"
-nbformat = ">= 4.4.0.0"
-pandocfilters = ">= 1.4.1.0"
+mistune = ">=0.7.4"
+nbformat = ">=4.4"
+pandocfilters = ">=1.4.1"
 pygments = "*"
 testpath = "*"
-traitlets = ">= 4.2.0.0"
+traitlets = ">=4.2"
 [[package]]
 name = "nbformat"
 version = "4.4.0"
@@ -453,9 +404,9 @@ platform = "Linux"
 
 [package.dependencies]
 ipython-genutils = "*"
-jsonschema = "!= 2.5.0.0, >= 2.4.0.0"
+jsonschema = ">=2.4,<2.5.0 || >2.5.0"
 jupyter-core = "*"
-traitlets = ">= 4.1.0.0"
+traitlets = ">=4.1"
 [[package]]
 name = "nbsphinx"
 version = "0.3.3"
@@ -466,7 +417,7 @@ python-versions = "*"
 platform = "any"
 
 [package.dependencies]
-sphinx = ">= 1.3.2.0"
+sphinx = ">=1.3.2"
 nbformat = "*"
 traitlets = "*"
 nbconvert = "*"
@@ -491,17 +442,6 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 platform = "Windows"
 
 [[package]]
-name = "ordereddict"
-version = "1.1"
-description = "A drop-in substitute for Py2.7's new collections.OrderedDict that works in Python 2.4-2.6."
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "UNKNOWN"
-
-[package.requirements]
-python = "<3.0"
-[[package]]
 name = "packaging"
 version = "17.1"
 description = "Core utilities for Python packages"
@@ -511,7 +451,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 platform = "*"
 
 [package.dependencies]
-pyparsing = ">= 2.0.2.0"
+pyparsing = ">=2.0.2"
 six = "*"
 [[package]]
 name = "pandas"
@@ -524,8 +464,8 @@ platform = "any"
 
 [package.dependencies]
 python-dateutil = "*"
-pytz = ">= 2011.0.0.0-k"
-numpy = ">= 1.9.0.0"
+pytz = ">=2011k"
+numpy = ">=1.9.0"
 [[package]]
 name = "pandocfilters"
 version = "1.4.2"
@@ -572,9 +512,9 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 platform = "*"
 
 [package.dependencies]
-pytzdata = ">= 2018.3.0.0"
-tzlocal = ">= 1.5.0.0, < 2.0.0.0"
-python-dateutil = ">= 2.6.0.0, < 3.0.0.0"
+pytzdata = ">=2018.3.0.0"
+tzlocal = ">=1.5.0.0,<2.0.0.0"
+python-dateutil = ">=2.6.0.0,<3.0.0.0"
 [[package]]
 name = "pillow"
 version = "5.1.0"
@@ -603,7 +543,7 @@ python-versions = "*"
 platform = "any"
 
 [package.dependencies]
-six = ">= 1.5.2.0"
+six = ">=1.5.2"
 [[package]]
 name = "py"
 version = "1.5.3"
@@ -631,6 +571,9 @@ optional = false
 python-versions = "*"
 platform = "*"
 
+[package.dependencies]
+snowballstemmer = "*"
+six = "*"
 [[package]]
 name = "pyflakes"
 version = "1.6.0"
@@ -659,10 +602,10 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-mccabe = ">= 0.5.2.0"
-pycodestyle = ">= 2.3.1.0"
-pydocstyle = ">= 2.0.0.0"
-pyflakes = ">= 1.5.0.0"
+mccabe = ">=0.5.2"
+pycodestyle = ">=2.3.1"
+pydocstyle = ">=2.0.0"
+pyflakes = ">=1.5.0"
 [[package]]
 name = "pyparsing"
 version = "2.2.0"
@@ -684,12 +627,12 @@ platform = "unix"
 [package.dependencies]
 colorama = "*"
 funcsigs = "*"
-pluggy = "< 0.7.0.0, >= 0.5.0.0"
-more-itertools = ">= 4.0.0.0"
-attrs = ">= 17.4.0.0"
+pluggy = ">=0.5,<0.7"
+more-itertools = ">=4.0.0"
+attrs = ">=17.4.0"
 setuptools = "*"
-six = ">= 1.10.0.0"
-py = ">= 1.5.0.0"
+six = ">=1.10.0"
+py = ">=1.5.0"
 [[package]]
 name = "pytest-cov"
 version = "2.5.1"
@@ -700,8 +643,8 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-coverage = ">= 3.7.1.0"
-pytest = ">= 2.6.0.0"
+coverage = ">=3.7.1"
+pytest = ">=2.6.0"
 [[package]]
 name = "python-coveralls"
 version = "2.9.1"
@@ -714,7 +657,7 @@ platform = "UNKNOWN"
 [package.dependencies]
 PyYAML = "*"
 requests = "*"
-coverage = "== 4.0.3.0"
+coverage = "4.0.3"
 six = "*"
 [[package]]
 name = "python-dateutil"
@@ -726,7 +669,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 platform = "*"
 
 [package.dependencies]
-six = ">= 1.5.0.0"
+six = ">=1.5"
 [[package]]
 name = "pytz"
 version = "2018.4"
@@ -755,7 +698,7 @@ python-versions = "*"
 platform = "Windows,Linux,Solaris,Mac OS-X,Unix"
 
 [package.dependencies]
-numpy = ">= 1.9.1.0"
+numpy = ">=1.9.1"
 [[package]]
 name = "pyyaml"
 version = "3.12"
@@ -775,8 +718,8 @@ python-versions = "*"
 platform = "UNKNOWN"
 
 [package.dependencies]
-commonmark = "<= 0.5.4.0"
-docutils = ">= 0.11.0.0"
+commonmark = "<=0.5.4"
+docutils = ">=0.11"
 [[package]]
 name = "requests"
 version = "2.18.4"
@@ -787,10 +730,10 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-certifi = ">= 2017.4.17.0"
-chardet = ">= 3.0.2.0, < 3.1.0.0"
-idna = ">= 2.5.0.0, < 2.7.0.0"
-urllib3 = "< 1.23.0.0, >= 1.21.1.0"
+certifi = ">=2017.4.17"
+chardet = ">=3.0.2,<3.1.0"
+idna = ">=2.5,<2.7"
+urllib3 = ">=1.21.1,<1.23"
 [[package]]
 name = "restructuredtext-lint"
 version = "1.1.3"
@@ -801,7 +744,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-docutils = ">= 0.11.0.0, < 1.0.0.0"
+docutils = ">=0.11,<1.0"
 [[package]]
 name = "scikit-image"
 version = "0.13.1"
@@ -812,12 +755,12 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-matplotlib = ">= 1.3.1.0"
-scipy = ">= 0.17.0.0"
-six = ">= 1.7.3.0"
-networkx = ">= 1.8.0.0"
-pillow = ">= 2.1.0.0"
-PyWavelets = ">= 0.4.0.0"
+matplotlib = ">=1.3.1"
+scipy = ">=0.17.0"
+six = ">=1.7.3"
+networkx = ">=1.8"
+pillow = ">=2.1.0"
+PyWavelets = ">=0.4.0"
 [[package]]
 name = "scipy"
 version = "1.0.1"
@@ -828,7 +771,7 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 platform = "Windows"
 
 [package.dependencies]
-numpy = ">= 1.8.2.0"
+numpy = ">=1.8.2"
 [[package]]
 name = "six"
 version = "1.11.0"
@@ -853,24 +796,24 @@ version = "1.7.4"
 description = "Python documentation generator"
 category = "dev"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 platform = "any"
 
 [package.dependencies]
-six = ">= 1.5.0.0"
-Jinja2 = ">= 2.3.0.0"
-Pygments = ">= 2.0.0.0"
-docutils = ">= 0.11.0.0"
-snowballstemmer = ">= 1.1.0.0"
-babel = "!= 2.0.0.0, >= 1.3.0.0"
-alabaster = "< 0.8.0.0, >= 0.7.0.0"
+six = ">=1.5"
+Jinja2 = ">=2.3"
+Pygments = ">=2.0"
+docutils = ">=0.11"
+snowballstemmer = ">=1.1"
+babel = ">=1.3,<2.0 || >2.0"
+alabaster = ">=0.7,<0.8"
 imagesize = "*"
-requests = ">= 2.0.0.0"
+requests = ">=2.0.0"
 setuptools = "*"
 packaging = "*"
 sphinxcontrib-websupport = "*"
 typing = "*"
-colorama = ">= 0.3.5.0"
+colorama = ">=0.3.5"
 [[package]]
 name = "sphinx_rtd_theme"
 version = "0.3.0"
@@ -899,8 +842,8 @@ python-versions = "*"
 platform = "any"
 
 [package.dependencies]
-pockets = ">= 0.3.0.0"
-six = ">= 1.5.2.0"
+pockets = ">=0.3"
+six = ">=1.5.2"
 [[package]]
 name = "stevedore"
 version = "1.28.0"
@@ -911,8 +854,8 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-pbr = "!= 2.1.0.0, >= 2.0.0.0"
-six = ">= 1.10.0.0"
+pbr = ">=2.0.0,<2.1.0 || >2.1.0"
+six = ">=1.10.0"
 [[package]]
 name = "streamz"
 version = "0.3.0"
@@ -937,7 +880,7 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-mpmath = ">= 0.19.0.0"
+mpmath = ">=0.19"
 [[package]]
 name = "testpath"
 version = "0.3.1"
@@ -957,18 +900,9 @@ python-versions = "*"
 platform = "Windows"
 
 [package.dependencies]
-numpy = ">= 1.9.1.0"
-scipy = ">= 0.14.0.0"
-six = ">= 1.9.0.0"
-[[package]]
-name = "toml"
-version = "0.9.4"
-description = "Python Library for Tom's Obvious, Minimal Language"
-category = "main"
-optional = false
-python-versions = "*"
-platform = "*"
-
+numpy = ">=1.9.1"
+scipy = ">=0.14"
+six = ">=1.9.0"
 [[package]]
 name = "toolz"
 version = "0.9.0"
@@ -980,11 +914,11 @@ platform = "*"
 
 [[package]]
 name = "tornado"
-version = "5.0.2"
+version = "4.5.3"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
 category = "main"
 optional = false
-python-versions = ">= 2.7, !=3.0.*, !=3.1.*, !=3.2.*, != 3.3.*"
+python-versions = "*"
 platform = "*"
 
 [[package]]
@@ -1010,17 +944,6 @@ decorator = "*"
 ipython-genutils = "*"
 six = "*"
 enum34 = "*"
-[[package]]
-name = "typing"
-version = "3.6.4"
-description = "Type Hints for Python"
-category = "dev"
-optional = false
-python-versions = "*"
-platform = "*"
-
-[package.requirements]
-python = "<3.5"
 [[package]]
 name = "tzlocal"
 version = "1.5.1"
@@ -1060,8 +983,8 @@ python-versions = "*"
 platform = "*"
 
 [package.dependencies]
-pandas = ">= 0.18.0.0"
-numpy = ">= 1.11.0.0"
+pandas = ">=0.18.0"
+numpy = ">=1.11"
 [[package]]
 name = "zict"
 version = "0.1.3"
@@ -1077,11 +1000,11 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "979350a55aaf26ca34311dabbca41baa7ea921297e6af9610c6c9f66e9701a5b"
+content-hash = "4a9e9cd7b5574bc73c685ade59a4169ac46692ad8fb9e7a45a9530efb4fffbc4"
 
 [metadata.hashes]
 alabaster = [ "2eef172f44e8d301d25aff8068fddd65f767a3f04b5f15b0f4922f113aa1c732", "37cdcb9e9954ed60912ebc1ca12a9d12178c26637abdf124e3cde2341c257fe0",]
-attrs = [ "a17a9573a6f475c99b551c0e0a812707ddda1ec9653bed04c13841404ed6f450", "1c7960ccfd6a005cd9f7ba884e6316b5e430a3f1a6c37c5f87d8b43f83b54ec9",]
+attrs = [ "4b90b09eeeb9b88c35bc642cbac057e45a5fd85367b985bd2809c62b7b939265", "e0d0eb91441a3b53dab4d9b743eafc1ac44476296a2053b6ca3af0b139faf87b",]
 babel = [ "ad209a68d7162c4cff4b29cdebe3dec4cef75492df501b0049a9433c96ce6f80", "8ce4cb6fdd4393edd323227cba3a077bceb2a6ce5201c902c65e730046f41f14",]
 bleach = [ "b8fa79e91f96c2c2cd9fd1f9eda906efb1b88b483048978ba62fef680e962b34", "eb7386f632349d10d9ce9d4a838b134d4731571851149f9cc2c05a9a837a9a44",]
 bokeh = [ "2891b883b30107dc610a7e963a21222f1fd096844d157c09db115179cfab6513",]
@@ -1090,7 +1013,6 @@ chardet = [ "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691", 
 cloudpickle = [ "604c1cb39c2043ba44f017444dd89b7f82541701dfa8a64f5ae72e6346755c0b", "b0e63dd89ed5285171a570186751bc9b84493675e99e12789e9a5dc5490ef554",]
 colorama = [ "463f8483208e921368c9f306094eb6f725c6ca42b0f97e313cb5d5512459feda", "48eb22f4f8461b1df5734a074b57042430fb06e1d61bd1e11b078c0fe6d7a1f1",]
 commonmark = [ "34d73ec8085923c023930dfc0bcd1c4286e28a2a82de094bb72fabcc0281cbe5",]
-configparser = [ "5308b47021bc2340965c371f0f058cc6971a04502638d4244225c49d80db273a",]
 coolname = [ "cb43c9a1305de4dbb5e1a745a0c827931d6563972d35b054ea7f80ed95cb6f6e", "576c22cdd3e094b9ed64c468477662c8c9630967b7e44b688dce811e0e58d679",]
 coverage = [ "6c2fd127cd4e2decb0ab41fe3ac2948b87ad2ea0470e24b4be5f7e7fdfef8df3", "0a90afa6f5ea08889da9066dca3ce2ef85d47587e3f66ca06a4fa8d3a0053acc", "93c50475f189cd226e9688b9897a0cd3c4c5d9c90b1733fa8f6445cfc0182c51", "94c1e66610807a7917d967ed6415b9d5fde7487ab2a07bb5e054567865ef6ef0", "76a73a48a308fb87a4417d630b0345d36166f489ef17ea5aa8e4596fb50a2296", "beb96d32ce8cfa47ec6433d95a33e4afaa97c19ac1b4a47ea40a424fedfee7c2", "50727512afe77e044c7d7f2fd4cd0fe62b06527f965b335a810d956748e0514d", "c00bac0f6b35b82ace069a6a0d88e8fd4cd18d964fc5e47329cd02b212397fbe", "e813cba9ff0e3d37ad31dc127fac85d23f9a26d0461ef8042ac4539b2045e781", "964f86394cb4d0fd2bb40ffcddca321acf4323b48d1aa5a93db8b743c8a00f79", "d079e36baceea9707fd50b268305654151011274494a33c608c075808920eda8", "8e60e720cad3ee6b0a32f475ae4040552c5623870a9ca0d3d4263faa89a8d96b", "99043494b28d6460035dd9410269cdb437ee460edc7f96f07ab45c57ba95e651", "6ed521ed3800d8f8911642b9b3c3891780a929db5e572c88c4713c1032530f82", "af2f59ce312523c384a7826821cae0b95f320fee1751387abba4f00eed737166", "85b1275b6d7a61ccc8024a4e9a4c9e896394776edce1a5d075ec116f91925462", "af6ed80340e5e1b89fa794f730ce7597651fbda3312e500002688b679c184ef9", "d3188345f1c7161d701fd2ea9150f9bb6e2df890f3ddd6c0aea1f525e21d1544", "e65c78bde155a734f0d624647c4d6e0f47fb4875355a0b95c37d537788737f4f", "845d0f8a1765074b3256f07ddbce2969e5a5316dfd0eb3289137010d7677326a", "e96c13a40df389ce8cbb5ec108e5fb834989d1bedff5d8846e5aa3d270a5f3b6", "7eaa0a33423476ed63317ee0a53cc07c0e36b5a390e3e95b95152e7eb6b3a6f6", "addf63b5e39d573c459c3930b25176146395c1dc1afce4710067bb5e6dc4ea58", "0ba6c4345e3c197f6a3ba924d155c402ad28c080ac0d79529493eb17582fbc41", "ee2338539157cfc35fb1d6757dd799126804df39393c4a6c5fe88b402c8c0ab4", "2be3748f45d2eb0259c3c93abccc15c10725ef715bf0817a4c0a1a1dad2abc6a", "00d464797a236f654337181af72b4baea3d35d056ca480e45e9163bb5df496b8",]
 cycler = [ "1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d", "cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8",]
@@ -1099,10 +1021,6 @@ decorator = [ "2c51dff8ef3c447388fe5e4453d24a2bf128d3a4c32af3fabef1f01c6851ab82"
 doc8 = [ "d12f08aa77a4a65eb28752f4bc78f41f611f9412c4155e2b03f1f5d4a45efe04", "2df89f9c1a5abfb98ab55d0175fed633cae0cf45025b8b1e0ee5ea772be28543",]
 docutils = [ "7a4bd47eaf6596e1295ecb11361139febe29b084a87bf005bf899f9a42edc3c6", "02aec4bd92ab067f6ff27a38a38a41173bf01bed8f89157768c1573f53e474a6", "51e64ef2ebfb29cae1faa133b3710143496eca21c530f3f71424d77687764274",]
 entrypoints = [ "10ad569bb245e7e2ba425285b9fa3e8178a0dc92fc53b1e1c553805e15a8825b", "d2d587dde06f99545fb13a383d2cd336a8ff1f359c5839ce3a64c917d10c029f",]
-enum34 = [ "6bd0f6ad48ec2aa117d3d141940d484deccda84d4fcd884f5c3d93c23ecd8c79", "644837f692e5f550741432dd3f223bbb9852018674981b1664e5dc339387588a", "8ad8c4783bf61ded74527bffb48ed9b54166685e4230386a9ed9b1279e2df5b1", "2d81cbbe0e73112bdfe6ef8576f2238f2ba27dd0d55752a776c41d38b7da2850",]
-funcsigs = [ "330cc27ccbf7f1e992e69fef78261dc7c6569012cf397db8d3de0234e6c937ca", "a7bb0f2cf3a3fd1ab2732cb49eba4252c2af4240442415b4abce3b87022a8f50",]
-functools32 = []
-futures = [ "c4884a65654a7c45435063e14ae85280eb1f111d94e542396717ba9828c4337f", "51ecb45f0add83c806c68e4b06106f90db260585b25ef2abfcda0bd95c0132fd",]
 heapdict = [ "40c9e3680616cfdf942f77429a3a9e0a76f31ce965d62f4ffbe63a83a5ef1b5a",]
 holoviews = [ "21388b8699a50fcc9139adabc16deb5c9478ee00e64dc2275b985663b5b3c66c",]
 html5lib = [ "20b159aa3badc9d5ee8f5c647e5efd02ed2a66ab8d354930bd9ff139fc1dc0a3", "66cb0dcfdbbc4f9c3ba1a63fdb511ffdbd4f513b2b6d81b80cd26ce6b3fb3736",]
@@ -1126,7 +1044,6 @@ nbformat = [ "b9a0dbdbd45bb034f4f8893cafd6f652ea08c8c1674ba83f2dc55d3955743b0b",
 nbsphinx = [ "efc03285a49554e3f0246ad0b6aa37d59b03777f031a8ed786617a4f594691d0", "5635f04cdb74376f33423813cdaabe5208ef5e6462031843fef7584b821a54a1",]
 networkx = [ "64272ca418972b70a196cb15d9c85a5a6041f09a2f32e0d30c0255f25d458bb1",]
 numpy = [ "a8dbab311d4259de5eeaa5b4e83f5f8545e4808f9144e84c0f424a6ee55a7b98", "034717bfef517858abc79324820a702dc6cd063effb9baab86533e8a78670689", "f39afab5769b3aaa786634b94b4a23ef3c150bdda044e8a32a3fc16ddafe803b", "8670067685051b49d1f2f66e396488064299fefca199c7c80b6ba0c639fedc98", "0db6301324d0568089663ef2701ad90ebac0e975742c97460e89366692bd0563", "98ff275f1b5907490d26b30b6ff111ecf2de0254f0ab08833d8fe61aa2068a00", "aaef1bea636b6e552bbc5dae0ada87d4f6046359daaa97a05a013b0169620f27", "760550fdf9d8ec7da9c4402a4afe6e25c0f184ae132011676298a6b636660b45", "e8578a62a8eaf552b95d62f630bb5dd071243ba1302bbff3e55ac48588508736", "e33baf50f2f6b7153ddb973601a11df852697fba4c08b34a5e0f39f66f8120e1", "0074d42e2cc333800bd09996223d40ec52e3b1ec0a5cab05dacc09b662c4c1ae", "c3fe23df6fe0898e788581753da453f877350058c5982e85a8972feeecb15309", "1864d005b2eb7598063e35c320787d87730d864f40d6410f768fe4ea20672016", "f22b3206f1c561dd9110b93d144c6aaa4a9a354e3b07ad36030df3ea92c5bb5b", "c80fcf9b38c7f4df666150069b04abbd2fe42ae640703a6e1f128cda83b552b7", "510863d606c932b41d2209e4de6157ab3fdf52001d3e4ad351103176d33c4b8b", "c5eb7254cfc4bd7a4330ad7e1f65b98343836865338c57b0e25c661e41d5cfd9", "b8987e30d9a0eb6635df9705a75cf8c4a2835590244baecf210163343bc65176", "57dc6c22d59054542600fce6fae2d1189b9c50bafc1aab32e55f7efcc84a6c46", "46ce8323ca9384814c7645298b8b627b7d04ce97d6948ef02da357b2389d6972", "9ccf4d5c9139b1e985db915039baa0610a7e4a45090580065f8d8cb801b7422f", "560e23a12e7599be8e8b67621396c5bc687fd54b48b890adbc71bc5a67333f86", "9016692c7d390f9d378fc88b7a799dc9caa7eb938163dda5276d3f3d6f75debf",]
-ordereddict = [ "1c35b4ac206cef2d24816c89f89cf289dd3d38cf7c449bb3fab7bf6d43f01b1f",]
 packaging = [ "e9215d2d2535d3ae866c3d6efc77d5b24a0192cce0ff20e42896cc0664f889c0", "f019b770dd64e585a99714f1fd5e01c7a8f11b45635aa953fd41c689a657375b",]
 pandas = [ "68ac484e857dcbbd07ea7c6f516cc67f7f143f5313d9bc661470e7f473528882", "12f2a19d0b0adf31170d98d0e8bcbc59add0965a9b0c65d39e0665400491c0c5", "68b121d13177f5128a4c118bb4f73ba40df28292c038389961aa55ea5a996427", "06efae5c00b9f4c6e6d3fe1eb52e590ff0ea8e5cb58032c724e04d31c540de53", "02541a4fdd31315f213a5c8e18708abad719ee03eda05f603c4fe973e9b9d770", "2907f3fe91ca2119ac3c38de6891bbbc83333bfe0d98309768fee28de563ee7a", "052a66f58783a59ea38fdfee25de083b107baa81fdbe38fabd169d0f9efce2bf", "244ae0b9e998cfa88452a49b20e29bf582cc7c0e69093876d505aec4f8e1c7fe", "66403162c8b45325a995493bdd78ad4d8be085e527d721dbfa773d56fbba9c88", "af0dbac881f6f87acd325415adea0ce8cccf28f5d4ad7a54b6a1e176e2f7bf70", "c2cd884794924687edbaad40d18ac984054d247bb877890932c4d41e3c3aba31", "c372db80a5bcb143c9cb254d50f902772c3b093a4f965275197ec2d2184b1e61", "97c8223d42d43d86ca359a57b4702ca0529c6553e83d736e93a5699951f0f8db", "587a9816cc663c958fcff7907c553b73fe196604f990bc98e1b71ebf07e45b44", "44a94091dd71f05922eec661638ec1a35f26d573c119aa2fad964f10a2880e6c",]
 pandocfilters = [ "b3dd70e169bb5449e6bc6ff96aea89c5eea8c5f6ab5e207fc2f521a2cf4a0da9",]
@@ -1168,12 +1085,10 @@ streamz = [ "89c9f10aadebad218878a150782ec030997eaf5a02afb555a5e7f994160af27d", 
 sympy = [ "ac5b57691bc43919dcc21167660a57cc51797c28a4301a6144eff07b751216a4",]
 testpath = [ "039fa6a6c9fd3488f8336d23aebbfead5fa602c4a47d49d83845f55a595ec1b4", "0d5337839c788da5900df70f8e01015aec141aa3fe7936cb0d0a2953f7ac7609",]
 theano = [ "88d8aba1fe2b6b75eacf455d01bc7e31e838c5a0fb8c13dde2d9472495ff4662",]
-toml = [ "8e86bd6ce8cc11b9620cb637466453d94f5d57ad86f17e98a98d1f73e3baab2d",]
 toolz = [ "929f0a7ea7f61c178bd951bdae93920515d3fbdbafc8e6caf82d752b9b3b31c9",]
-tornado = [ "88ce0282cce70df9045e515f578c78f1ebc35dcabe1d70f800c3583ebda7f5f5", "ba9fbb249ac5390bff8a1d6aa4b844fd400701069bda7d2e380dfe2217895101", "408d129e9d13d3c55aa73f8084aa97d5f90ed84132e38d6932e63a67d5bec563", "c050089173c2e9272244bccfb6a8615fb9e53b79420a5551acfa76094ecc3111", "1b83d5c10550f2653380b4c77331d6f8850f287c4f67d7ce1e1c639d9222fbc7",]
+tornado = [ "92b7ca81e18ba9ec3031a7ee73d4577ac21d41a0c9b775a9182f43301c3b5f8e", "b36298e9f63f18cad97378db2222c0e0ca6a55f6304e605515e05a25483ed51a", "ab587996fe6fb9ce65abfda440f9b61e4f9f2cf921967723540679176915e4c3", "5ef073ac6180038ccf99411fe05ae9aafb675952a2c8db60592d5daf8401f803", "6d14e47eab0e15799cf3cdcc86b0b98279da68522caace2bd7ce644287685f0a",]
 tqdm = [ "22c760d05b2eb6e96a91ad7ed1b03c9c97e6256fb7716410c27c2cb3265a5913", "d7bfa112a55290a5e2d0c3263a09b17b24240686fbf20d1ef7c5e8edfbb71ad0",]
 traitlets = [ "c6cb5e6f57c5a9bdaa40fa71ce7b4af30298fbab9ece9815b5d995ab6217c7d9", "9c4bd2d267b7153df9152698efb1050a5d84982d3384a37b2c1f7723ba3e7835",]
-typing = [ "b2c689d54e1144bbcfd191b0832980a21c2dbcf7b5ff7a66248a60c90e951eb8", "3a887b021a77b292e151afb75323dea88a7bc1b3dfa92176cff8e44c8b68bddf", "d400a9344254803a2368533e4533a4200d21eb7b6b729c173bc38201a74db3f2",]
 tzlocal = [ "4ebeb848845ac898da6519b9b31879cf13b6626f7184c496037b818e238f2c4e",]
 urllib3 = [ "06330f386d6e4b195fbfc736b297f58c5a892e4440e54d294d7004e3a9bbea1b", "cc44da8e1145637334317feebd728bd869a35285b93cbb4cca2577da7e62db4f",]
 webencodings = [ "a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78", "b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923",]
