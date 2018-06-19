@@ -1,332 +1,110 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from functools import partial
+from itertools import chain
 
-import numpy as np
-from scipy.sparse import csc_matrix
-from sympy import lambdify
+import theano.tensor as tt
+from sympy import And, Idx, Integer, Symbol
+from sympy.printing.theanocode import TheanoPrinter, dim_handling, mapping
 
-
-def theano_compiler(model):
-    """Take a triflow model and return optimized theano routines.
-
-    Parameters
-    ----------
-    model: triflow.Model:
-        Model to compile
-
-    Returns
-    -------
-    (theano function, theano_function):
-        Optimized routine that compute the evolution equations and their
-        jacobian matrix.
-    """
-    from theano import tensor as T
-    from theano.ifelse import ifelse
-    import theano.sparse as ths
-    from theano import function
-
-    def th_Min(a, b):
-        if isinstance(a, T.TensorVariable) or isinstance(b, T.TensorVariable):
-            return T.where(a < b, a, b)
-        return min(a, b)
-
-    def th_Max(a, b):
-        if isinstance(a, T.TensorVariable) or isinstance(b, T.TensorVariable):
-            return T.where(a < b, b, a)
-        return max(a, b)
-
-    def th_Heaviside(a):
-        if isinstance(a, T.TensorVariable):
-            return T.where(a < 0, 1, 1)
-        return 0 if a < 0 else 1
-
-    mapargs = {arg: T.vector(arg)
-               for arg, sarg
-               in zip(model._args, model._symbolic_args)}
-
-    to_feed = mapargs.copy()
-
-    x_th = mapargs['x']
-    N = x_th.size
-    L = x_th[-1] - x_th[0]
-    dx = L / (N - 1)
-    to_feed['dx'] = dx
-
-    periodic = T.scalar("periodic", dtype="int32")
-
-    middle_point = int((model._window_range - 1) / 2)
-
-    th_args = [mapargs[key]
-               for key
-               in [*model._indep_vars,
-                   *model._dep_vars,
-                   *model._help_funcs,
-                   *model._pars]] + [periodic]
-
-    map_extended = {}
-
-    for (varname, discretisation_tree) in \
-            model._symb_vars_with_spatial_diff_order.items():
-        pad_left, pad_right = model._bounds
-
-        th_arg = mapargs[varname]
-
-        per_extended_var = T.concatenate([th_arg[pad_left:],
-                                          th_arg,
-                                          th_arg[:pad_right]])
-        edge_extended_var = T.concatenate([[th_arg[0]] * middle_point,
-                                           th_arg,
-                                           [th_arg[-1]] * middle_point])
-
-        extended_var = ifelse(periodic,
-                              per_extended_var,
-                              edge_extended_var)
-
-        map_extended[varname] = extended_var
-        for order in range(pad_left, pad_right + 1):
-            if order != 0:
-                var = ("{}_{}{}").format(varname,
-                                         'm' if order < 0 else 'p',
-                                         np.abs(order))
-            else:
-                var = varname
-            new_var = extended_var[order - pad_left:
-                                   extended_var.size +
-                                   order - pad_right]
-            to_feed[var] = new_var
-
-    F = lambdify((model._symbolic_args),
-                 expr=model.F_array.tolist(),
-                 modules=[T, {"Max": th_Max,
-                              "Min": th_Min,
-                              "Heaviside": th_Heaviside}])(
-        *[to_feed[key]
-          for key
-          in model._args]
-    )
-
-    F = T.concatenate(F, axis=0).reshape((model._nvar, N)).T
-    F = T.stack(F).flatten()
-
-    J = lambdify((model._symbolic_args),
-                 expr=model.J_array.tolist(),
-                 modules=[T, {"Max": th_Max,
-                              "Min": th_Min,
-                              "Heaviside": th_Heaviside}])(
-        *[to_feed[key]
-          for key
-          in model._args]
-    )
-
-    J = [j if j != 0 else T.constant(0.)
-         for j in J]
-    J = [j if not isinstance(j, (int, float)) else T.constant(j)
-         for j in J]
-    J = T.stack([T.repeat(j, N) if j.ndim == 0 else j
-                 for j in J])
-    J = J[model._sparse_indices[0]].T.squeeze()
-
-    i = T.arange(N).dimshuffle([0, 'x'])
-    idx = T.arange(N * model._nvar).reshape((N, model._nvar)).T
-    edge_extended_idx = T.concatenate([T.repeat(idx[:, :1],
-                                                middle_point,
-                                                axis=1),
-                                       idx,
-                                       T.repeat(idx[:, -1:],
-                                                middle_point,
-                                                axis=1)],
-                                      axis=1).T.flatten()
-    per_extended_idx = T.concatenate([idx[:, -middle_point:],
-                                      idx,
-                                      idx[:, :middle_point]],
-                                     axis=1).T.flatten()
-    extended_idx = ifelse(periodic,
-                          per_extended_idx,
-                          edge_extended_idx)
-
-    rows = T.tile(T.arange(model._nvar),
-                  model._window_range * model._nvar) + i * model._nvar
-    cols = T.repeat(T.arange(model._window_range * model._nvar),
-                    model._nvar) + i * model._nvar
-    rows = rows[:, model._sparse_indices].reshape(J.shape).flatten()
-    cols = extended_idx[cols][:, model._sparse_indices] \
-        .reshape(J.shape).flatten()
-
-    permutation = T.argsort(cols)
-
-    J = J.flatten()[permutation]
-    rows = rows[permutation]
-    cols = cols[permutation]
-    count = T.zeros((N * model._nvar + 1,), dtype=int)
-    uq, cnt = T.extra_ops.Unique(False, False, True)(cols)
-    count = T.set_subtensor(count[uq + 1], cnt)
-
-    indptr = T.cumsum(count)
-    shape = T.stack([N * model._nvar, N * model._nvar])
-    sparse_J = ths.CSC(J, rows, indptr, shape)
-    F_theano_function = function(inputs=th_args,
-                                 outputs=F,
-                                 on_unused_input='ignore',
-                                 allow_input_downcast=True)
-    J_theano_function = function(inputs=th_args,
-                                 outputs=sparse_J,
-                                 on_unused_input='ignore',
-                                 allow_input_downcast=True)
-
-    return F_theano_function, J_theano_function
+from .system import DependentVariable, IndependentVariable
 
 
-def numpy_compiler(model):
-    """Take a triflow model and return optimized numpy routines.
-
-    Parameters
-    ----------
-    model: triflow.Model:
-        Model to compile
-
-    Returns
-    -------
-    (numpy function, numpy function):
-        Optimized routine that compute the evolution equations and their
-        jacobian matrix.
-    """
-
-    def np_Min(args):
-        a, b = args
-        return np.where(a < b, a, b)
-
-    def np_Max(args):
-        a, b = args
-        return np.where(a < b, b, a)
-
-    def np_Heaviside(a):
-        return np.where(a < 0, 1, 1)
-
-    f_func = lambdify((model._symbolic_args),
-                      expr=model.F_array.tolist(),
-                      modules=[{"amax": np_Max,
-                                "amin": np_Min,
-                                "Heaviside": np_Heaviside},
-                               "numpy"])
-
-    j_func = lambdify((model._symbolic_args),
-                      expr=model._J_sparse_array.tolist(),
-                      modules=[{"amax": np_Max,
-                                "amin": np_Min,
-                                "Heaviside": np_Heaviside},
-                               "numpy"])
-
-    compute_F = partial(compute_F_numpy, model, f_func)
-    compute_J = partial(compute_J_numpy, model, j_func)
-
-    return compute_F, compute_J
+def th_depvar_printer(printer, dvar):
+    kwargs = dict(dtypes=printer._dtypes, broadcastables=printer._broadcast)
+    return printer.doprint(dvar.discrete, **kwargs)
 
 
-def init_computation_numpy(model, *input_args):
-    mapargs = {key: input_args[i]
-               for i, key
-               in enumerate([*model._indep_vars,
-                             *model._dep_vars,
-                             *model._help_funcs,
-                             *[*model._pars, "periodic"]])}
-    x = mapargs["x"]
-    N = x.size
-    L = x[-1] - x[0]
-    dx = L / (N - 1)
-    periodic = mapargs["periodic"]
-    middle_point = int((model._window_range - 1) / 2)
-
-    args = [mapargs[key]
-            for key
-            in [*model._indep_vars,
-                *model._dep_vars,
-                *model._help_funcs,
-                *model._pars]] + [periodic]
-
-    mapargs['dx'] = dx
-
-    map_extended = mapargs.copy()
-
-    for (varname, discretisation_tree) in \
-            model._symb_vars_with_spatial_diff_order.items():
-        pad_left, pad_right = model._bounds
-
-        arg = mapargs[varname]
-        if periodic:
-            extended_var = np.concatenate([arg[pad_left:],
-                                           arg,
-                                           arg[:pad_right]])
-        else:
-            extended_var = np.concatenate([[arg[0]] * middle_point,
-                                           arg,
-                                           [arg[-1]] * middle_point])
-
-        map_extended[varname] = extended_var
-        for order in range(pad_left, pad_right + 1):
-            if order != 0:
-                var = ("{}_{}{}").format(varname,
-                                         'm' if order < 0 else 'p',
-                                         np.abs(order))
-            else:
-                var = varname
-            new_var = extended_var[order - pad_left:
-                                   extended_var.size +
-                                   order - pad_right]
-            map_extended[var] = new_var
-    return args, map_extended, N, middle_point, periodic
+def th_ivar_printer(printer, ivar):
+    kwargs = dict(dtypes=printer._dtypes, broadcastables=printer._broadcast)
+    return (printer.doprint(ivar.discrete, **kwargs),
+            printer.doprint(Symbol(str(ivar.idx)), **kwargs),
+            printer.doprint(ivar.step, **kwargs),
+            printer.doprint(ivar.N, **kwargs))
 
 
-def compute_F_numpy(model, f_func, *input_args):
-    args, map_extended, N, middle_point, periodic = \
-        init_computation_numpy(model, *input_args)
-    F = f_func(*[map_extended[key]
-                 for key
-                 in model._args])
-    F = np.concatenate(F, axis=0).reshape((model._nvar, N)).T
-    F = np.stack(F).flatten()
-    return F
+def idx_to_symbol(idx, range):
+    return Symbol(str(idx))
 
 
-def compute_J_numpy(model, j_func, *input_args):
-    args, map_extended, N, middle_point, periodic = \
-        init_computation_numpy(model, *input_args)
-    J = j_func(*[map_extended[key]
-                 for key
-                 in model._args])
+def theano_and(*args):
+    return tt.all(args, axis=0)
 
-    J = np.stack([np.repeat(j, N) if len(
-        np.array(j).shape) == 0 else j for j in J])
-    J = J.T.squeeze()
 
-    i = np.arange(N)[:, None]
-    idx = np.arange(N * model._nvar).reshape((N, model._nvar)).T
+mapping[And] = theano_and
 
-    if periodic:
-        extended_idx = np.concatenate([idx[:, -middle_point:],
-                                       idx,
-                                       idx[:, :middle_point]],
-                                      axis=1).T.flatten()
-    else:
-        extended_idx = np.concatenate([np.repeat(idx[:, :1],
-                                                 middle_point,
-                                                 axis=1),
-                                       idx,
-                                       np.repeat(idx[:, -1:],
-                                                 middle_point,
-                                                 axis=1)],
-                                      axis=1).T.flatten()
 
-    rows = np.tile(np.arange(model._nvar),
-                   model._window_range * model._nvar) + i * model._nvar
-    cols = np.repeat(np.arange(model._window_range * model._nvar),
-                     model._nvar) + i * model._nvar
-    rows = rows[:, model._sparse_indices].reshape(J.shape)
-    cols = extended_idx[cols][:, model._sparse_indices].reshape(J.shape)
-    rows = rows.flatten()
-    cols = cols.flatten()
+class EnhancedTheanoPrinter(TheanoPrinter):
+    def _init_broadcast(self, system):
+        dvar_broadcast = {dvar.discrete:
+                          list(dim_handling([dvar.discrete],
+                                            dim=len(dvar.independent_variables)
+                                            ).values())[0]
+                          for dvar in system.dependent_variables}
+        ivar_broadcast = dim_handling(
+            list(chain(*[(ivar.idx, ivar.discrete)
+                         for ivar in system.independent_variables])),
+            dim=1)
+        return {Symbol(str(key)): value
+                for key, value
+                in chain(dvar_broadcast.items(),
+                         ivar_broadcast.items())}
 
-    sparse_J = csc_matrix((J.flatten(), (rows, cols)),
-                          shape=(N * model._nvar, N * model._nvar))
-    return sparse_J
+    def _init_dtypes(self, system):
+        sizes_dtypes = {
+            ivar.N: "int16" for ivar in system.independent_variables}
+        idx_dtypes = {Symbol(str(ivar.idx)): "int16"
+                      for ivar in system.independent_variables}
+        return {key: value for key, value in chain(sizes_dtypes.items(),
+                                                   idx_dtypes.items())}
+
+    def __init__(self, system, *args, **kwargs):
+        self._system = system
+        self._broadcast = self._init_broadcast(system)
+        self._dtypes = self._init_dtypes(system)
+        super().__init__(*args, **kwargs)
+
+    def _print_Idx(self, idx, **kwargs):
+        try:
+            return tt.constant([self._print_Integer(Integer(str(idx)))],
+                               dtype="int16", ndim=1)
+        except ValueError:
+            pass
+        idx_symbol = idx.replace(Idx, idx_to_symbol)
+        idx_th = self._print(idx_symbol, dtypes=self._dtypes,
+                             broadcastables=self._broadcast)
+        return idx_th
+
+    def _print_IndexedBase(self, indexed_base, ndim=1, **kwargs):
+        base_symbol = Symbol(str(indexed_base))
+        return self._print_Symbol(base_symbol, dtypes=self._dtypes,
+                                  broadcastables=self._broadcast)
+
+    def _print_Indexed(self, indexed, **kwargs):
+        idxs = [self._print(idx,
+                            dtypes=self._dtypes,
+                            broadcastables=self._broadcast)
+                for idx in indexed.indices]
+        idxs = [tt.cast(idx, dtype="int16") for idx in idxs]
+
+        th_base = self._print(indexed.base,
+                              ndim=len(idxs), **kwargs)
+        var_map = {var.discrete: var
+                   for var
+                   in [*self._system.dependent_variables,
+                       *self._system.independent_variables]}
+        var = var_map[indexed.base]
+        if isinstance(var, DependentVariable):
+            ranges = [(self._print(ivar.idx.lower, dtypes=self._dtypes,
+                                   broadcastables=self._broadcast),
+                       self._print(ivar.idx.upper, dtypes=self._dtypes,
+                                   broadcastables=self._broadcast))
+                      for ivar in var.independent_variables]
+        elif isinstance(var, IndependentVariable):
+            ranges = [(self._print(var.idx.lower, dtypes=self._dtypes,
+                                   broadcastables=self._broadcast),
+                       self._print(var.idx.upper, dtypes=self._dtypes,
+                                   broadcastables=self._broadcast))]
+        idxs = [tt.clip(idx, *range) for idx, range in zip(idxs, ranges)]
+
+        return th_base[tuple(idxs)]
