@@ -30,25 +30,7 @@ def ensure_bool(cond, ivars):
         return cond
     else:
         cond = cond.subs({ivar.N: oo for ivar in ivars})
-        try:
-            return bool(cond)
-        except TypeError:
-            # for idx in cond.atoms(Idx):
-            #     if ((idx in cond.lhs.args
-            #          and isinstance(cond, (GreaterThan, StrictGreaterThan)))
-            #         or (idx in cond.rhs.args
-            #             and isinstance(cond, (LessThan, StrictLessThan)))):
-            #         cond = cond.subs(idx, idx.lower)
-            #         print(cond)
-            #         return ensure_bool(cond, ivars)
-            #     if ((idx in cond.rhs.args
-            #          and isinstance(cond, (GreaterThan, StrictGreaterThan)))
-            #         or (idx in cond.lhs.args
-            #             and isinstance(cond, (LessThan, StrictLessThan)))):
-            #         cond = cond.subs(idx, idx.upper)
-            #         print(cond)
-            #         return ensure_bool(cond, ivars)
-            raise
+        return bool(cond)
 
 
 def is_in_bulk(indexed, ivars, all_ivars):
@@ -166,20 +148,25 @@ class DependentVariable:
 
     @property
     def symbol(self):
-        return Function(self.name)
+        return Function(self.name) if self.independent_variables else Symbol(
+            self.name)
 
     @property
     def discrete(self):
-        return IndexedBase(self.name)
+        return IndexedBase(
+            self.name) if self.independent_variables else Symbol(self.name)
 
     @property
     def discrete_i(self):
-        return self.discrete[tuple(
-            [ivar.idx for ivar in self.independent_variables])]
+        return self.discrete[tuple([
+            ivar.idx for ivar in self.independent_variables
+        ])] if self.independent_variables else Symbol(self.name)
 
     def __repr__(self):
-        return "{}({})".format(self.name, ", ".join(
-            map(str, self.independent_variables)))
+        return "{}{}".format(
+            self.name,
+            ("(%s)" % ", ".join(map(str, self.independent_variables))
+             if self.independent_variables else ""))
 
     def __str__(self):
         return self.__repr__()
@@ -222,6 +209,11 @@ class PDEquation:
     equation = attr.ib(type=str)
     dependent_variables = attr.ib(
         type=typing.Tuple[DependentVariable], converter=_convert_depvar_list)
+    parameters = attr.ib(
+        type=typing.Tuple[DependentVariable],
+        converter=_convert_depvar_list,
+        default=[],
+    )
     independent_variables = attr.ib(
         type=typing.Tuple[IndependentVariable],
         default=[],
@@ -303,7 +295,10 @@ class PDEquation:
 
         spatial_derivative_re = re.compile(
             r"d(?P<derargs>\w+?)(?:(?P<depder>[%s]+)|\((?P<inder>.*?)\))" %
-            ",".join([var.name for var in self.dependent_variables]))
+            ",".join([
+                var.name
+                for var in chain(self.dependent_variables, self.parameters)
+            ]))
         spatial_derivative = spatial_derivative_re.findall(str(self.equation))
 
         namespace = dict()
@@ -312,8 +307,9 @@ class PDEquation:
              for var in self.independent_variables})
         namespace.update({
             var.name:
-            var.symbol(*[ivar.symbol for ivar in var.independent_variables])
-            for var in self.dependent_variables
+            (var.symbol(*[ivar.symbol for ivar in var.independent_variables])
+             if var.independent_variables else var.symbol)
+            for var in chain(self.dependent_variables, self.parameters)
         })
         for ivar, dvar, inside in spatial_derivative:
             if dvar:
@@ -379,12 +375,14 @@ class PDEquation:
             fdiff_equation = fdiff_equation.replace(
                 ivar.symbol + a * ivar.step, ivar.idx + a)
 
-        for var in self.dependent_variables:
+        for var in chain(self.dependent_variables, self.parameters):
 
             def replacement(*args):
                 return var.discrete[args]
 
-            fdiff_equation = fdiff_equation.replace(var.symbol, replacement)
+            if var.independent_variables:
+                fdiff_equation = fdiff_equation.replace(
+                    var.symbol, replacement)
 
         for indexed in fdiff_equation.atoms(Indexed):
             new_indexed = indexed.subs(
@@ -412,6 +410,8 @@ class PDESys:
     evolution_equations = attr.ib(
         type=typing.List[str], converter=_convert_pde_list)
     dependent_variables = attr.ib(
+        type=typing.List[DependentVariable], converter=_convert_depvar_list)
+    parameters = attr.ib(
         type=typing.List[DependentVariable], converter=_convert_depvar_list)
     independent_variables = attr.ib(
         type=typing.List[IndependentVariable],
@@ -480,6 +480,7 @@ class PDESys:
             PDEquation(
                 eq,
                 self.dependent_variables,
+                self.parameters,
                 auxiliary_definitions=self.auxiliary_definitions,
             ) for eq in self.evolution_equations.copy()
         ]
@@ -560,8 +561,8 @@ class PDESys:
             _unknown_nodes = {
                 ivar: tuple(
                     zip(*[
-                        map(set, unode.get(ivar, [[], []])) for dvar, unode in zip(
-                            self.dependent_variables, self._unknown_nodes)
+                        map(set, unode.get(ivar, [[], []])) for dvar, unode in
+                        zip(self.dependent_variables, self._unknown_nodes)
                         if ivar in ivars
                     ]))
                 for ivar in ivars
@@ -614,8 +615,8 @@ class PDESys:
                     for bdc in available_bdcs:
                         subs_queue.put([
                             indexed for indexed in bdc.atoms(Indexed)
-                            if not is_in_bulk(
-                                indexed, ivars, self.independent_variables)
+                            if not is_in_bulk(indexed, ivars,
+                                              self.independent_variables)
                             and indexed not in unavailable_vars
                         ])
                     all_available_bdcs = all_available_bdcs.union(
@@ -623,13 +624,16 @@ class PDESys:
                     all_unavailable_vars = all_unavailable_vars.union(
                         set(unavailable_vars))
 
-                    all_idxs = set([*chain(*[list(var.atoms(Idx)) for var in all_unavailable_vars]),
-                                    *chain(*[list(bdc.atoms(Idx)) for bdc in all_available_bdcs])])
+                    all_idxs = set([
+                        *chain(*[
+                            list(var.atoms(Idx))
+                            for var in all_unavailable_vars
+                        ]), *chain(*[
+                            list(bdc.atoms(Idx)) for bdc in all_available_bdcs
+                        ])
+                    ])
 
-                    dummy_map = {
-                        idx: Dummy()
-                        for idx in all_idxs
-                    }
+                    dummy_map = {idx: Dummy() for idx in all_idxs}
                     reverse_dummy_map = {
                         value: key
                         for key, value in dummy_map.items()
@@ -639,13 +643,19 @@ class PDESys:
                         [bdc.subs(dummy_map) for bdc in all_available_bdcs])
                     all_unavailable_vars = set(
                         [var.subs(dummy_map) for var in all_unavailable_vars])
+                    solved_ = {}
+                    [
+                        solved_.update(sol) for sol in solve(
+                            all_available_bdcs,
+                            all_unavailable_vars,
+                            dict=True,
+                            set=True)
+                    ]
 
-                    solved_variables = solve(all_available_bdcs,
-                                             all_unavailable_vars)
                     solved_variables = {
                         key.subs(reverse_dummy_map):
                         value.subs(reverse_dummy_map)
-                        for key, value in solved_variables.items()
+                        for key, value in solved_.items()
                     }
                     local_eq = local_eq.subs(solved_variables)
 

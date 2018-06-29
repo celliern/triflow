@@ -11,7 +11,7 @@ from collections import namedtuple
 import cloudpickle
 import pendulum
 import streamz
-import tqdm
+from tqdm import tqdm
 from coolname import generate_slug
 from numpy import isclose
 
@@ -20,14 +20,6 @@ from ..plugins.container import TriflowContainer
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
-
-
-def is_interactive():
-    import __main__ as main
-    return not hasattr(main, '__file__')
-
-
-tqdm = tqdm.tqdm_notebook if is_interactive() else tqdm.tqdm
 
 
 class Timer:
@@ -48,8 +40,8 @@ total:  {total}"""
             .diff()))
 
 
-def null_hook(t, fields, pars):
-    return fields, pars
+def null_hook(t, fields):
+    return fields
 
 
 def get_total_iter(tmax, user_dt):
@@ -91,7 +83,6 @@ def _reduce_simulation(model,
                        _container,
                        ):
     simul = Simulation(model=model, fields=fields,
-                       parameters=parameters,
                        dt=dt, t=t, tmax=tmax, id=id)
     simul.i = i
     simul._pprocesses = cloudpickle.loads(_pprocesses)
@@ -123,8 +114,6 @@ class Simulation(object):
           system
       fields : triflow.BaseFields or dict (any mappable)
           triflow container or mappable filled with initial conditions
-      parameters : dict
-          physical parameters of the simulation
       dt : float
           time stepping for output. if time_stepping is False, the internal
           time stepping will be the same.
@@ -146,7 +135,7 @@ class Simulation(object):
       scheme : callable, optional, default triflow.schemes.RODASPR
           An callable object which take the simulation state and return
           the next step.
-          Its signature is scheme.__call__(fields, t, dt, pars, hook)
+          Its signature is scheme.__call__(fields, t, dt, hook)
           and it should return the next time and the updated fields.
           It take the model and extra positional and named arguments.
       time_stepping : boolean, default True
@@ -167,8 +156,6 @@ class Simulation(object):
         name of the simulation
       model : triflow.Model
         triflow Model used in the simulation
-      parameters : dict
-        physical parameters of the simulation
       status : str
         status of the simulation, one of the following one:
         ('created', 'running', 'finished', 'failed')
@@ -203,15 +190,14 @@ class Simulation(object):
       >>> U = np.cos(x * 2 * np.pi / 100)
       >>> V = np.sin(x * 2 * np.pi / 100)
       >>> fields = model.fields_template(x=x, U=U, V=V)
-      >>> pars = {'k1': 1, 'k2': 1, 'periodic': True}
-      >>> simulation = triflow.Simulation(model, fields, pars, dt=5., tmax=50.)
+      >>> simulation = triflow.Simulation(model, fields, dt=5., tmax=50.)
       >>> for t, fields in simulation:
       ...    pass
       >>> print(t)
       50.0
       """  # noqa
 
-    def __init__(self, model, fields, parameters, dt, t=0, tmax=None,
+    def __init__(self, model, fields, dt, t=0, tmax=None,
                  id=None, hook=null_hook,
                  scheme=schemes.RODASPR,
                  time_stepping=True, **kwargs):
@@ -229,7 +215,6 @@ class Simulation(object):
         kwargs["time_stepping"] = time_stepping
         self.id = generate_slug(2) if not id else id
         self.model = model
-        self.parameters = parameters
         self.fields = model.fields_template(**fields)
         self.t = t
         self.user_dt = self.dt = dt
@@ -261,23 +246,23 @@ class Simulation(object):
         self._container = None
         self._iterator = self.compute()
 
-    def _compute_one_step(self, t, fields, pars):
+    def _compute_one_step(self, t, fields):
         """
         Compute one step of the simulation, then update the timers.
         """
-        fields, pars = self._hook(t, fields, pars)
+        fields = self._hook(t, fields)
         self.dt = (self.tmax - t
                    if self.tmax and (t + self.dt >= self.tmax)
                    else self.dt)
         before_compute = time.clock()
         t, fields = self._scheme(t, fields, self.dt,
-                                 pars, hook=self._hook)
+                                 hook=self._hook)
         after_compute = time.clock()
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
         self._last_timestamp = self._actual_timestamp
         self._actual_timestamp = pendulum.now()
-        return t, fields, pars
+        return t, fields
 
     def compute(self):
         """Generator which yield the actual state of the system every dt.
@@ -289,18 +274,16 @@ class Simulation(object):
         """
         fields = self.fields
         t = self.t
-        pars = self.parameters
         self._started_timestamp = pendulum.now()
         self.stream.emit(self)
 
         try:
             while True:
-                t, fields, pars = self._compute_one_step(t, fields, pars)
+                t, fields = self._compute_one_step(t, fields)
 
                 self.i += 1
                 self.t = t
                 self.fields = fields
-                self.parameters = pars
                 for pprocess in self.post_processes:
                     pprocess.function(self)
                 self.stream.emit(self)

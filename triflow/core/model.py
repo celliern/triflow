@@ -3,8 +3,13 @@
 
 import logging
 import sys
+from itertools import chain
+import xarray as xr
 
-# from .routines import F_Routine, J_Routine
+import forge
+
+from .compilers import TheanoCompiler
+from .system import PDESys
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -33,31 +38,12 @@ class Model:
           derivative of the previous arg.
       parameters : iterable of str or str, optional, default None
           list of the parameters. Can be feed with a scalar of an array with
-          the same size
-      help_functions : None, optional
-          All fields which have not to be solved with the time derivative but
-          will be derived in space.
-
-      Attributes
-      ----------
-      F : triflow.F_Routine
-          Callable used to compute the right hand side of the dynamical system
-      F_array : numpy.ndarray of sympy.Expr
-          Symbolic expressions of the right hand side of the dynamical system
-      J : triflow.J_Routine
-          Callable used to compute the Jacobian of the dynamical system
-      J_array : numpy.ndarray of sympy.Expr
-          Symbolic expressions of the Jacobian side of the dynamical system
-
-      Properties
-      ----------
-      fields_template:
-          Model specific Fields container used to store andaccess to the model
-          variables in an efficient way.
+          the same size. They can be derivated in space as well.
 
       Methods
       -------
-      save: Save a binary of the Model with pre-optimized F and J routines
+      F : Compute the right hand side of the dynamical system
+      J : Compute the Jacobian of the dynamical system as sparce csc matrix
 
       Examples
       --------
@@ -75,12 +61,53 @@ class Model:
       """  # noqa
 
     def __init__(self,
-                 differential_equations,
+                 evolution_equations,
                  dependent_variables,
-                 parameters=None,
-                 independent_variables=None,
-                 bdc_conditions=None,
-                 auxiliary_definitions=None,
-                 compiler="theano",
-                 hold_compilation=False):
-        pass
+                 parameters=[],
+                 independent_variables=[],
+                 bdc_conditions={},
+                 auxiliary_definitions={},
+                 compiler="theano"):
+
+        self.pdesys = PDESys(
+            evolution_equations=evolution_equations,
+            dependent_variables=dependent_variables,
+            independent_variables=independent_variables,
+            parameters=parameters,
+            boundary_conditions=bdc_conditions,
+            auxiliary_definitions=auxiliary_definitions)
+
+        if compiler == "theano":
+            self.compiler = TheanoCompiler(self.pdesys)
+
+        self.F = self.compiler.F
+        self.J = self.compiler.J
+        self.U_from_fields = self.compiler.U_from_fields
+        self.fields_from_U = self.compiler.fields_from_U
+
+        dvar_names = [dvar.name for dvar in self.pdesys.dependent_variables]
+        ivar_names = [ivar.name for ivar in self.pdesys.independent_variables]
+        par_names = [par.name for par in self.pdesys.parameters]
+
+        @forge.sign(*[
+            forge.arg(name)
+            for name in chain(dvar_names, ivar_names, par_names)
+        ])
+        def create_dataset(**kwargs):
+            dvars = {
+                dvar.name:
+                ([ivar.name for ivar in dvar.independent_variables],
+                 kwargs[dvar.name])
+                for dvar in chain(
+                    self.pdesys.dependent_variables,
+                    self.pdesys.parameters,
+                )
+            }
+            coords = {
+                ivar.name: kwargs[ivar.name]
+                for ivar in self.pdesys.independent_variables
+            }
+
+            return xr.Dataset(data_vars=dvars, coords=coords)
+
+        self.fields_template = create_dataset
