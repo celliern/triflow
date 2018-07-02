@@ -216,12 +216,10 @@ Coupled burger’s-like equations
 
 We initialize the model with a coupled burger-like system of equations
 
-.. raw:: latex
-
-   \begin{align}
-       \partial_{t}U &= k \partial_{xx} U - c U \partial_{x} V \\
-       \partial_{t}V &= k \partial_{xx} U - c V \partial_{x} U
-   \end{align}
+:raw-latex:`\begin{align}
+    \partial_{t}U &= k \partial_{xx} U - c U \partial_{x} V \\
+    \partial_{t}V &= k \partial_{xx} U - c V \partial_{x} U
+\end{align}`
 
 .. code:: ipython3
 

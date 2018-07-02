@@ -68,7 +68,7 @@ class TriflowDisplay:
                       xlabel=None, ylabel=None, buffer=None):
         history = deque([], buffer)
         if not xlabel:
-            xlabel = str(uuid4())[:8]
+            xlabel = str(uuid4())[:6]
         if not ylabel:
             ylabel = function.__name__
         if ylabel == '<lambda>':

@@ -3,7 +3,7 @@
 
 from setuptools import find_packages, setup
 
-version = "0.5.1"
+version = "0.6.0"
 
 setup(
     name='triflow',
@@ -38,7 +38,6 @@ setup(
             'holoviews',
             'cloudpickle',
             'bokeh',
-            'coolname',
             'path.py',
             'dask',
             'tqdm',

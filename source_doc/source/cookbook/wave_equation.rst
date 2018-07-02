@@ -221,12 +221,10 @@ first order differential equations.
 
 which lead to
 
-.. raw:: latex
-
-   \begin{align}
-       \partial_{t}u &= v\\
-       \partial_{t}v &= c^2 \partial_{x,\,x} u
-   \end{align}
+:raw-latex:`\begin{align}
+    \partial_{t}u &= v\\
+    \partial_{t}v &= c^2 \partial_{x,\,x} u
+\end{align}`
 
 with :math:`c` the velocity of the wave.
 

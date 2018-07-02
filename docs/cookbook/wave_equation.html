@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Wave equation &mdash; triflow 0.5.0rc documentation</title>
+  <title>Wave equation &mdash; triflow 0.5.1rc documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.5
+                0.5.1
               </div>
             
           
@@ -393,6 +393,12 @@ roTBs2RqAAAAAElFTkSuQmCC'
 </div><p>We initialize the model with the wave equation written as a system of
 first order differential equations.</p>
 <img src="../_images/mathmpl/math-63ef631d5e.png" class="center" /><p>which lead to</p>
+<dl class="docutils">
+<dt>:raw-latex:<a href="#id1"><span class="problematic" id="id2">`</span></a>begin{align}</dt>
+<dd>partial_{t}u &amp;= v\
+partial_{t}v &amp;= c^2 partial_{x,,x} u</dd>
+</dl>
+<p>end{align}`</p>
 <p>with <img src="../_images/mathmpl/math-38408b5f33.png" style="position: relative; bottom: -3px"/> the velocity of the wave.</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">trf</span><span class="o">.</span><span class="n">Model</span><span class="p">([</span><span class="s2">&quot;c**2 * dxxu&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">],</span>
                   <span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;u&quot;</span><span class="p">],</span> <span class="s2">&quot;c&quot;</span><span class="p">)</span>
@@ -512,7 +518,7 @@ trf.display_fields(simulation)
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.5.0rc',
+            VERSION:'0.5.1rc',
             LANGUAGE:'python',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
