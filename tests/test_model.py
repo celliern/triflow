@@ -7,7 +7,6 @@ import pytest
 from path import tempdir
 
 from triflow import Model
-from triflow.core.compilers import numpy_compiler, theano_compiler
 
 
 @pytest.fixture
@@ -27,7 +26,7 @@ def heat_model():
 @pytest.mark.parametrize("var", [func("U") for func in (str, list)])
 @pytest.mark.parametrize("par", [func("k") for func in (str, list)])
 @pytest.mark.parametrize("k", [1, np.ones((100,))])
-@pytest.mark.parametrize("compiler", [numpy_compiler, theano_compiler])
+@pytest.mark.parametrize("compiler", ["theano"])
 def test_model_monovariate(func, var, par, k, compiler):
     model = Model(func, var, par, compiler=compiler)
     x, dx = np.linspace(0, 10, 100, retstep=True, endpoint=False)
