@@ -5,14 +5,14 @@ import inspect
 import logging
 import pprint
 import time
+from datetime import datetime
 import warnings
 from collections import namedtuple
+from uuid import uuid4
 
 import cloudpickle
-import pendulum
 import streamz
 from tqdm import tqdm
-from coolname import generate_slug
 from numpy import isclose
 
 from . import schemes
@@ -20,6 +20,8 @@ from ..plugins.container import TriflowContainer
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+now = datetime.now
 
 
 class Timer:
@@ -30,14 +32,8 @@ class Timer:
     def __repr__(self):
         repr = """last:   {last}
 total:  {total}"""
-        return repr.format(last=(pendulum.now()
-                                 .subtract(
-            seconds=self.last)
-            .diff()),
-            total=(pendulum.now()
-                   .subtract(
-                seconds=self.total)
-            .diff()))
+        return repr.format(last=(now() - self.last),
+                           total=(now() - self.total))
 
 
 def null_hook(t, fields):
@@ -212,7 +208,7 @@ class Simulation(object):
                       in kwargs.items() if key in func_parameters}
             return kwargs
         kwargs["time_stepping"] = time_stepping
-        self.id = generate_slug(2) if not id else id
+        self.id = str(uuid4())[:6] if not id else id
         self.model = model
         self.fields = model.fields_template(**fields)
         self.t = t
@@ -237,10 +233,10 @@ class Simulation(object):
 
         self._total_running = 0
         self._last_running = 0
-        self._created_timestamp = pendulum.now()
+        self._created_timestamp = now()
         self._started_timestamp = None
         self._last_timestamp = None
-        self._actual_timestamp = pendulum.now()
+        self._actual_timestamp = now()
         self._hook = hook
         self._container = None
         self._iterator = self.compute()
@@ -260,7 +256,7 @@ class Simulation(object):
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
         self._last_timestamp = self._actual_timestamp
-        self._actual_timestamp = pendulum.now()
+        self._actual_timestamp = now()
         return t, fields
 
     def compute(self):
@@ -273,7 +269,7 @@ class Simulation(object):
         """
         fields = self.fields
         t = self.t
-        self._started_timestamp = pendulum.now()
+        self._started_timestamp = now()
         self.stream.emit(self)
 
         try:
@@ -352,11 +348,6 @@ iteration:    {iter:g}
 last step:    {step_time}
 total time:   {running_time}
 
-
-Physical parameters
--------------------
-{parameters}
-
 Hook function
 -------------
 {hook_source}
@@ -368,33 +359,18 @@ Container
 =========== Model ===========
 {model_repr}"""
         repr = repr.format(simulation_name=" %s " % self.id,
-                           parameters="\n\t".join(
-                               [("%s:" % key).ljust(12) +
-                                pprint.pformat(value)
-                                for key, value
-                                in self.parameters.items()]),
                            container=self.container,
                            t=self.t,
                            iter=self.i,
                            model_repr=self.model,
                            hook_source=inspect.getsource(self._hook),
-                           step_time=(None if not self._last_running else
-                                      pendulum.now()
-                                      .subtract(
-                                          seconds=self._last_running)
-                                      .diff()),
-                           running_time=(pendulum.now()
-                                         .subtract(
-                               seconds=self._total_running)
-                               .diff()),
-                           created_date=(self._created_timestamp
-                                         .to_cookie_string()),
+                           step_time=self._last_running,
+                           running_time=self._total_running,
+                           created_date=(self._created_timestamp),
                            started_date=(self._started_timestamp
-                                         .to_cookie_string()
                                          if self._started_timestamp
                                          else "None"),
                            last_date=(self._last_timestamp
-                                      .to_cookie_string()
                                       if self._last_timestamp
                                       else "None"))
         return repr

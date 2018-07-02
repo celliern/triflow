@@ -29,9 +29,12 @@ theano = "^1"
 # pipeline for data and display
 streamz = "^0.3"
 
-# data container:
+# data container
 xarray = "^0.10"
 dask = "^0.17.2"
+
+# memoization for ndarray input
+joblib = "^0.12.0"
 
 # path management
 "path.py" = "^11.0"

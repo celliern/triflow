@@ -324,6 +324,15 @@ platform = "*"
 [package.dependencies]
 MarkupSafe = ">=0.23"
 [[package]]
+name = "joblib"
+version = "0.12.0"
+description = "Lightweight pipelining: using Python functions as pipeline jobs."
+category = "main"
+optional = false
+python-versions = "*"
+platform = "any"
+
+[[package]]
 name = "jsonschema"
 version = "2.6.0"
 description = "An implementation of JSON Schema validation for Python"
@@ -1101,7 +1110,7 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "459ff4b94d51d5e5aa909202e2ddc33c88ea9b4ee1b86cde37013e9b363e4a8a"
+content-hash = "ea9161e69ffd52497b7f08b9f9e196e3bc346c742947a78f9e5a8727534be80d"
 
 [metadata.hashes]
 alabaster = [ "674bb3bab080f598371f4443c5008cbfeb1a5e622dd312395d2d82af2c54c456", "b63b1f4dc77c074d386752ec4a8a7517600f6c0db8cd42980cae17ab7b3275d7",]
@@ -1134,6 +1143,7 @@ ipywidgets = [ "9985e91c300f7bb41ca97627ed8a8ce22750584cefd023ffbe4b0c18edb84605
 isort = [ "ec9ef8f4a9bc6f71eec99e1806bfa2de401650d996c59330782b89a5555c1497", "1153601da39a25b14ddc54955dbbacbb6b2d19135386699e2ad58517953b34af", "b9c40e9750f3d77e6e4d441d8b0266cf555e7cdabdcff33c4fd06366ca761ef8",]
 jedi = [ "c254b135fb39ad76e78d4d8f92765ebc9bf92cbc76f49e97ade1d5f5121e1f6f", "b409ed0f6913a701ed474a614a3bb46e6953639033e31f769ca7581da5bd1ec1",]
 jinja2 = [ "74c935a1b8bb9a3947c50a54766a969d4846290e1e788ea44c1392163723c3bd", "f84be1bb0040caca4cea721fcbbbbd61f9be9464ca236387158b0feea01914a4",]
+joblib = [ "9de5fe8bc953f871f862d27e77f153c31d545b84f2aa31a63b5165e912ad6dfa", "aba9f97aa3e0548be6fc458b5d708be863eb4be35830caeb3faa7bd3d9afb7bb",]
 jsonschema = [ "000e68abd33c972a5248544925a0cae7d1125f9bf6c58280d37546b946769a08", "6ff5f3180870836cae40f06fa10419f557208175f13ad7bc26caa77beb1f6e02",]
 jupyter = [ "5b290f93b98ffbc21c0c7e749f054b3267782166d72fa5e3ed1ed4eaf34a2b78", "d9dc4b3318f310e34c82951ea5d6683f67bed7def4b259fafbfe4f1beb1d8e5f", "3e1f86076bbb7c8c207829390305a2b1fe836d471ed54be66a3b8c41e7f46cc7",]
 jupyter-client = [ "59e6d791e22a8002ad0e80b78c6fd6deecab4f9e1b1aa1a22f4213de271b29ea", "27befcf0446b01e29853014d6a902dd101ad7d7f94e2252b1adca17c3466b761",]
