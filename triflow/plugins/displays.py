@@ -17,30 +17,6 @@ log.handlers = []
 log.addHandler(logging.NullHandler())
 
 
-def is_interactive():
-    import __main__ as main
-    return not hasattr(main, '__file__')
-
-
-def manage_display_import():
-    global MPLRenderer
-    import matplotlib as mpl
-    if os.environ.get('DISPLAY', '') == '':
-        log.info('no display found. Using non-interactive Agg backend')
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            mpl.use('Agg')
-
-    from holoviews.plotting.mpl import MPLRenderer  # noqa
-
-    if is_interactive():
-        from holoviews import notebook_extension
-        notebook_extension("bokeh")
-
-
-manage_display_import()
-
-
 class TriflowDisplay:
     def __init__(self, skel_data, plot_function,
                  on_disk=None, on_disk_name="triflow_plot",
