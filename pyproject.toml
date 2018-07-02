@@ -18,7 +18,7 @@ keywords = ['PDE', 'finite-difference', 'physic',
             'modelling', 'interactive']
 
 [tool.poetry.dependencies]
-python = ">=3.5"  # Compatible python versions must be declared here
+python = ">=3.5"
 
 # core computation
 numpy = "^1"
@@ -26,37 +26,50 @@ scipy = "^1"
 sympy = "^1"
 theano = "^1"
 
-# plugins: displays and containers
+# pipeline for data and display
 streamz = "^0.3"
-xarray = "^0.10"
-holoviews = "^1.1"
-bokeh = "^0.12"
 
-# misc: simul name generation and path management, serialization
-coolname = "^1.0"
-"path.py" = "^11.0"
-pendulum = "^1.5"
+# data container:
+xarray = "^0.10"
 dask = "^0.17.2"
+
+# path management
+"path.py" = "^11.0"
+
+# iteration display
 tqdm = "^4.23"
+
+# better serialization
 cloudpickle = "^0.5.2"
+
+# dataclass for python < 3.7
 attrs = "^18.1"
 
+# needed for decision-tree building
+sklearn = "^0"
+
+# allow dynamic function signature
+python-forge = "^18"
+
+# interactive work with jupyter
+jupyter = {version = "^1.0", extras = ["jupyter"]}
+ipywidgets = {version = "^7.2", extras = ["jupyter"]}
+bokeh = {version = "^0.13.0", extras = ["jupyter"]}
+holoviews = {version = "^1.10", extras = ["jupyter"]}
+
 [tool.poetry.dev-dependencies]
-jupyter = "^1.0"
+# linting & formatting
 pylama = "^7.4"
-pytest = "^3.5"
 isort = "^4.3"
-matplotlib = "^2.2"
-cycler = "^0.10.0"
-kiwisolver = "^1.0"
-recommonmark = "^0.4.0"
+
+# tests
+pytest = "^3.5"
+
+# doc generation
 sphinx = "^1.7"
-"sphinxcontrib.napoleon" = "^0.6.1"
-nbsphinx = "^0.3.3"
-nbconvert = "^5.3"
-sphinx_rtd_theme = "^0.3.0"
-doc8 = "^0.8.0"
-scikit-image = "^0.13.1"
+matplotlib = "^2.2"
+
+# coverage
 python-coveralls = "^2.9"
 pytest-cov = "^2.5"
 
