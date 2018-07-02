@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
+from triflow.utils import enable_notebook  # noqa
 from triflow.core import schemes  # noqa
 from triflow.core.model import Model  # noqa
 from triflow.core.simulation import Simulation  # noqa

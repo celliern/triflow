@@ -136,7 +136,7 @@ platform = "UNKNOWN"
 name = "cycler"
 version = "0.10.0"
 description = "Composable style cycles"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 platform = "Cross platform (Linux,Mac OSX,Windows)"
@@ -380,7 +380,7 @@ traitlets = "*"
 name = "kiwisolver"
 version = "1.0.1"
 description = "A fast implementation of the Cassowary constraint solver"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 platform = "*"
@@ -400,7 +400,7 @@ platform = "UNKNOWN"
 name = "matplotlib"
 version = "2.2.2"
 description = "Python plotting package"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 platform = "any"
@@ -1110,7 +1110,7 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "ea9161e69ffd52497b7f08b9f9e196e3bc346c742947a78f9e5a8727534be80d"
+content-hash = "9f255bea0ced2414a19fee919a5db857b66e692a706bc6bfd1099f12fa46cea0"
 
 [metadata.hashes]
 alabaster = [ "674bb3bab080f598371f4443c5008cbfeb1a5e622dd312395d2d82af2c54c456", "b63b1f4dc77c074d386752ec4a8a7517600f6c0db8cd42980cae17ab7b3275d7",]

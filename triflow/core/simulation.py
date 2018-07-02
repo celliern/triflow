@@ -3,7 +3,6 @@
 
 import inspect
 import logging
-import pprint
 import time
 from datetime import datetime
 import warnings
@@ -12,7 +11,7 @@ from uuid import uuid4
 
 import cloudpickle
 import streamz
-from tqdm import tqdm
+from ..utils import tqdm
 from numpy import isclose
 
 from . import schemes
@@ -32,8 +31,8 @@ class Timer:
     def __repr__(self):
         repr = """last:   {last}
 total:  {total}"""
-        return repr.format(last=(now() - self.last),
-                           total=(now() - self.total))
+        return repr.format(
+            last=(now() - self.last), total=(now() - self.total))
 
 
 def null_hook(t, fields):
@@ -54,31 +53,31 @@ def get_initial(total_iter, i):
     return 0
 
 
-PostProcess = namedtuple(
-    "PostProcess", ["name", "function", "description"])
+PostProcess = namedtuple("PostProcess", ["name", "function", "description"])
 
 
-def _reduce_simulation(model,
-                       fields,
-                       dt,
-                       t,
-                       tmax,
-                       i,
-                       id,
-                       _pprocesses,
-                       _scheme,
-                       status,
-                       _total_running,
-                       _last_running,
-                       _created_timestamp,
-                       _started_timestamp,
-                       _last_timestamp,
-                       _actual_timestamp,
-                       _hook,
-                       _container,
-                       ):
-    simul = Simulation(model=model, fields=fields,
-                       dt=dt, t=t, tmax=tmax, id=id)
+def _reduce_simulation(
+        model,
+        fields,
+        dt,
+        t,
+        tmax,
+        i,
+        id,
+        _pprocesses,
+        _scheme,
+        status,
+        _total_running,
+        _last_running,
+        _created_timestamp,
+        _started_timestamp,
+        _last_timestamp,
+        _actual_timestamp,
+        _hook,
+        _container,
+):
+    simul = Simulation(
+        model=model, fields=fields, dt=dt, t=t, tmax=tmax, id=id)
     simul.i = i
     simul._pprocesses = cloudpickle.loads(_pprocesses)
     simul._scheme = cloudpickle.loads(_scheme)
@@ -192,25 +191,35 @@ class Simulation(object):
       50.0
       """  # noqa
 
-    def __init__(self, model, fields, dt, t=0, tmax=None,
-                 id=None, hook=null_hook,
+    def __init__(self,
+                 model,
+                 fields,
+                 dt,
+                 t=0,
+                 tmax=None,
+                 id=None,
+                 hook=null_hook,
                  scheme=schemes.RODASPR,
-                 time_stepping=True, **kwargs):
-
+                 time_stepping=True,
+                 **kwargs):
         def intersection_kwargs(kwargs, function):
             """Inspect the function signature to identify the relevant keys
             in a dictionary of named parameters.
             """
             func_signature = inspect.signature(function)
             func_parameters = func_signature.parameters
-            kwargs = {key: value
-                      for key, value
-                      in kwargs.items() if key in func_parameters}
+            kwargs = {
+                key: value
+                for key, value in kwargs.items() if key in func_parameters
+            }
             return kwargs
+
         kwargs["time_stepping"] = time_stepping
         self.id = str(uuid4())[:6] if not id else id
         self.model = model
-        self.fields = model.fields_template(**fields)
+        self.fields = model.fields_template(
+            **{var: fields[var]
+               for var in fields.variables})
         self.t = t
         self.user_dt = self.dt = dt
         self.tmax = tmax
@@ -219,16 +228,14 @@ class Simulation(object):
         self._pprocesses = []
 
         self._scheme = scheme(model,
-                              **intersection_kwargs(kwargs,
-                                                    scheme.__init__))
-        if (time_stepping and
-            self._scheme not in [schemes.RODASPR,
-                                 schemes.ROS3PRL,
-                                 schemes.ROS3PRw]):
-            self._scheme = schemes.time_stepping(
-                self._scheme,
-                **intersection_kwargs(kwargs,
-                                      schemes.time_stepping))
+                              **intersection_kwargs(kwargs, scheme.__init__))
+        if (time_stepping and self._scheme not in [
+                schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw
+        ]):
+            self._scheme = schemes.time_stepping(self._scheme,
+                                                 **intersection_kwargs(
+                                                     kwargs,
+                                                     schemes.time_stepping))
         self.status = 'created'
 
         self._total_running = 0
@@ -247,11 +254,9 @@ class Simulation(object):
         """
         fields = self._hook(t, fields)
         self.dt = (self.tmax - t
-                   if self.tmax and (t + self.dt >= self.tmax)
-                   else self.dt)
+                   if self.tmax and (t + self.dt >= self.tmax) else self.dt)
         before_compute = time.clock()
-        t, fields = self._scheme(t, fields, self.dt,
-                                 hook=self._hook)
+        t, fields = self._scheme(t, fields, self.dt, hook=self._hook)
         after_compute = time.clock()
         self._last_running = after_compute - before_compute
         self._total_running += self._last_running
@@ -358,25 +363,28 @@ Container
 
 =========== Model ===========
 {model_repr}"""
-        repr = repr.format(simulation_name=" %s " % self.id,
-                           container=self.container,
-                           t=self.t,
-                           iter=self.i,
-                           model_repr=self.model,
-                           hook_source=inspect.getsource(self._hook),
-                           step_time=self._last_running,
-                           running_time=self._total_running,
-                           created_date=(self._created_timestamp),
-                           started_date=(self._started_timestamp
-                                         if self._started_timestamp
-                                         else "None"),
-                           last_date=(self._last_timestamp
-                                      if self._last_timestamp
-                                      else "None"))
+        repr = repr.format(
+            simulation_name=" %s " % self.id,
+            container=self.container,
+            t=self.t,
+            iter=self.i,
+            model_repr=self.model,
+            hook_source=inspect.getsource(self._hook),
+            step_time=self._last_running,
+            running_time=self._total_running,
+            created_date=(self._created_timestamp),
+            started_date=(self._started_timestamp
+                          if self._started_timestamp else "None"),
+            last_date=(self._last_timestamp
+                       if self._last_timestamp else "None"))
         return repr
 
-    def attach_container(self, path=None, save="all",
-                         mode="w", nbuffer=50, force=False):
+    def attach_container(self,
+                         path=None,
+                         save="all",
+                         mode="w",
+                         nbuffer=50,
+                         force=False):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
@@ -398,10 +406,12 @@ Container
             if True, remove the target folder if not empty. if False, raise an
             error.
         """
-        self._container = TriflowContainer("%s/%s" % (path, self.id)
-                                           if path else None,
-                                           save=save, mode=mode,
-                                           force=force, nbuffer=nbuffer)
+        self._container = TriflowContainer(
+            "%s/%s" % (path, self.id) if path else None,
+            save=save,
+            mode=mode,
+            force=force,
+            nbuffer=nbuffer)
         self._container.connect(self.stream)
         return self._container
 
@@ -439,9 +449,9 @@ Container
             give extra information about the post-processing
         """
 
-        self._pprocesses.append(PostProcess(name=name,
-                                            function=post_process,
-                                            description=description))
+        self._pprocesses.append(
+            PostProcess(
+                name=name, function=post_process, description=description))
         self._pprocesses[-1].function(self)
 
     def remove_post_process(self, name):
@@ -452,9 +462,10 @@ Container
         name : str
             name of the post-process to remove.
         """
-        self._pprocesses = [post_process
-                            for post_process in self._pprocesses
-                            if post_process.name != name]
+        self._pprocesses = [
+            post_process for post_process in self._pprocesses
+            if post_process.name != name
+        ]
 
     def __iter__(self):
         return self.compute()
@@ -463,24 +474,23 @@ Container
         return next(self._iterator)
 
     def __reduce__(self):
-        return (_reduce_simulation,
-                (self.model,
-                 self.fields,
-                 self.dt,
-                 self.t,
-                 self.tmax,
-                 self.i,
-                 self.id,
-                 cloudpickle.dumps(self._pprocesses),
-                 cloudpickle.dumps(self._scheme),
-                 self.status,
-                 self._total_running,
-                 self._last_running,
-                 self._created_timestamp,
-                 self._started_timestamp,
-                 self._last_timestamp,
-                 self._actual_timestamp,
-                 self._hook,
-                 self._container,
-                 )
-                )
+        return (_reduce_simulation, (
+            self.model,
+            self.fields,
+            self.dt,
+            self.t,
+            self.tmax,
+            self.i,
+            self.id,
+            cloudpickle.dumps(self._pprocesses),
+            cloudpickle.dumps(self._scheme),
+            self.status,
+            self._total_running,
+            self._last_running,
+            self._created_timestamp,
+            self._started_timestamp,
+            self._last_timestamp,
+            self._actual_timestamp,
+            self._hook,
+            self._container,
+        ))

@@ -55,10 +55,11 @@ sklearn = "^0"
 python-forge = "^18"
 
 # interactive work with jupyter
-jupyter = {version = "^1.0", extras = ["jupyter"]}
-ipywidgets = {version = "^7.2", extras = ["jupyter"]}
-bokeh = {version = "^0.13.0", extras = ["jupyter"]}
-holoviews = {version = "^1.10", extras = ["jupyter"]}
+jupyter = {version = "^1.0", extras = ["jupyter", "all"]}
+ipywidgets = {version = "^7.2", extras = ["jupyter", "all"]}
+bokeh = {version = "^0.13.0", extras = ["jupyter", "display", "all"]}
+holoviews = {version = "^1.10", extras = ["jupyter", "display", "all"]}
+matplotlib = {version = "^2.2", extras = ["display", "all"]}
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
