@@ -65,7 +65,7 @@ class Model:
                  dependent_variables,
                  parameters=[],
                  independent_variables=[],
-                 bdc_conditions={},
+                 boundary_conditions={},
                  auxiliary_definitions={},
                  compiler="theano"):
 
@@ -74,7 +74,7 @@ class Model:
             dependent_variables=dependent_variables,
             independent_variables=independent_variables,
             parameters=parameters,
-            boundary_conditions=bdc_conditions,
+            boundary_conditions=boundary_conditions,
             auxiliary_definitions=auxiliary_definitions)
 
         if compiler == "theano":

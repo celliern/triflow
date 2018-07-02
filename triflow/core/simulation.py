@@ -64,7 +64,6 @@ PostProcess = namedtuple(
 
 def _reduce_simulation(model,
                        fields,
-                       parameters,
                        dt,
                        t,
                        tmax,
@@ -425,8 +424,7 @@ Container
         """
         self._container = TriflowContainer("%s/%s" % (path, self.id)
                                            if path else None,
-                                           save=save,
-                                           mode=mode, metadata=self.parameters,
+                                           save=save, mode=mode,
                                            force=force, nbuffer=nbuffer)
         self._container.connect(self.stream)
         return self._container
@@ -492,7 +490,6 @@ Container
         return (_reduce_simulation,
                 (self.model,
                  self.fields,
-                 self.parameters,
                  self.dt,
                  self.t,
                  self.tmax,

@@ -40,11 +40,13 @@ def time_stepping(scheme, tol=1E-1, ord=2, m=10, reject_factor=2):
                 t, fields = scheme(t, fields, dt_, hook)
             errs = [
                 np.linalg.norm(
-                    np.atleast_1d(fields[key]) - np.atleast_1d(fields[key]),
-                    ord) / (m**2 - 1) for key in fields.data_vars
+                    np.atleast_1d(fields[key]) - np.atleast_1d(fields_[key]), ord
+                )
+                / (m ** 2 - 1)
+                for key in fields.data_vars
             ]
             err = max(errs)
-            dt_ = np.sqrt(dt**2 * tol / err)
+            dt_ = np.sqrt(dt ** 2 * tol / err)
             if dt_ < dt / reject_factor:
                 continue
             break
@@ -73,21 +75,24 @@ class ROW_general:
 
     @memoize
     def __cache__(self, N):
-        Id = sps.eye(N, format='csc')
+        Id = sps.eye(N, format="csc")
         return Id
 
-    def __init__(self,
-                 model,
-                 alpha,
-                 gamma,
-                 b,
-                 b_pred=None,
-                 time_stepping=False,
-                 tol=None,
-                 max_iter=None,
-                 dt_min=None,
-                 safety_factor=0.9,
-                 recompute_target=True):
+    def __init__(
+        self,
+        model,
+        alpha,
+        gamma,
+        b,
+        b_pred=None,
+        time_stepping=False,
+        tol=None,
+        max_iter=None,
+        dt_min=None,
+        safety_factor=0.9,
+        solver="auto",
+        recompute_target=True,
+    ):
         self._internal_dt = None
         self._model = model
         self._alpha = alpha
@@ -102,6 +107,7 @@ class ROW_general:
         self._max_iter = max_iter
         self._dt_min = dt_min
         self._recompute_target = recompute_target
+        self._solver = solver
         self._interp_cache = None
 
     def __call__(self, t, fields, dt, hook=null_hook):
@@ -150,29 +156,41 @@ class ROW_general:
         fields = fields.copy()
         fields = hook(t, fields)
         J = self._model.J(fields)
+        if self._solver == "auto":
+            size = J.shape[0] * J.shape[1]
+            self._solver = "iteratif" if size > 50000 else "direct"
         U = self._model.U_from_fields(fields)
         Id = self.__cache__(U.size)
         self._A = A = Id - self._gamma[0, 0] * dt * J
-        luf = sps.linalg.factorized(A)
+        if self._solver == "direct":
+            luf = sps.linalg.factorized(A)
         ks = []
         fields_i = fields.copy()
         for i in np.arange(self._s):
             fields_i = self._model.fields_from_U(
-                U + sum([self._alpha[i, j] * ks[j] for j in range(i)]),
-                fields_i)
+                U + sum([self._alpha[i, j] * ks[j] for j in range(i)]), fields_i
+            )
             F = self._model.F(fields_i)
-            ks.append(
-                luf(dt * F + dt *
-                    (J @ sum([self._gamma[i, j] * ks[j]
-                              for j in range(i)]) if i > 0 else 0)))
+            B = dt * F + dt * (
+                J @ sum([self._gamma[i, j] * ks[j] for j in range(i)]) if i > 0 else 0
+            )
+            if self._solver == "direct":
+                Utilde = luf(B)
+            elif self._solver == "iteratif":
+                Utilde = sps.linalg.gcrotmk(A, B, U, atol=1E-5)[0]
+            ks.append(Utilde)
         U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
-        U_pred = (U + sum([bi * ki for bi, ki in zip(self._b_pred, ks)])
-                  if self._b_pred is not None else None)
+        U_pred = (
+            U + sum([bi * ki for bi, ki in zip(self._b_pred, ks)])
+            if self._b_pred is not None
+            else None
+        )
         fields = self._model.fields_from_U(U, fields)
 
-        return t + dt, fields, (norm(U - U_pred, np.inf)
-                                if U_pred is not None else None)
+        return t + dt, fields, (
+            norm(U - U_pred, np.inf) if U_pred is not None else None
+        )
 
     def _variable_step(self, t, fields, dt, hook=null_hook):
 
@@ -181,56 +199,69 @@ class ROW_general:
         self._internal_iter = 0
         try:
             fields = self._model.fields_from_U(
-                self._interp_cache(self._next_time_step), fields)
+                self._interp_cache(self._next_time_step), fields
+            )
             return self._next_time_step, fields
         except (TypeError, ValueError):
             pass
         if not self._recompute_target:
-            dt = self._internal_dt = (1E-6 if self._internal_dt is None else
-                                      self._internal_dt)
+            dt = self._internal_dt = (
+                1E-6 if self._internal_dt is None else self._internal_dt
+            )
         else:
             dt = self._internal_dt = min(
-                (1E-6 if self._internal_dt is None else self._internal_dt), dt)
+                (1E-6 if self._internal_dt is None else self._internal_dt), dt
+            )
         while True:
             self._err = None
-            while (self._err is None or self._err > self._tol):
-                new_t, new_fields, self._err = self._fixed_step(
-                    t, fields, dt, hook)
+            while self._err is None or self._err > self._tol:
+                new_t, new_fields, self._err = self._fixed_step(t, fields, dt, hook)
                 logging.debug("error: {}".format(self._err))
                 dt = self._internal_dt = (
-                    self._safety_factor * dt * np.sqrt(self._tol / self._err))
+                    self._safety_factor * dt * np.sqrt(self._tol / self._err)
+                )
 
-            logging.debug('dt computed after err below tol: %g' % dt)
-            logging.debug('ROS_vart, t %g' % t)
+            logging.debug("dt computed after err below tol: %g" % dt)
+            logging.debug("ROS_vart, t %g" % t)
             if new_t >= self._next_time_step:
                 target_dt = self._next_time_step - t
-                logging.debug('new t more than next expected time step, '
-                              'compute with proper timestep %g' % target_dt)
+                logging.debug(
+                    "new t more than next expected time step, "
+                    "compute with proper timestep %g" % target_dt
+                )
                 if self._recompute_target:
                     t, fields, self._err = self._fixed_step(
-                        t, fields, self._next_time_step - t, hook)
+                        t, fields, self._next_time_step - t, hook
+                    )
                 else:
                     self._interp_cache = interp1d(
-                        [t, new_t], [
+                        [t, new_t],
+                        [
                             self._model.U_from_fields(fields)[None],
-                            self._model.U_from_fields(new_fields)[None]
+                            self._model.U_from_fields(new_fields)[None],
                         ],
-                        axis=0)
+                        axis=0,
+                    )
                     fields = self._model.fields_from_U(
-                        self._interp_cache(self._next_time_step), fields)
+                        self._interp_cache(self._next_time_step), fields
+                    )
                 self._internal_iter += 1
                 fields = hook(t, fields)
                 return self._next_time_step, fields
             t = new_t
             fields = new_fields.copy()
             self._internal_iter += 1
-            if self._internal_iter > (self._max_iter if self._max_iter else
-                                      self._internal_iter + 1):
-                raise RuntimeError("Rosebrock internal iteration "
-                                   "above max iterations authorized")
+            if (
+                self._internal_iter
+                > (self._max_iter if self._max_iter else self._internal_iter + 1)
+            ):
+                raise RuntimeError(
+                    "Rosebrock internal iteration " "above max iterations authorized"
+                )
             if dt < (self._dt_min if self._dt_min else dt * .5):
-                raise RuntimeError("Rosebrock internal time step "
-                                   "less than authorized")
+                raise RuntimeError(
+                    "Rosebrock internal time step " "less than authorized"
+                )
 
 
 class ROS2(ROW_general):
@@ -243,8 +274,9 @@ class ROS2(ROW_general):
     """
 
     def __init__(self, model):
-        gamma = np.array([[2.928932188134E-1, 0],
-                          [-5.857864376269E-1, 2.928932188134E-1]])
+        gamma = np.array(
+            [[2.928932188134E-1, 0], [-5.857864376269E-1, 2.928932188134E-1]]
+        )
         alpha = np.array([[0, 0], [1, 0]])
         b = np.array([1 / 2, 1 / 2])
         super().__init__(model, alpha, gamma, b, time_stepping=False)
@@ -273,23 +305,21 @@ class ROS3PRw(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
-    def __init__(self,
-                 model,
-                 tol=1E-1,
-                 time_stepping=True,
-                 max_iter=None,
-                 dt_min=None,
-                 recompute_target=True):
+    def __init__(
+        self,
+        model,
+        tol=1E-1,
+        time_stepping=True,
+        max_iter=None,
+        dt_min=None,
+        recompute_target=True,
+    ):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
-        b = [
-            5.0544867840851759e-01, -1.1571687603637559e-01,
-            6.1026819762785800e-01
-        ]
+        b = [5.0544867840851759e-01, -1.1571687603637559e-01, 6.1026819762785800e-01]
         b_pred = [
-            2.8973180237214197e-01, 1.0000000000000001e-01,
-            6.1026819762785800e-01
+            2.8973180237214197e-01, 1.0000000000000001e-01, 6.1026819762785800e-01
         ]
 
         alpha[1, 0] = 2.3660254037844388e+00
@@ -309,7 +339,8 @@ class ROS3PRw(ROW_general):
             tol=tol,
             max_iter=max_iter,
             dt_min=dt_min,
-            recompute_target=recompute_target)
+            recompute_target=recompute_target,
+        )
 
 
 class ROS3PRL(ROW_general):
@@ -335,24 +366,30 @@ class ROS3PRL(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
-    def __init__(self,
-                 model,
-                 tol=1E-1,
-                 time_stepping=True,
-                 max_iter=None,
-                 dt_min=None,
-                 recompute_target=True):
+    def __init__(
+        self,
+        model,
+        tol=1E-1,
+        time_stepping=True,
+        max_iter=None,
+        dt_min=None,
+        recompute_target=True,
+    ):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
         gamma_i = 4.3586652150845900e-01
 
         b = [
-            2.1103008548132443e-03, 8.8607515441580453e-01,
-            -3.2405197677907682e-01, 4.3586652150845900e-01
+            2.1103008548132443e-03,
+            8.8607515441580453e-01,
+            -3.2405197677907682e-01,
+            4.3586652150845900e-01,
         ]
         b_pred = [
-            5.0000000000000000e-01, 3.8752422953298199e-01,
-            -2.0949226315045236e-01, 3.2196803361747034e-01
+            5.0000000000000000e-01,
+            3.8752422953298199e-01,
+            -2.0949226315045236e-01,
+            3.2196803361747034e-01,
         ]
         alpha[1, 0] = .5
         alpha[2, 0] = .5
@@ -378,7 +415,8 @@ class ROS3PRL(ROW_general):
             tol=tol,
             max_iter=max_iter,
             dt_min=dt_min,
-            recompute_target=recompute_target)
+            recompute_target=recompute_target,
+        )
 
 
 class RODASPR(ROW_general):
@@ -404,23 +442,32 @@ class RODASPR(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
-    def __init__(self,
-                 model,
-                 tol=1E-1,
-                 time_stepping=True,
-                 max_iter=None,
-                 dt_min=None,
-                 recompute_target=True):
+    def __init__(
+        self,
+        model,
+        tol=1E-1,
+        time_stepping=True,
+        max_iter=None,
+        dt_min=None,
+        recompute_target=True,
+    ):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [
-            -7.9683251690137014E-1, 6.2136401428192344E-2,
-            1.1198553514719862E00, 4.7198362114404874e-1,
-            -1.0714285714285714E-1, 2.5e-1
+            -7.9683251690137014E-1,
+            6.2136401428192344E-2,
+            1.1198553514719862E00,
+            4.7198362114404874e-1,
+            -1.0714285714285714E-1,
+            2.5e-1,
         ]
         b_pred = [
-            -7.3844531665375115e0, -3.0593419030174646e-1,
-            7.8622074209377981e0, 5.7817993590145966e-1, 2.5e-1, 0
+            -7.3844531665375115e0,
+            -3.0593419030174646e-1,
+            7.8622074209377981e0,
+            5.7817993590145966e-1,
+            2.5e-1,
+            0,
         ]
         alpha[1, 0] = 7.5E-1
         alpha[2, 0] = 7.5162877593868457E-2
@@ -465,7 +512,8 @@ class RODASPR(ROW_general):
             tol=tol,
             max_iter=max_iter,
             dt_min=dt_min,
-            recompute_target=recompute_target)
+            recompute_target=recompute_target,
+        )
 
 
 class scipy_ode:
@@ -482,11 +530,7 @@ class scipy_ode:
           extra arguments provided to the scipy integration scheme.
       """  # noqa
 
-    def __init__(self,
-                 model,
-                 jac=False,
-                 integrator='vode',
-                 **integrator_kwargs):
+    def __init__(self, model, jac=False, integrator="vode", **integrator_kwargs):
         self._model = model
 
         def func_scipy_proxy(t, U, fields, hook):
@@ -499,8 +543,7 @@ class scipy_ode:
             fields = hook(t, fields)
             return self._model.J(fields, sparse=True)
 
-        self._solv = ode(
-            func_scipy_proxy, jac=jacob_scipy_proxy if jac else None)
+        self._solv = ode(func_scipy_proxy, jac=jacob_scipy_proxy if jac else None)
         self._solv.set_integrator(integrator, **integrator_kwargs)
 
     def __call__(self, t, fields, dt, hook=null_hook):
@@ -602,7 +645,10 @@ class Theta:
         J = self._model.J(fields)
         U = self._model.U_from_fields(fields)
         B = dt * (F - self._theta * J @ U) + U
-        J = (sps.identity(U.size, format='csc') - self._theta * dt * J)
-        fields = self._model.fields_from_U(self._solver(J, B), fields)
+        J = (sps.identity(U.size, format="csc") - self._theta * dt * J)
+        new_U = self._solver(J, B)
+        if isinstance(new_U, tuple):
+            new_U = new_U[0]
+        fields = self._model.fields_from_U(new_U, fields)
         fields = hook(t + dt, fields)
         return t + dt, fields

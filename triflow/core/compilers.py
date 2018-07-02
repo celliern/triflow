@@ -12,10 +12,10 @@ import theano.tensor as tt
 from joblib import Memory
 from scipy.sparse import csc_matrix
 from sklearn.tree import DecisionTreeRegressor
-from sympy import (And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol,
-                   oo)
+from sympy import And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol, oo
 from sympy.printing.theanocode import TheanoPrinter, dim_handling, mapping
 from theano import function
+from theano.ifelse import ifelse
 from theano.compile.ops import as_op
 from triflow.core.system import PDESys
 
@@ -60,8 +60,12 @@ class EnhancedTheanoPrinter(TheanoPrinter):
             dvar.discrete: list(
                 dim_handling(
                     [dvar.discrete],
-                    dim=len(dvar.independent_variables)).values())[0]
-            for dvar in system.dependent_variables
+                    dim=len(dvar.independent_variables)).values())
+            for dvar in chain(system.dependent_variables, system.parameters)
+        }
+        dvar_broadcast = {
+            key: value[0] if value else tuple()
+            for key, value in dvar_broadcast.items()
         }
         ivar_broadcast = dim_handling(
             list(
@@ -131,9 +135,7 @@ class EnhancedTheanoPrinter(TheanoPrinter):
             for idx in indexed.indices
         ]
         idxs = [tt.cast(idx, dtype="int32") for idx in idxs]
-
         th_base = self._print(indexed.base, ndim=len(idxs), **kwargs)
-
         return th_base[tuple(idxs)]
 
 
@@ -167,8 +169,7 @@ class TheanoCompiler:
         self.pars = list(
             map(
                 partial(th_depvar_printer, self.printer),
-                self.system.parameters,
-            ))
+                self.system.parameters))
         self.ivars, self.idxs, self.th_steps, self.th_sizes = zip(
             *map(
                 partial(th_ivar_printer, self.printer),
@@ -220,7 +221,11 @@ class TheanoCompiler:
 
     def _pivot_choice(self):
         th_shapes = tt.stacklists(list(self.shapes))
-        self.pivot_idx = tt.argsort(tt.sum(th_shapes, axis=0))[::-1]
+        self.pivot_idx = ifelse(
+            tt.all(tt.eq(th_shapes, th_shapes[0])),
+            tt.arange(self.ndim),
+            tt.argsort(tt.sum(th_shapes, axis=0))[::-1],
+        )
 
     def _create_gridinfo(self):
         dvar_info = tt.zeros((self.size, ), dtype="int32")
@@ -316,8 +321,9 @@ class TheanoCompiler:
                 tt.extra_ops.compress(
                     tt.eq(self._gridinfo[:, 0], i),
                     self._gridinfo[:, :-2],
-                    axis=0), tt.stacklists(self.th_sizes))
-            for i in range(len(self.dvars))
+                    axis=0),
+                tt.stacklists(self.th_sizes),
+            ) for i in range(len(self.dvars))
         ]
 
         self._ptrs = self.th_get_idxs_from_flat(
@@ -408,11 +414,13 @@ class TheanoCompiler:
         self._get_flat_from_idxs_routine = th.function(
             [self._input_idxs, *self.th_sizes],
             self.th_get_flat_from_idxs(self._input_idxs,
-                                       tt.stacklists(self.th_sizes)))
+                                       tt.stacklists(self.th_sizes)),
+        )
         self._get_idxs_from_flat_routine = th.function(
             [self._input_flat, *self.th_sizes],
             self.th_get_idxs_from_flat(self._input_flat,
-                                       tt.stacklists(self.th_sizes)))
+                                       tt.stacklists(self.th_sizes)),
+        )
 
         @memory.cache
         def compute_flat_from_idxs(idxs, *sizes):
@@ -435,7 +443,8 @@ class TheanoCompiler:
             U_,
             givens=self._replacement,
             allow_input_downcast=True,
-            on_unused_input="ignore")
+            on_unused_input="ignore",
+        )
 
         def U_from_fields(fields):
             dvars = [
@@ -446,12 +455,13 @@ class TheanoCompiler:
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
-            sizes = [dvar.size for dvar in dvars]
             ivars = [
                 fields[varname] for varname in
                 [ivar.name for ivar in self.system.independent_variables]
             ]
-            return self._U_routine(*dvars, *pars, *ivars, *self.compute_idxs(*sizes),
+            sizes = [ivar.size for ivar in ivars]
+            return self._U_routine(*dvars, *pars, *ivars,
+                                   *self.compute_idxs(*sizes),
                                    self.compute_dvars_to_flat(*sizes))
 
         self.U_from_fields = U_from_fields
@@ -473,19 +483,29 @@ class TheanoCompiler:
             [U_, *self.th_sizes, *idxs_grids_],
             dvars,
             allow_input_downcast=True,
-            on_unused_input="ignore")
+            on_unused_input="ignore",
+        )
 
         def fields_from_U(U, fields):
             varnames = [dvar.name for dvar in self.system.dependent_variables]
             fields = fields.copy()
-            sizes = fields.sizes.values()
+
+            ivars = [
+                fields[varname] for varname in
+                [ivar.name for ivar in self.system.independent_variables]
+            ]
+            sizes = [ivar.size for ivar in ivars]
             pivots = self.compute_pivot(*sizes)
             dvars = self._fields_routine(U, *sizes,
                                          *self.compute_flat_to_dvars(*sizes))
-            for varname, dvar, ivars in zip(varnames, dvars, [
+            for varname, dvar, ivars in zip(
+                    varnames,
+                    dvars,
+                [
                     dvar.independent_variables
                     for dvar in self.system.dependent_variables
-            ]):
+                ],
+            ):
                 fields[varname] = [ivars[i].name for i in pivots], dvar
             return fields
 
@@ -518,8 +538,7 @@ class TheanoCompiler:
         ]
 
         F_ = tt.alloc(
-            tt.as_tensor_variable(np.nan),
-            (tt.as_tensor_variable(self.size, )))
+            tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
         for grid, eq in zip(_subgrids, self.evolution_equations):
             eq = th.clone(
                 eq,
@@ -534,7 +553,8 @@ class TheanoCompiler:
             allow_input_downcast=True,
             accept_inplace=True,
             on_unused_input="ignore",
-            givens=self._replacement)
+            givens=self._replacement,
+        )
 
         def F(fields, parameters={}):
             dvars = [
@@ -545,11 +565,11 @@ class TheanoCompiler:
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
-            sizes = [dvar.size for dvar in dvars]
             ivars = [
                 fields[varname] for varname in
                 [ivar.name for ivar in self.system.independent_variables]
             ]
+            sizes = [ivar.size for ivar in ivars]
             subgrids = self.compute_subgrids(*sizes)
             return F_routine(*dvars, *pars, *ivars, *self.compute_idxs(*sizes),
                              *subgrids)
@@ -568,6 +588,11 @@ class TheanoCompiler:
         ]
         return [dvar_idx, *idxs]
 
+    def filter_dvar_indexed(self, indexed):
+        return indexed.base in [
+            dvar.discrete for dvar in self.system.dependent_variables
+        ]
+
     def _simplify_kron(self, *kron_args):
         kron = KroneckerDelta(*kron_args)
         return kron.subs(
@@ -578,7 +603,7 @@ class TheanoCompiler:
         self._full_jacs = []
         self._full_jacs_cols = []
         for expr in self._full_exprs:
-            wrts = expr.atoms(Indexed)
+            wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
             wrts, grids = wrts, list(map(self.sort_indexed, wrts))
             grids = [[
                 tt.constant(int(idx), dtype="int32") if isinstance(
@@ -610,13 +635,15 @@ class TheanoCompiler:
                     replace={
                         self.idxs[i]: grid[:, i + 1]
                         for i in range(self.ndim)
-                    })
+                    },
+                )
                 cols_idxs = th.clone(
                     col_func,
                     replace={
                         self.idxs[i]: grid[:, i + 1]
                         for i in range(self.ndim)
-                    })
+                    },
+                )
                 jac = tt.set_subtensor(J_[:], jac)
                 for i, col in enumerate(cols_idxs):
                     cols_ = tt.set_subtensor(cols_[:, i], col)
@@ -652,22 +679,26 @@ class TheanoCompiler:
             [*self.th_sizes, *_subgrids],
             rows,
             on_unused_input="ignore",
-            allow_input_downcast=True)
+            allow_input_downcast=True,
+        )
         Jcols_routine = th.function(
             [*self.th_sizes, *_subgrids],
             cols,
             on_unused_input="ignore",
-            allow_input_downcast=True)
+            allow_input_downcast=True,
+        )
         Jdata_routine = th.function(
             [*self.inputs, *_subgrids],
             data,
             givens=self._replacement,
             on_unused_input="ignore",
-            allow_input_downcast=True)
+            allow_input_downcast=True,
+        )
 
         coo_to_csr = th.function(
             [data_, rows_, cols_, *self.th_sizes, permutation],
-            [pdata, prows, indptr, shape])
+            [pdata, prows, indptr, shape],
+        )
 
         @lru_cache(maxsize=128)
         def compute_J_coords(*sizes):
@@ -679,10 +710,11 @@ class TheanoCompiler:
 
         def compute_J_data(ivars, dvars, pars):
             sizes = [ivar.size for ivar in ivars]
-            return Jdata_routine(*dvars, *pars, *ivars, *self.compute_idxs(*sizes),
+            return Jdata_routine(*dvars, *pars, *ivars,
+                                 *self.compute_idxs(*sizes),
                                  *self.compute_subgrids(*sizes))
 
-        def J(fields, parameters={}):
+        def J(fields):
             dvars = [
                 fields[varname] for varname in
                 [dvar.name for dvar in self.system.dependent_variables]
@@ -691,11 +723,11 @@ class TheanoCompiler:
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
-            sizes = [dvar.size for dvar in dvars]
             ivars = [
                 fields[varname] for varname in
                 [ivar.name for ivar in self.system.independent_variables]
             ]
+            sizes = [ivar.size for ivar in ivars]
 
             data = compute_J_data(ivars, dvars, pars)
             rows, cols, perm = compute_J_coords(*sizes)

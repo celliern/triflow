@@ -13,8 +13,23 @@ from queue import Queue
 import attr
 import numpy as np
 from more_itertools import unique_everseen
-from sympy import (Derivative, Function, Idx, Indexed, Dummy, And, Eq,
-                   IndexedBase, Symbol, Wild, solve, sympify, oo, Ge, Le)
+from sympy import (
+    Derivative,
+    Function,
+    Idx,
+    Indexed,
+    Dummy,
+    And,
+    Eq,
+    IndexedBase,
+    Symbol,
+    Wild,
+    solve,
+    sympify,
+    oo,
+    Ge,
+    Le,
+)
 from sympy.logic.boolalg import BooleanTrue
 
 
@@ -23,6 +38,13 @@ def _convert_pde_list(pdes):
         return [pdes]
     else:
         return pdes
+
+
+def filter_relevent_equations(bdc, vars):
+    for indexed in bdc.atoms(Indexed):
+        if indexed in vars:
+            return True
+    return False
 
 
 def ensure_bool(cond, ivars):
@@ -166,7 +188,8 @@ class DependentVariable:
         return "{}{}".format(
             self.name,
             ("(%s)" % ", ".join(map(str, self.independent_variables))
-             if self.independent_variables else ""))
+             if self.independent_variables else ""),
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -212,8 +235,7 @@ class PDEquation:
     parameters = attr.ib(
         type=typing.Tuple[DependentVariable],
         converter=_convert_depvar_list,
-        default=[],
-    )
+        default=[])
     independent_variables = attr.ib(
         type=typing.Tuple[IndependentVariable],
         default=[],
@@ -500,14 +522,16 @@ class PDESys:
 
         for dvar in filter(
                 partial(not_in_iter, self.boundary_conditions),
-                self.dependent_variables):
+                chain(self.dependent_variables, self.parameters),
+        ):
             self.boundary_conditions[dvar] = {
                 ivar.name: ["d%s%s" % (ivar.name, dvar.name)] * 2
                 for ivar in dvar.independent_variables
             }
         for dvar in filter(
                 partial(in_iter, self.boundary_conditions),
-                self.dependent_variables):
+                chain(self.dependent_variables, self.parameters),
+        ):
             self.boundary_conditions[dvar] = self.boundary_conditions.pop(
                 dvar.name)
             for ivar in filter(
@@ -554,24 +578,13 @@ class PDESys:
             self.boundary_conditions[dvar] = bdc
 
     def _build_system(self):
-        for eq, sysdomain, dvar in zip(self, self._domains,
-                                       self.dependent_variables):
+        for eq, sysdomain, dvar, unodes in zip(self, self._domains,
+                                               self.dependent_variables,
+                                               self._unknown_nodes):
             system = {}
             ivars = dvar.independent_variables
-            _unknown_nodes = {
-                ivar: tuple(
-                    zip(*[
-                        map(set, unode.get(ivar, [[], []])) for dvar, unode in
-                        zip(self.dependent_variables, self._unknown_nodes)
-                        if ivar in ivars
-                    ]))
-                for ivar in ivars
-            }
-            _unknown_nodes = {
-                key: tuple(
-                    map(tuple, [reduce(set.union, bdc) for bdc in value]))
-                for key, value in _unknown_nodes.items()
-            }
+
+            _unknown_nodes = unodes
 
             idxs = []
             for ivar, unode in _unknown_nodes.items():
@@ -628,9 +641,10 @@ class PDESys:
                         *chain(*[
                             list(var.atoms(Idx))
                             for var in all_unavailable_vars
-                        ]), *chain(*[
+                        ]),
+                        *chain(*[
                             list(bdc.atoms(Idx)) for bdc in all_available_bdcs
-                        ])
+                        ]),
                     ])
 
                     dummy_map = {idx: Dummy() for idx in all_idxs}
@@ -646,12 +660,16 @@ class PDESys:
                     solved_ = {}
                     [
                         solved_.update(sol) for sol in solve(
-                            all_available_bdcs,
+                            [
+                                bdc for bdc in all_available_bdcs
+                                if filter_relevent_equations(
+                                    bdc, all_unavailable_vars)
+                            ],
                             all_unavailable_vars,
                             dict=True,
-                            set=True)
+                            set=True,
+                        )
                     ]
-
                     solved_variables = {
                         key.subs(reverse_dummy_map):
                         value.subs(reverse_dummy_map)
@@ -696,7 +714,6 @@ class PDESys:
             self.boundary_conditions = dict()
         if self.auxiliary_definitions is None:
             self.auxiliary_definitions = dict()
-
         self._coerce_equations()
         self._compute_domain()
         self._get_shapes()
