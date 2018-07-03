@@ -7,14 +7,13 @@ from tempfile import mkdtemp
 
 import attr
 import numpy as np
-import theano as th
 import theano.tensor as tt
 from joblib import Memory
 from scipy.sparse import csc_matrix
 from sklearn.tree import DecisionTreeRegressor
 from sympy import And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol, oo
 from sympy.printing.theanocode import TheanoPrinter, dim_handling, mapping
-from theano import function
+from theano import function, scan, clone
 from theano.ifelse import ifelse
 from theano.compile.ops import as_op
 from triflow.core.system import PDESys
@@ -118,7 +117,7 @@ class EnhancedTheanoPrinter(TheanoPrinter):
             base_symbol, dtypes=self._dtypes, broadcastables=self._broadcast)
 
     def _print_KroneckerDelta(self, kron, **kwargs):
-        return th.ifelse.ifelse(
+        return ifelse(
             tt.eq(*[
                 self._print(
                     arg, dtypes=self._dtypes, broadcastables=self._broadcast)
@@ -262,7 +261,7 @@ class TheanoCompiler:
                 self._full_exprs.append(expr)
                 self._domains.append(j + domain_cursor)
             th_conds = tt.stacklists(list(map(self.printer.doprint, conds)))
-            th_conds_cloned = th.clone(
+            th_conds_cloned = clone(
                 th_conds,
                 replace={idx: indice[i]
                          for i, idx in enumerate(self.idxs)})
@@ -277,7 +276,7 @@ class TheanoCompiler:
                             dtype="int32"),
                     ))
 
-            domains, _ = th.scan(get_domain, sequences=tt.arange(size))
+            domains, _ = scan(get_domain, sequences=tt.arange(size))
             domains = tt.flatten(domains)
             domains_info = tt.set_subtensor(domains_info[cursor:cursor + size],
                                             domains)
@@ -331,14 +330,13 @@ class TheanoCompiler:
         self._compile_grid_routines()
 
     def _compile_grid_routines(self):
-        self._flat_maps_routine = th.function(self.th_sizes, self.flat_maps)
-        self._gridinfo_routine = th.function(self.th_sizes, self._gridinfo)
-        self._grids_routine = th.function(self.th_sizes, self.grids)
-        self._subgrids_routine = th.function(self.th_sizes, self._subgrids)
-        self._dvars_to_flat_routine = th.function(self.th_sizes, self._ptrs)
-        self._flat_to_dvars_routine = th.function(self.th_sizes,
-                                                  self._idxs_grids)
-        self._pivots_routine = th.function(self.th_sizes, self.pivot_idx)
+        self._flat_maps_routine = function(self.th_sizes, self.flat_maps)
+        self._gridinfo_routine = function(self.th_sizes, self._gridinfo)
+        self._grids_routine = function(self.th_sizes, self.grids)
+        self._subgrids_routine = function(self.th_sizes, self._subgrids)
+        self._dvars_to_flat_routine = function(self.th_sizes, self._ptrs)
+        self._flat_to_dvars_routine = function(self.th_sizes, self._idxs_grids)
+        self._pivots_routine = function(self.th_sizes, self.pivot_idx)
 
         @lru_cache(maxsize=128)
         def compute_flatmaps(*sizes):
@@ -395,12 +393,12 @@ class TheanoCompiler:
             reg.fit(X, y)
             return reg
 
-        @th.as_op([tt.imatrix, tt.ivector], tt.ivector)
+        @as_op([tt.imatrix, tt.ivector], tt.ivector)
         def th_get_flat_from_idxs(idxs, sizes):
             reg = build_flat_from_idxs_decision_tree(*sizes)
             return reg.predict(idxs).astype("int32")
 
-        @th.as_op([tt.ivector, tt.ivector], tt.imatrix)
+        @as_op([tt.ivector, tt.ivector], tt.imatrix)
         def th_get_idxs_from_flat(flatindex, sizes):
             reg = build_idxs_from_flat_decision_tree(*sizes)
             return reg.predict(flatindex.reshape(-1, 1)).astype("int32")
@@ -411,12 +409,12 @@ class TheanoCompiler:
         self._input_idxs = tt.imatrix("in_idxs")
         self._input_flat = tt.ivector("in_flat")
 
-        self._get_flat_from_idxs_routine = th.function(
+        self._get_flat_from_idxs_routine = function(
             [self._input_idxs, *self.th_sizes],
             self.th_get_flat_from_idxs(self._input_idxs,
                                        tt.stacklists(self.th_sizes)),
         )
-        self._get_idxs_from_flat_routine = th.function(
+        self._get_idxs_from_flat_routine = function(
             [self._input_flat, *self.th_sizes],
             self.th_get_idxs_from_flat(self._input_flat,
                                        tt.stacklists(self.th_sizes)),
@@ -438,7 +436,7 @@ class TheanoCompiler:
         U_ = tt.stack(
             self.dvars,
             axis=0)[tuple([_ptrs.T[i] for i in range(self.ndim + 1)])]
-        self._U_routine = th.function(
+        self._U_routine = function(
             [*self.inputs, _ptrs],
             U_,
             givens=self._replacement,
@@ -479,7 +477,7 @@ class TheanoCompiler:
             for grid, shape, shapeinfo in zip(idxs_grids_, shapes, self.shapes)
         ]
 
-        self._fields_routine = th.function(
+        self._fields_routine = function(
             [U_, *self.th_sizes, *idxs_grids_],
             dvars,
             allow_input_downcast=True,
@@ -540,14 +538,14 @@ class TheanoCompiler:
         F_ = tt.alloc(
             tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
         for grid, eq in zip(_subgrids, self.evolution_equations):
-            eq = th.clone(
+            eq = clone(
                 eq,
                 replace={
                     self.idxs[i]: grid[:, i + 1]
                     for i in range(self.ndim)
                 })
             F_ = tt.set_subtensor(F_[grid[:, -1]], eq)
-        F_routine = th.function(
+        F_routine = function(
             [*self.inputs, *_subgrids],
             F_,
             allow_input_downcast=True,
@@ -630,14 +628,14 @@ class TheanoCompiler:
             for col_func, jac in zip(jac_cols, jacs):
                 J_ = tt.zeros((grid.shape[0], ))
                 cols_ = tt.zeros((grid.shape[0], self.ndim + 1), dtype="int32")
-                jac = th.clone(
+                jac = clone(
                     jac,
                     replace={
                         self.idxs[i]: grid[:, i + 1]
                         for i in range(self.ndim)
                     },
                 )
-                cols_idxs = th.clone(
+                cols_idxs = clone(
                     col_func,
                     replace={
                         self.idxs[i]: grid[:, i + 1]
@@ -675,19 +673,19 @@ class TheanoCompiler:
         indptr = tt.cumsum(count)
         shape = tt.stack([self.size, self.size])
 
-        Jrows_routine = th.function(
+        Jrows_routine = function(
             [*self.th_sizes, *_subgrids],
             rows,
             on_unused_input="ignore",
             allow_input_downcast=True,
         )
-        Jcols_routine = th.function(
+        Jcols_routine = function(
             [*self.th_sizes, *_subgrids],
             cols,
             on_unused_input="ignore",
             allow_input_downcast=True,
         )
-        Jdata_routine = th.function(
+        Jdata_routine = function(
             [*self.inputs, *_subgrids],
             data,
             givens=self._replacement,
@@ -695,7 +693,7 @@ class TheanoCompiler:
             allow_input_downcast=True,
         )
 
-        coo_to_csr = th.function(
+        coo_to_csr = function(
             [data_, rows_, cols_, *self.th_sizes, permutation],
             [pdata, prows, indptr, shape],
         )

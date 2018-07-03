@@ -586,7 +586,7 @@ class scipy_ode:
         solv.set_jac_params(fields, hook)
         U = solv.integrate(t + dt)
         fields = self._model.fields_from_U(U, fields)
-        fields, _ = hook(t + dt, fields)
+        fields = hook(t + dt, fields)
         return t + dt, fields
 
 

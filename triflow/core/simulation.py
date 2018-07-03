@@ -4,7 +4,7 @@
 import inspect
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import warnings
 from collections import namedtuple
 from uuid import uuid4
@@ -32,7 +32,8 @@ class Timer:
         repr = """last:   {last}
 total:  {total}"""
         return repr.format(
-            last=(now() - self.last), total=(now() - self.total))
+            last=(now() - timedelta(seconds=self.last)),
+            total=(now() - timedelta(seconds=self.total)))
 
 
 def null_hook(t, fields):

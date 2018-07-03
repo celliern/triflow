@@ -28,7 +28,7 @@ class Model:
 
       Parameters
       ----------
-      differential_equations : iterable of str or str
+      evolution_equations : iterable of str or str
           the right hand sides of the partial differential equations written
           as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial
           derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy
@@ -79,6 +79,8 @@ class Model:
 
         if compiler == "theano":
             self.compiler = TheanoCompiler(self.pdesys)
+        else:
+            raise NotImplementedError("For now, only the theano compiler is available.")
 
         self.F = self.compiler.F
         self.J = self.compiler.J

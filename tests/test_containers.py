@@ -14,9 +14,10 @@ from triflow import Container, Model, Simulation, retrieve_container
 
 @pytest.fixture
 def heat_model():
-    model = Model(differential_equations="k * dxxT",
+    model = Model(evolution_equations="k * dxxT",
                   dependent_variables="T",
-                  parameters="k", compiler="numpy")
+                  parameters="k",
+                  boundary_conditions={"T": {"x": "periodic", "y": "periodic"}})
     return model
 
 
@@ -24,15 +25,14 @@ def heat_model():
 def fields(heat_model):
     x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
     T = np.cos(x * 2 * np.pi / 10)
-    initial_fields = heat_model.fields_template(x=x, T=T)
+    initial_fields = heat_model.fields_template(x=x, T=T, k=1)
 
     return initial_fields
 
 
 @pytest.fixture
 def simul(heat_model, fields):
-    parameters = dict(periodic=True, k=1)
-    simul = Simulation(heat_model, fields.copy(), parameters,
+    simul = Simulation(heat_model, fields.copy(),
                        dt=.5, tmax=2, tol=1E-1,
                        id="test_triflow_containers")
     return simul
@@ -40,10 +40,6 @@ def simul(heat_model, fields):
 
 def test_containers_coerce(simul, fields):
     with tempdir() as container_path:
-        simul.parameters["test_bool"] = True
-        simul.parameters["test_list"] = []
-        simul.parameters["test_object"] = type("TestObject", (object, ),
-                                               dict(a=[], b={}))
         simul.attach_container(container_path)
         simul.run()
 
@@ -64,7 +60,6 @@ def test_containers_attached_memory(simul, fields):
 
     assert simul.container.data.isel(t=0) == fields
     assert simul.container.data.isel(t=-1) == simul.fields
-    assert simul.container.metadata == simul.parameters
 
 
 def test_containers_attached_ondisk(simul, fields):
@@ -74,10 +69,7 @@ def test_containers_attached_ondisk(simul, fields):
 
         assert simul.container.data.isel(t=0) == fields
         assert simul.container.data.isel(t=-1) == simul.fields
-        assert simul.container.metadata == simul.parameters
 
-        with open(container_path / simul.id / "metadata.yml") as metafile:
-            assert yaml.load(metafile) == simul.parameters
         assert (xr.open_dataset(container_path / simul.id / "data.nc") ==
                 simul.container.data)
         with pytest.raises(FileExistsError):
