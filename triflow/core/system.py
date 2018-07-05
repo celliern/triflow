@@ -13,24 +13,12 @@ from queue import Queue
 import attr
 import numpy as np
 from more_itertools import unique_everseen
-from sympy import (
-    Derivative,
-    Function,
-    Idx,
-    Indexed,
-    Dummy,
-    And,
-    Eq,
-    IndexedBase,
-    Symbol,
-    Wild,
-    solve,
-    sympify,
-    oo,
-    Ge,
-    Le,
-)
+from sympy import (And, Derivative, Dummy, Eq, Function, Ge, Idx, Indexed,
+                   IndexedBase, Le, Symbol, Wild, oo, solve, sympify)
 from sympy.logic.boolalg import BooleanTrue
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 
 def _convert_pde_list(pdes):
@@ -709,16 +697,23 @@ class PDESys:
         self.sizes = dict(zip(self.dependent_variables, sizes))
 
     def __attrs_post_init__(self):
+        logging.info("processing pde system")
         self._system = []
         if self.boundary_conditions is None:
             self.boundary_conditions = dict()
         if self.auxiliary_definitions is None:
             self.auxiliary_definitions = dict()
+        logging.info("coerce equations...")
         self._coerce_equations()
+        logging.info("compute domain...")
         self._compute_domain()
+        logging.info("get shapes...")
         self._get_shapes()
+        logging.info("ensure bdc...")
         self._ensure_bdc()
+        logging.info("build system...")
         self._build_system()
+        logging.info("done")
 
     @property
     def dependent_dict(self):

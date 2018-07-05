@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf8
 
+import logging
 from functools import lru_cache, partial, wraps
 from itertools import accumulate, chain
 from tempfile import mkdtemp
@@ -11,12 +12,16 @@ import theano.tensor as tt
 from joblib import Memory
 from scipy.sparse import csc_matrix
 from sklearn.tree import DecisionTreeRegressor
-from sympy import And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol, oo
+from sympy import (And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol,
+                   oo)
 from sympy.printing.theanocode import TheanoPrinter, dim_handling, mapping
-from theano import function, scan, clone
-from theano.ifelse import ifelse
+from theano import clone, function, scan
 from theano.compile.ops import as_op
+from theano.ifelse import ifelse
 from triflow.core.system import PDESys
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging = logging.getLogger(__name__)
 
 cachedir = mkdtemp()
 memory = Memory(location=cachedir)
@@ -736,13 +741,23 @@ class TheanoCompiler:
         self.J = J
 
     def __attrs_post_init__(self):
+        logging.info("theano compiler: init printer...")
         self.printer = self.Printer(self.system)
+        logging.info("theano compiler: convert_inputs...")
         self._convert_inputs()
+        logging.info("theano compiler: setup_replacements...")
         self._setup_replacements()
+        logging.info("theano compiler: build_decision_trees...")
         self._build_decision_trees()
+        logging.info("theano compiler: pivot_choice...")
         self._pivot_choice()
+        logging.info("theano compiler: create_gridinfo...")
         self._create_gridinfo()
+        logging.info("theano compiler: build_idxs...")
         self._build_idxs()
+        logging.info("theano compiler: build_flattener...")
         self._build_flattener()
+        logging.info("theano compiler: build_evolution_equations...")
         self._build_evolution_equations()
+        logging.info("theano compiler: build_jacobian...")
         self._build_jacobian()
