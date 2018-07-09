@@ -5,7 +5,6 @@ import logging
 from functools import lru_cache, partial, wraps
 from itertools import accumulate, chain
 from tempfile import mkdtemp
-from ..utils import tqdm
 
 import attr
 import numpy as np
@@ -245,16 +244,14 @@ class TheanoCompiler:
         self._domains = []
 
         grids = []
-        for i, (sys, cursor, shape, size, indice) in tqdm(
-                enumerate(
-                    zip(
-                        self.system._system,
-                        self._cursors,
-                        self.shapes,
-                        self.sizes,
-                        self.indices,
-                    )),
-                desc="building gridinfo"):
+        for i, (sys, cursor, shape, size, indice) in enumerate(
+                zip(
+                    self.system._system,
+                    self._cursors,
+                    self.shapes,
+                    self.sizes,
+                    self.indices,
+                )):
 
             grids.append(indice.reshape(tt.stack([self.ndim, *shape])))
 
@@ -545,9 +542,7 @@ class TheanoCompiler:
 
         F_ = tt.alloc(
             tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
-        for grid, eq in tqdm(
-                list(zip(_subgrids, self.evolution_equations)),
-                desc="build evolution equations"):
+        for grid, eq in zip(_subgrids, self.evolution_equations):
             eq = clone(
                 eq,
                 replace={
@@ -610,7 +605,7 @@ class TheanoCompiler:
     def _build_jacobian(self):
         self._full_jacs = []
         self._full_jacs_cols = []
-        for expr in tqdm(self._full_exprs, desc="build symbolic jacobian"):
+        for expr in self._full_exprs:
             wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
             wrts, grids = wrts, list(map(self.sort_indexed, wrts))
             grids = [[
@@ -621,7 +616,7 @@ class TheanoCompiler:
             self._full_jacs_cols.append(grids)
             diffs = [
                 expr.diff(wrt).replace(KroneckerDelta,
-                                       self._simplify_kron).n().simplify()
+                                       self._simplify_kron).n()
                 for wrt in wrts
             ]
             self._full_jacs.append(
@@ -633,9 +628,7 @@ class TheanoCompiler:
 
         _subgrids = [tt.imatrix("sub%i" % i) for i in self._domains]
 
-        for grid, jacs, jac_cols in tqdm(
-                zip(_subgrids, self._full_jacs, self._full_jacs_cols),
-                desc="build jacobian routine"):
+        for grid, jacs, jac_cols in zip(_subgrids, self._full_jacs, self._full_jacs_cols):
             for col_func, jac in zip(jac_cols, jacs):
                 J_ = tt.zeros((grid.shape[0], ))
                 cols_ = tt.zeros((grid.shape[0], self.ndim + 1), dtype="int32")

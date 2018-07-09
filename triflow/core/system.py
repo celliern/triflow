@@ -13,8 +13,23 @@ from queue import Queue
 import attr
 import numpy as np
 from more_itertools import unique_everseen
-from sympy import (And, Derivative, Dummy, Eq, Function, Ge, Idx, Indexed,
-                   IndexedBase, Le, Symbol, Wild, oo, solve, sympify)
+from sympy import (
+    And,
+    Derivative,
+    Dummy,
+    Eq,
+    Function,
+    Ge,
+    Idx,
+    Indexed,
+    IndexedBase,
+    Le,
+    Symbol,
+    Wild,
+    oo,
+    solve,
+    sympify,
+)
 from sympy.logic.boolalg import BooleanTrue
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -45,14 +60,14 @@ def ensure_bool(cond, ivars):
 
 def is_in_bulk(indexed, ivars, all_ivars):
     ivar_idxs_value = indexed.args[1:]
-    is_inside = True
+    is_inside = []
     for ivar, value in zip(ivars, ivar_idxs_value):
         if ivar.idx in value.atoms(Idx):
-            is_inside *= True
+            is_inside.append(True)
             continue
         left_cond = ensure_bool(value >= ivar.idx.lower, all_ivars)
         right_cond = ensure_bool(value <= ivar.idx.upper, all_ivars)
-        is_inside *= bool(left_cond & right_cond)
+        is_inside.append(bool(left_cond & right_cond))
     return is_inside
 
 
@@ -77,12 +92,55 @@ def compute_bdc_on_ghost_node(indexed, ivars, bdcs, all_ivars):
     for ivar, node, domain in zip(ivars, ghost_node, domains):
         if domain == "left":
             yield bdcs[ivar][0].fdiff_equation.subs(
-                {ivar.idx: coord
-                 for ivar, coord in zip(ivars, ghost_node)})
+                {ivar.idx: coord for ivar, coord in zip(ivars, ghost_node)}
+            )
         if domain == "right":
             yield bdcs[ivar][1].fdiff_equation.subs(
-                {ivar.idx: coord
-                 for ivar, coord in zip(ivars, ghost_node)})
+                {ivar.idx: coord for ivar, coord in zip(ivars, ghost_node)}
+            )
+
+
+def include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
+    all_idxs = set(
+        [
+            *chain(*[list(var.atoms(Idx)) for var in all_unavailable_vars]),
+            *chain(*[list(bdc.atoms(Idx)) for bdc in all_available_bdcs]),
+        ]
+    )
+    dummy_map = {idx: Dummy() for idx in all_idxs}
+    reverse_dummy_map = {value: key for key, value in dummy_map.items()}
+    all_unavailable_vars_ = set([var.subs(dummy_map) for var in all_unavailable_vars])
+    all_available_bdcs_ = set([bdc.subs(dummy_map) for bdc in all_available_bdcs])
+    all_available_bdcs_ = [
+        bdc
+        for bdc in all_available_bdcs_
+        if filter_relevent_equations(bdc, all_unavailable_vars_)
+    ]
+    logging.debug("ghost nodes: %s" % ", ".join(map(str, all_unavailable_vars_)))
+    logging.debug(
+        "using bdc to replace ghost nodes: %s"
+        % ", ".join(map(str, all_available_bdcs_))
+    )
+
+    solved_variables = dict()
+    for solved_ in list(
+        solve(all_available_bdcs_, all_unavailable_vars_, dict=True, set=True)
+    ):
+        solved_variables.update(solved_)
+
+    solved_variables = {
+        key.subs(reverse_dummy_map): value.subs(reverse_dummy_map)
+        for key, value in solved_variables.items()
+    }
+
+    logging.debug(
+        "ghost nodes values: %s"
+        % ", ".join(
+            ["%s: %s" % (key, value) for key, value in solved_variables.items()]
+        )
+    )
+    local_eq = local_eq.subs(solved_variables)
+    return local_eq, solved_variables
 
 
 @attr.s(frozen=True, repr=False, hash=False)
@@ -92,9 +150,11 @@ class IndependentVariable:
     @name.validator
     def check(self, attrs, value):
         if value not in string.ascii_letters or len(value) > 1:
-            raise ValueError("independant variables have to be 1 char "
-                             "lenght and be an ascii letter "
-                             '(is "%s")' % value)
+            raise ValueError(
+                "independant variables have to be 1 char "
+                "lenght and be an ascii letter "
+                '(is "%s")' % value
+            )
 
     @property
     def symbol(self):
@@ -132,14 +192,12 @@ _dependent_var_re = re.compile(r"^(?P<dvar>\w+)(?:\((?P<dvararg>[^\)]*)\))?$")
 @attr.s(frozen=True, repr=False, hash=False)
 class DependentVariable:
     name = attr.ib(type=str)
-    independent_variables = attr.ib(
-        init=False, type=typing.Tuple[IndependentVariable])
+    independent_variables = attr.ib(init=False, type=typing.Tuple[IndependentVariable])
 
     def __attrs_post_init__(self):
         name, independent_variables = DependentVariable._convert(self.name)
         object.__setattr__(self, "name", name)
-        object.__setattr__(self, "independent_variables",
-                           independent_variables)
+        object.__setattr__(self, "independent_variables", independent_variables)
 
     @staticmethod
     def _convert(var):
@@ -150,33 +208,41 @@ class DependentVariable:
         depvar, indepvars = _dependent_var_re.findall(var)[0]
         return (
             depvar,
-            tuple([
-                IndependentVariable(indepvar.strip())
-                for indepvar in indepvars.split(",") if indepvar != ""
-            ]),
+            tuple(
+                [
+                    IndependentVariable(indepvar.strip())
+                    for indepvar in indepvars.split(",")
+                    if indepvar != ""
+                ]
+            ),
         )
 
     @property
     def symbol(self):
-        return Function(self.name) if self.independent_variables else Symbol(
-            self.name)
+        return Function(self.name) if self.independent_variables else Symbol(self.name)
 
     @property
     def discrete(self):
-        return IndexedBase(
-            self.name) if self.independent_variables else Symbol(self.name)
+        return IndexedBase(self.name) if self.independent_variables else Symbol(
+            self.name
+        )
 
     @property
     def discrete_i(self):
-        return self.discrete[tuple([
-            ivar.idx for ivar in self.independent_variables
-        ])] if self.independent_variables else Symbol(self.name)
+        return self.discrete[
+            tuple([ivar.idx for ivar in self.independent_variables])
+        ] if self.independent_variables else Symbol(
+            self.name
+        )
 
     def __repr__(self):
         return "{}{}".format(
             self.name,
-            ("(%s)" % ", ".join(map(str, self.independent_variables))
-             if self.independent_variables else ""),
+            (
+                "(%s)" % ", ".join(map(str, self.independent_variables))
+                if self.independent_variables
+                else ""
+            ),
         )
 
     def __str__(self):
@@ -187,6 +253,7 @@ class DependentVariable:
 
 
 def _convert_depvar_list(dependent_variables):
+
     def convert_depvar(dependent_variable):
         if isinstance(dependent_variable, str):
             return DependentVariable(dependent_variable)
@@ -201,13 +268,13 @@ def _convert_depvar_list(dependent_variables):
 
 
 def _convert_indepvar_list(independent_variables):
+
     def convert_indepvar(independent_variable):
         if isinstance(independent_variable, str):
             return IndependentVariable(independent_variable)
         if isinstance(independent_variable, IndependentVariable):
             return independent_variable
-        raise ValueError(
-            "dependent var should be string or IndependentVariable")
+        raise ValueError("dependent var should be string or IndependentVariable")
 
     if not isinstance(independent_variables, (list, tuple)):
         return [convert_indepvar(independent_variables)]
@@ -219,11 +286,11 @@ def _convert_indepvar_list(independent_variables):
 class PDEquation:
     equation = attr.ib(type=str)
     dependent_variables = attr.ib(
-        type=typing.Tuple[DependentVariable], converter=_convert_depvar_list)
+        type=typing.Tuple[DependentVariable], converter=_convert_depvar_list
+    )
     parameters = attr.ib(
-        type=typing.Tuple[DependentVariable],
-        converter=_convert_depvar_list,
-        default=[])
+        type=typing.Tuple[DependentVariable], converter=_convert_depvar_list, default=[]
+    )
     independent_variables = attr.ib(
         type=typing.Tuple[IndependentVariable],
         default=[],
@@ -249,10 +316,7 @@ class PDEquation:
         if self.raw:
             self.fdiff_equation = sympify(
                 self.equation,
-                locals={
-                    dvar.name: dvar.discrete
-                    for dvar in self.dependent_variables
-                },
+                locals={dvar.name: dvar.discrete for dvar in self.dependent_variables},
             )
             return
         self._complete_independent_vars()
@@ -279,63 +343,71 @@ class PDEquation:
         the dependent variables.
         """
         harvested_indep_vars = list(
-            chain(*[
-                dep_var.independent_variables
-                for dep_var in self.dependent_variables
-                if dep_var.independent_variables is not None
-            ]))
+            chain(
+                *[
+                    dep_var.independent_variables
+                    for dep_var in self.dependent_variables
+                    if dep_var.independent_variables is not None
+                ]
+            )
+        )
         if not self.independent_variables and harvested_indep_vars:
             self.independent_variables = harvested_indep_vars
         elif not self.independent_variables and not harvested_indep_vars:
             self.independent_variables = _convert_indepvar_list(["x"])
         else:
-            self.independent_variables = tuple([
-                *self.independent_variables,
-                *[
-                    var for var in harvested_indep_vars
-                    if var not in self.independent_variables
-                ],
-            ])
-        self.independent_variables = list(
-            unique_everseen(self.independent_variables))
+            self.independent_variables = tuple(
+                [
+                    *self.independent_variables,
+                    *[
+                        var
+                        for var in harvested_indep_vars
+                        if var not in self.independent_variables
+                    ],
+                ]
+            )
+        self.independent_variables = list(unique_everseen(self.independent_variables))
 
     def _build_sympify_namespace(self):
+
         def partial_derivative(expr, symbolic_independent_variables):
             return Derivative(expr, *symbolic_independent_variables)
 
         spatial_derivative_re = re.compile(
-            r"d(?P<derargs>\w+?)(?:(?P<depder>[%s]+)|\((?P<inder>.*?)\))" %
-            ",".join([
-                var.name
-                for var in chain(self.dependent_variables, self.parameters)
-            ]))
+            r"d(?P<derargs>\w+?)(?:(?P<depder>[%s]+)|\((?P<inder>.*?)\))"
+            % ",".join(
+                [var.name for var in chain(self.dependent_variables, self.parameters)]
+            )
+        )
         spatial_derivative = spatial_derivative_re.findall(str(self.equation))
 
         namespace = dict()
+        namespace.update({var.name: var.symbol for var in self.independent_variables})
         namespace.update(
-            {var.name: var.symbol
-             for var in self.independent_variables})
-        namespace.update({
-            var.name:
-            (var.symbol(*[ivar.symbol for ivar in var.independent_variables])
-             if var.independent_variables else var.symbol)
-            for var in chain(self.dependent_variables, self.parameters)
-        })
+            {
+                var.name: (
+                    var.symbol(*[ivar.symbol for ivar in var.independent_variables])
+                    if var.independent_variables
+                    else var.symbol
+                )
+                for var in chain(self.dependent_variables, self.parameters)
+            }
+        )
         for ivar, dvar, inside in spatial_derivative:
             if dvar:
                 namespace["d%s%s" % (ivar, dvar)] = partial_derivative(
-                    namespace[dvar], ivar)
+                    namespace[dvar], ivar
+                )
             else:
                 namespace["d%s" % ivar] = partial(
-                    partial_derivative, symbolic_independent_variables=ivar)
+                    partial_derivative, symbolic_independent_variables=ivar
+                )
         self._sympy_namespace = namespace
 
     def _sympify_equation(self):
-        self.symbolic_equation = sympify(
-            self.equation, locals=self._sympy_namespace)
+        self.symbolic_equation = sympify(self.equation, locals=self._sympy_namespace)
         for dvar in self.dependent_variables:
-            self.symbolic_equation = self.symbolic_equation.subs(
-                dvar.name, dvar.symbol)
+            self.symbolic_equation = self.symbolic_equation.subs(dvar.name, dvar.symbol)
         self.symbolic_equation = self.symbolic_equation.doit()
 
     def _as_finite_diff(self):
@@ -349,8 +421,7 @@ class PDEquation:
                         deriv,
                         deriv.as_finite_difference(
                             points=[
-                                ivar.symbol + i * ivar.step
-                                for i in range(-n, n + 1)
+                                ivar.symbol + i * ivar.step for i in range(-n, n + 1)
                             ],
                             wrt=ivar.symbol,
                         ),
@@ -360,10 +431,7 @@ class PDEquation:
                     fdiff_equation = fdiff_equation.replace(
                         deriv,
                         deriv.as_finite_difference(
-                            points=[
-                                ivar.symbol + i * ivar.step
-                                for i in range(0, n)
-                            ],
+                            points=[ivar.symbol + i * ivar.step for i in range(0, n)],
                             wrt=ivar.symbol,
                         ),
                     )
@@ -373,8 +441,7 @@ class PDEquation:
                         deriv,
                         deriv.as_finite_difference(
                             points=[
-                                ivar.symbol + i * ivar.step
-                                for i in range(-(n - 1), 1)
+                                ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)
                             ],
                             wrt=ivar.symbol,
                         ),
@@ -383,7 +450,8 @@ class PDEquation:
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
             fdiff_equation = fdiff_equation.replace(
-                ivar.symbol + a * ivar.step, ivar.idx + a)
+                ivar.symbol + a * ivar.step, ivar.idx + a
+            )
 
         for var in chain(self.dependent_variables, self.parameters):
 
@@ -391,19 +459,20 @@ class PDEquation:
                 return var.discrete[args]
 
             if var.independent_variables:
-                fdiff_equation = fdiff_equation.replace(
-                    var.symbol, replacement)
+                fdiff_equation = fdiff_equation.replace(var.symbol, replacement)
 
         for indexed in fdiff_equation.atoms(Indexed):
             new_indexed = indexed.subs(
-                {ivar.symbol: ivar.idx
-                 for ivar in self.independent_variables})
+                {ivar.symbol: ivar.idx for ivar in self.independent_variables}
+            )
             fdiff_equation = fdiff_equation.subs(indexed, new_indexed)
 
-        fdiff_equation = fdiff_equation.subs({
-            ivar.symbol: ivar.discrete[ivar.idx]
-            for ivar in self.independent_variables
-        })
+        fdiff_equation = fdiff_equation.subs(
+            {
+                ivar.symbol: ivar.discrete[ivar.idx]
+                for ivar in self.independent_variables
+            }
+        )
 
         self.fdiff_equation = fdiff_equation
 
@@ -417,12 +486,13 @@ class PDEquation:
 
 @attr.s
 class PDESys:
-    evolution_equations = attr.ib(
-        type=typing.List[str], converter=_convert_pde_list)
+    evolution_equations = attr.ib(type=typing.List[str], converter=_convert_pde_list)
     dependent_variables = attr.ib(
-        type=typing.List[DependentVariable], converter=_convert_depvar_list)
+        type=typing.List[DependentVariable], converter=_convert_depvar_list
+    )
     parameters = attr.ib(
-        type=typing.List[DependentVariable], converter=_convert_depvar_list)
+        type=typing.List[DependentVariable], converter=_convert_depvar_list
+    )
     independent_variables = attr.ib(
         type=typing.List[IndependentVariable],
         default=[],
@@ -441,29 +511,27 @@ class PDESys:
             domain = {}
             for i, ivar in enumerate(ivars, 1):
                 lower_conds = [
-                    (indexed.args[i] - ivar.idx.lower).subs(
-                        ivar.idx, ivar.symbol) for indexed in eq.atoms(Indexed)
-                    if indexed.args[0] not in
-                    [ivar.discrete for ivar in dvar.independent_variables]
+                    (indexed.args[i] - ivar.idx.lower).subs(ivar.idx, ivar.symbol)
+                    for indexed in eq.atoms(Indexed)
+                    if indexed.args[0] not in [
+                        ivar.discrete for ivar in dvar.independent_variables
+                    ]
                 ]
                 upper_conds = [
-                    (indexed.args[i] - ivar.idx.upper).subs(
-                        ivar.idx, ivar.symbol) for indexed in eq.atoms(Indexed)
-                    if indexed.args[0] not in
-                    [ivar.discrete for ivar in dvar.independent_variables]
+                    (indexed.args[i] - ivar.idx.upper).subs(ivar.idx, ivar.symbol)
+                    for indexed in eq.atoms(Indexed)
+                    if indexed.args[0] not in [
+                        ivar.discrete for ivar in dvar.independent_variables
+                    ]
                 ]
                 cond = (
                     Ge(
                         ivar.idx,
-                        max([
-                            solve(cond, ivar.symbol)[0] for cond in lower_conds
-                        ]),
+                        max([solve(cond, ivar.symbol)[0] for cond in lower_conds]),
                     ),
                     Le(
                         ivar.idx,
-                        min([
-                            solve(cond, ivar.symbol)[0] for cond in upper_conds
-                        ]),
+                        min([solve(cond, ivar.symbol)[0] for cond in upper_conds]),
                     ),
                 )
                 domain[ivar] = cond
@@ -475,13 +543,13 @@ class PDESys:
                 if isinstance(lower_cond, (bool, BooleanTrue)):
                     left_unodes = []
                 else:
-                    left_unodes = np.arange(ivar.idx.lower,
-                                            lower_cond.rhs).tolist()
+                    left_unodes = np.arange(ivar.idx.lower, lower_cond.rhs).tolist()
                 if isinstance(upper_cond, (bool, BooleanTrue)):
                     right_unodes = []
                 else:
-                    right_unodes = np.arange(ivar.idx.upper, upper_cond.rhs,
-                                             -1).tolist()
+                    right_unodes = np.arange(
+                        ivar.idx.upper, upper_cond.rhs, -1
+                    ).tolist()
                 unodes[ivar] = (left_unodes, right_unodes)
             self._unknown_nodes.append(unodes)
 
@@ -492,16 +560,22 @@ class PDESys:
                 self.dependent_variables,
                 self.parameters,
                 auxiliary_definitions=self.auxiliary_definitions,
-            ) for eq in self.evolution_equations.copy()
+            )
+            for eq in self.evolution_equations.copy()
         ]
         self.independent_variables = sorted(
             set(
-                chain(*[
-                    eq.independent_variables
-                    for eq in self.evolution_equations.copy()
-                ])))
+                chain(
+                    *[
+                        eq.independent_variables
+                        for eq in self.evolution_equations.copy()
+                    ]
+                )
+            )
+        )
 
     def _ensure_bdc(self):
+
         def not_in_iter(iter, dvar):
             return dvar.name not in iter
 
@@ -509,25 +583,25 @@ class PDESys:
             return dvar.name in iter
 
         for dvar in filter(
-                partial(not_in_iter, self.boundary_conditions),
-                chain(self.dependent_variables, self.parameters),
+            partial(not_in_iter, self.boundary_conditions),
+            chain(self.dependent_variables, self.parameters),
         ):
             self.boundary_conditions[dvar] = {
                 ivar.name: ["d%s%s" % (ivar.name, dvar.name)] * 2
                 for ivar in dvar.independent_variables
             }
         for dvar in filter(
-                partial(in_iter, self.boundary_conditions),
-                chain(self.dependent_variables, self.parameters),
+            partial(in_iter, self.boundary_conditions),
+            chain(self.dependent_variables, self.parameters),
         ):
-            self.boundary_conditions[dvar] = self.boundary_conditions.pop(
-                dvar.name)
+            self.boundary_conditions[dvar] = self.boundary_conditions.pop(dvar.name)
             for ivar in filter(
-                    partial(not_in_iter, self.boundary_conditions[dvar]),
-                    dvar.independent_variables,
+                partial(not_in_iter, self.boundary_conditions[dvar]),
+                dvar.independent_variables,
             ):
-                self.boundary_conditions[dvar][
-                    ivar.name] = ["d%s%s" % (ivar.name, dvar.name)] * 2
+                self.boundary_conditions[dvar][ivar.name] = [
+                    "d%s%s" % (ivar.name, dvar.name)
+                ] * 2
 
         for dvar, bdc in self.boundary_conditions.items():
             keys = list(bdc.keys())
@@ -537,9 +611,11 @@ class PDESys:
             for ivar, eqs in bdc.items():
                 if eqs == "periodic":
                     left_cond = dvar.discrete_i - dvar.discrete_i.subs(
-                        ivar.idx, ivar.idx + ivar.N)
+                        ivar.idx, ivar.idx + ivar.N
+                    )
                     right_cond = dvar.discrete_i - dvar.discrete_i.subs(
-                        ivar.idx, ivar.idx - ivar.N)
+                        ivar.idx, ivar.idx - ivar.N
+                    )
                     bdc[ivar] = (
                         PDEquation(
                             left_cond,
@@ -561,14 +637,15 @@ class PDESys:
                             dependent_variables=self.dependent_variables,
                             independent_variables=dvar.independent_variables,
                             scheme=scheme,
-                        ) for scheme, eq in zip(["right", "left"], eqs)
+                        )
+                        for scheme, eq in zip(["right", "left"], eqs)
                     ]
             self.boundary_conditions[dvar] = bdc
 
     def _build_system(self):
-        for eq, sysdomain, dvar, unodes in zip(self, self._domains,
-                                               self.dependent_variables,
-                                               self._unknown_nodes):
+        for eq, sysdomain, dvar, unodes in zip(
+            self, self._domains, self.dependent_variables, self._unknown_nodes
+        ):
             system = {}
             ivars = dvar.independent_variables
 
@@ -585,13 +662,15 @@ class PDESys:
             bdcs = self.boundary_conditions.values()
 
             for coords in coords_to_compute:
+                logging.debug("evaluate coord: %s" % ", ".join(map(str, coords)))
                 local_eq = eq.fdiff_equation.subs(
-                    {ivar.idx: coord
-                     for ivar, coord in zip(ivars, coords)})
+                    {ivar.idx: coord for ivar, coord in zip(ivars, coords)}
+                )
                 subs_queue = Queue()
                 unavailable_vars = [
-                    indexed for indexed in local_eq.atoms(Indexed) if
-                    not is_in_bulk(indexed, ivars, self.independent_variables)
+                    indexed
+                    for indexed in local_eq.atoms(Indexed)
+                    if not all(is_in_bulk(indexed, ivars, self.independent_variables))
                 ]
 
                 subs_queue.put(unavailable_vars)
@@ -600,70 +679,80 @@ class PDESys:
                 all_available_bdcs = set()
                 solved_variables = dict()
 
-                for unavailable_vars in iter(subs_queue.get, []):
-                    available_bdcs = chain(*[
-                        compute_bdc_on_ghost_node(
-                            unavailable_var,
-                            bdc.keys(),
-                            bdc,
-                            self.independent_variables,
-                        ) for unavailable_var, bdc in product(
-                            unavailable_vars, bdcs)
-                    ])
+                for i, unavailable_vars in enumerate(iter(subs_queue.get, [])):
+                    available_bdcs = list(
+                        chain(
+                            *[
+                                compute_bdc_on_ghost_node(
+                                    unavailable_var,
+                                    bdc.keys(),
+                                    bdc,
+                                    self.independent_variables,
+                                )
+                                for unavailable_var, bdc in product(
+                                    unavailable_vars, bdcs
+                                )
+                            ]
+                        )
+                    )
                     available_bdcs = [
-                        bdc.subs(solved_variables) for bdc in available_bdcs
+                        bdc
+                        for bdc in available_bdcs
+                        if filter_relevent_equations(bdc, unavailable_vars)
                     ]
-                    for bdc in available_bdcs:
-                        subs_queue.put([
-                            indexed for indexed in bdc.atoms(Indexed)
-                            if not is_in_bulk(indexed, ivars,
-                                              self.independent_variables)
-                            and indexed not in unavailable_vars
-                        ])
-                    all_available_bdcs = all_available_bdcs.union(
-                        set(available_bdcs))
+                    if i > 5:
+                        raise AssertionError
+                    available_bdcs = set(
+                        [bdc.subs(solved_variables) for bdc in available_bdcs]
+                    )
+
+                    all_available_bdcs = all_available_bdcs.union(set(available_bdcs))
                     all_unavailable_vars = all_unavailable_vars.union(
-                        set(unavailable_vars))
+                        set(unavailable_vars)
+                    )
+                    indexed = set(
+                        list(chain(*[bdc.atoms(Indexed) for bdc in all_available_bdcs]))
+                    )
+                    # indexed = local_eq.atoms(Indexed)
+                    tosolve = [
+                        idx
+                        for idx in indexed
+                        if not all(is_in_bulk(idx, ivars, self.independent_variables))
+                    ]
+                    local_eq, solved_variables_ = include_bdc_in_localeq(
+                        tosolve, all_available_bdcs, local_eq
+                    )
+                    solved_variables.update(solved_variables_)
 
-                    all_idxs = set([
-                        *chain(*[
-                            list(var.atoms(Idx))
-                            for var in all_unavailable_vars
-                        ]),
-                        *chain(*[
-                            list(bdc.atoms(Idx)) for bdc in all_available_bdcs
-                        ]),
-                    ])
-
-                    dummy_map = {idx: Dummy() for idx in all_idxs}
-                    reverse_dummy_map = {
-                        value: key
-                        for key, value in dummy_map.items()
-                    }
-
-                    all_available_bdcs = set(
-                        [bdc.subs(dummy_map) for bdc in all_available_bdcs])
-                    all_unavailable_vars = set(
-                        [var.subs(dummy_map) for var in all_unavailable_vars])
-                    solved_ = {}
-                    [
-                        solved_.update(sol) for sol in solve(
-                            [
-                                bdc for bdc in all_available_bdcs
-                                if filter_relevent_equations(
-                                    bdc, all_unavailable_vars)
-                            ],
-                            all_unavailable_vars,
-                            dict=True,
-                            set=True,
+                    remaining_ghosts = [
+                        indexed
+                        for indexed in local_eq.atoms(Indexed)
+                        if not all(
+                            is_in_bulk(indexed, ivars, self.independent_variables)
                         )
                     ]
-                    solved_variables = {
-                        key.subs(reverse_dummy_map):
-                        value.subs(reverse_dummy_map)
-                        for key, value in solved_.items()
-                    }
-                    local_eq = local_eq.subs(solved_variables)
+                    if remaining_ghosts:
+                        subs_queue.put(set(tosolve).union(set(remaining_ghosts)))
+                    else:
+                        subs_queue.put([])
+                local_eq, solved_variables = include_bdc_in_localeq(
+                    all_unavailable_vars, all_available_bdcs, local_eq
+                )
+
+                remaining_ghosts = [
+                    indexed
+                    for indexed in local_eq.atoms(Indexed)
+                    if not all(is_in_bulk(indexed, ivars, self.independent_variables))
+                ]
+                if remaining_ghosts:
+                    logging.error("remaining ghosts nodes! : %s" % remaining_ghosts)
+                    raise RuntimeError(
+                        "Solver not able to eliminate all ghost nodes."
+                        " Check your boundary conditions !"
+                    )
+
+                logging.debug("local equation after subs: %s" % local_eq)
+                logging.debug("Indexed in local eq: %s" % local_eq.atoms(Indexed))
 
                 domain_map = []
                 for coord, ivar in zip(coords, dvar.independent_variables):
@@ -682,13 +771,15 @@ class PDESys:
             zip(
                 self.independent_variables,
                 [ivar.N for ivar in self.independent_variables],
-            ))
+            )
+        )
 
         shapes = []
         for depvar in self.dependent_variables:
-            gridshape = [(gridinfo[ivar]
-                          if ivar in depvar.independent_variables else 1)
-                         for ivar in self.independent_variables]
+            gridshape = [
+                (gridinfo[ivar] if ivar in depvar.independent_variables else 1)
+                for ivar in self.independent_variables
+            ]
             shapes.append(tuple(gridshape))
         sizes = [reduce(mul, shape) for shape in shapes]
         self.size = sum(sizes)
@@ -721,17 +812,15 @@ class PDESys:
 
     @property
     def independent_dict(self):
-        return {
-            depvar.name: depvar.ivars
-            for depvar in self.dependent_variables
-        }
+        return {depvar.name: depvar.ivars for depvar in self.dependent_variables}
 
     @property
     def equation_dict(self):
         return {
             depvar.name: equation
-            for depvar, equation in zip(self.dependent_variables,
-                                        self.evolution_equations)
+            for depvar, equation in zip(
+                self.dependent_variables, self.evolution_equations
+            )
         }
 
     def __getitem__(self, key):

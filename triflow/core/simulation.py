@@ -231,7 +231,7 @@ class Simulation(object):
         self._scheme = scheme(model,
                               **intersection_kwargs(kwargs, scheme.__init__))
         if (time_stepping and self._scheme not in [
-                schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw
+                schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw, schemes.scipy_ode
         ]):
             self._scheme = schemes.time_stepping(self._scheme,
                                                  **intersection_kwargs(
