@@ -319,6 +319,7 @@ class PDEquation:
                 locals={dvar.name: dvar.discrete for dvar in self.dependent_variables},
             )
             return
+        self._t = Symbol("t")
         self._complete_independent_vars()
         self._fill_incomplete_dependent_vars()
         self._build_sympify_namespace()
@@ -795,6 +796,7 @@ class PDESys:
         if self.auxiliary_definitions is None:
             self.auxiliary_definitions = dict()
         logging.info("coerce equations...")
+        self._t = Symbol("t")
         self._coerce_equations()
         logging.info("compute domain...")
         self._compute_domain()

@@ -92,6 +92,7 @@ class ROW_general:
         safety_factor=0.9,
         solver="auto",
         recompute_target=True,
+        iteratif_atol=1E-3,
     ):
         self._internal_dt = None
         self._model = model
@@ -109,6 +110,7 @@ class ROW_general:
         self._recompute_target = recompute_target
         self._solver = solver
         self._interp_cache = None
+        self._atol = iteratif_atol
 
     def __call__(self, t, fields, dt, hook=null_hook):
         """Perform a step of the solver: took a time and a system state as a
@@ -155,7 +157,7 @@ class ROW_general:
     def _fixed_step(self, t, fields, dt, hook=null_hook):
         fields = fields.copy()
         fields = hook(t, fields)
-        J = self._model.J(fields)
+        J = self._model.J(fields, t)
         if self._solver == "auto":
             size = J.shape[0] * J.shape[1]
             self._solver = "iteratif" if size > 50000 else "direct"
@@ -170,14 +172,14 @@ class ROW_general:
             fields_i = self._model.fields_from_U(
                 U + sum([self._alpha[i, j] * ks[j] for j in range(i)]), fields_i
             )
-            F = self._model.F(fields_i)
+            F = self._model.F(fields_i, t)
             B = dt * F + dt * (
                 J @ sum([self._gamma[i, j] * ks[j] for j in range(i)]) if i > 0 else 0
             )
             if self._solver == "direct":
                 Utilde = luf(B)
             elif self._solver == "iteratif":
-                Utilde = sps.linalg.gcrotmk(A, B, U, atol=1E-5)[0]
+                Utilde = sps.linalg.gcrotmk(A, B, U if not ks else ks[-1], atol=self._atol)[0]
             ks.append(Utilde)
         U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
@@ -536,12 +538,12 @@ class scipy_ode:
         def func_scipy_proxy(t, U, fields, hook):
             fields = self._model.fields_from_U(U, fields)
             fields = hook(t, fields)
-            return self._model.F(fields)
+            return self._model.F(fields, t)
 
         def jacob_scipy_proxy(t, U, fields, hook):
             fields = self._model.fields_from_U(U, fields)
             fields = hook(t, fields)
-            return self._model.J(fields, sparse=True)
+            return self._model.J(fields, t)
 
         self._solv = ode(func_scipy_proxy, jac=jacob_scipy_proxy if jac else None)
         self._solv.set_integrator(integrator, **integrator_kwargs)
@@ -641,8 +643,8 @@ class Theta:
 
         fields = fields.copy()
         fields = hook(t, fields)
-        F = self._model.F(fields)
-        J = self._model.J(fields)
+        F = self._model.F(fields, t)
+        J = self._model.J(fields, t)
         U = self._model.U_from_fields(fields)
         B = dt * (F - self._theta * J @ U) + U
         J = (sps.identity(U.size, format="csc") - self._theta * dt * J)
