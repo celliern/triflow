@@ -457,7 +457,7 @@ platform = "any"
 name = "more-itertools"
 version = "4.2.0"
 description = "More routines for operating on iterables, beyond itertools"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 platform = "*"
@@ -1150,7 +1150,7 @@ heapdict = "*"
 [metadata]
 python-versions = ">=3.5"
 platform = "*"
-content-hash = "efe71b70799741b83a8233bb9db749f2eafaa933637e66f475b3f800dee26d6b"
+content-hash = "2b21c9f212dc734c062506488a1d5872be785972395f95a0a9caf9b62803b619"
 
 [metadata.hashes]
 alabaster = [ "674bb3bab080f598371f4443c5008cbfeb1a5e622dd312395d2d82af2c54c456", "b63b1f4dc77c074d386752ec4a8a7517600f6c0db8cd42980cae17ab7b3275d7",]

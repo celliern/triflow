@@ -60,6 +60,7 @@ ipywidgets = {version = "^7.2", extras = ["jupyter", "all"]}
 bokeh = {version = "^0.13.0", extras = ["jupyter", "display", "all"]}
 holoviews = {version = "^1.10", extras = ["jupyter", "display", "all"]}
 matplotlib = {version = "^2.2", extras = ["display", "all"]}
+more-itertools = "^4.2"
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
