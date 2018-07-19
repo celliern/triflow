@@ -28,6 +28,7 @@ theano = "^1"
 
 # pipeline for data and display
 streamz = "^0.3"
+more-itertools = "^4.2"
 
 # data container
 xarray = "^0.10"
@@ -55,17 +56,22 @@ sklearn = "^0"
 python-forge = "^18"
 
 # interactive work with jupyter
-jupyter = {version = "^1.0", extras = ["jupyter", "all"]}
-ipywidgets = {version = "^7.2", extras = ["jupyter", "all"]}
-bokeh = {version = "^0.13.0", extras = ["jupyter", "display", "all"]}
-holoviews = {version = "^1.10", extras = ["jupyter", "display", "all"]}
-matplotlib = {version = "^2.2", extras = ["display", "all"]}
-more-itertools = "^4.2"
+jupyter = {version = "^1.0", optional = true}
+ipywidgets = {version = "^7.2", optional = true}
+bokeh = {version = "^0.13.0", optional = true}
+holoviews = {version = "^1.10", optional = true}
+matplotlib = {version = "^2.2", optional = true}
+
+[tool.poetry.extras]
+jupyter = ["jupyter", "ipywidgets", "bokeh", "holoviews"]
+display = ["bokeh", "holoviews", "matplotlib"]
+all = ["jupyter", "ipywidgets", "bokeh", "holoviews", "matplotlib"]
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
 pylama = "^7.4"
 isort = "^4.3"
+black = "^18"
 
 # tests
 pytest = "^3.5"
