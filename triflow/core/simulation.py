@@ -290,7 +290,7 @@ class Simulation(object):
                 self.stream.emit(self)
                 yield self.t, self.fields
 
-                if self.tmax and (isclose(self.t, self.tmax)):
+                if self.tmax and isclose(self.t, self.tmax):
                     self._end_simulation()
                     return
 
