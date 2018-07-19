@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # coding=utf8
 
-from triflow.utils import enable_notebook  # noqa
-from triflow.core import schemes  # noqa
-from triflow.core.model import Model  # noqa
-from triflow.core.simulation import Simulation  # noqa
+from .utils import enable_notebook, tqdm  # noqa
+from .core import schemes  # noqa
+from .core.schemes import Stationnary as StationnarySolver
+from .core.model import Model  # noqa
+from .core.simulation import Simulation  # noqa
 
-from triflow.plugins.container import TriflowContainer as Container  # noqa
-from triflow.plugins.displays import TriflowDisplay as Display  # noqa
+from .plugins.container import TriflowContainer as Container  # noqa
+from .plugins.displays import TriflowDisplay as Display  # noqa
 
 import logging
 from logging import NullHandler
