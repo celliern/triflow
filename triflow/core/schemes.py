@@ -190,9 +190,8 @@ class ROW_general:
         )
         fields = self._model.fields_from_U(U, fields)
 
-        return t + dt, fields, (
-            norm(U - U_pred, np.inf) if U_pred is not None else None
-        )
+        err = norm(U - U_pred, np.inf) if U_pred is not None else None
+        return t + dt, fields, err
 
     def _variable_step(self, t, fields, dt, hook=null_hook):
 
@@ -219,9 +218,10 @@ class ROW_general:
             while self._err is None or self._err > self._tol:
                 new_t, new_fields, self._err = self._fixed_step(t, fields, dt, hook)
                 logging.debug("error: {}".format(self._err))
-                dt = self._internal_dt = (
-                    self._safety_factor * dt * np.sqrt(self._tol / self._err)
-                )
+                computed_dt = self._safety_factor * dt * np.sqrt(self._tol / self._err)
+                if np.isinf(computed_dt):
+                    computed_dt = 1 / self._safety_factor * dt
+                dt = self._internal_dt = computed_dt
 
             logging.debug("dt computed after err below tol: %g" % dt)
             logging.debug("ROS_vart, t %g" % t)
@@ -314,7 +314,10 @@ class ROS3PRw(ROW_general):
         time_stepping=True,
         max_iter=None,
         dt_min=None,
+        safety_factor=0.9,
+        solver="auto",
         recompute_target=True,
+        iteratif_atol=1E-3,
     ):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
@@ -336,12 +339,15 @@ class ROS3PRw(ROW_general):
             alpha,
             gamma,
             b,
+            tol=tol,
             b_pred=b_pred,
             time_stepping=time_stepping,
-            tol=tol,
             max_iter=max_iter,
             dt_min=dt_min,
+            safety_factor=safety_factor,
+            solver=solver,
             recompute_target=recompute_target,
+            iteratif_atol=iteratif_atol,
         )
 
 
@@ -375,7 +381,10 @@ class ROS3PRL(ROW_general):
         time_stepping=True,
         max_iter=None,
         dt_min=None,
+        safety_factor=0.9,
+        solver="auto",
         recompute_target=True,
+        iteratif_atol=1E-3,
     ):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
@@ -413,11 +422,14 @@ class ROS3PRL(ROW_general):
             gamma,
             b,
             b_pred=b_pred,
-            time_stepping=time_stepping,
             tol=tol,
+            time_stepping=time_stepping,
             max_iter=max_iter,
             dt_min=dt_min,
+            safety_factor=safety_factor,
+            solver=solver,
             recompute_target=recompute_target,
+            iteratif_atol=iteratif_atol,
         )
 
 
@@ -451,7 +463,10 @@ class RODASPR(ROW_general):
         time_stepping=True,
         max_iter=None,
         dt_min=None,
+        safety_factor=0.9,
+        solver="auto",
         recompute_target=True,
+        iteratif_atol=1E-3,
     ):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
@@ -510,11 +525,14 @@ class RODASPR(ROW_general):
             gamma,
             b,
             b_pred=b_pred,
-            time_stepping=time_stepping,
             tol=tol,
+            time_stepping=time_stepping,
             max_iter=max_iter,
             dt_min=dt_min,
+            safety_factor=safety_factor,
+            solver=solver,
             recompute_target=recompute_target,
+            iteratif_atol=iteratif_atol,
         )
 
 
@@ -654,3 +672,57 @@ class Theta:
         fields = self._model.fields_from_U(new_U, fields)
         fields = hook(t + dt, fields)
         return t + dt, fields
+
+
+class Stationnary:
+    """Solve the stationnary problem F(U) = 0
+
+      Parameters
+      ----------
+      model : triflow.Model
+          triflow Model
+      solver : callable, optional, default scipy.sparse.linalg.spsolve
+          method able to solve a Ax = b linear equation with A a sparse matrix.
+          Take A and b as argument and return x.
+      """  # noqa
+
+    def __init__(self, model, solver=sps.linalg.spsolve):
+        self._model = model
+        self._solver = solver
+
+    def __call__(self, fields):
+        """Perform a step of the solver: took a time and a system state as a
+          triflow Fields container and return the next time step with updated
+          container.
+
+          Parameters
+          ----------
+          t : float
+              actual time step
+          fields : triflow.Fields
+              actual system state in a triflow Fields container
+          dt : float
+              temporal step-size
+          pars : dict
+              physical parameters of the model
+          hook : callable, optional
+              any callable taking the actual time, fields and parameters and
+              return modified fields and parameters. Will be called every
+              internaltime step and can be used to include time dependent or
+              conditionnal parameters, boundary conditions...
+
+          Returns
+          -------
+          tuple : t, fields
+              updated time and fields container
+          """  # noqa
+
+        fields = fields.copy()
+        U0 = self._model.U_from_fields(fields)
+        J0 = self._model.J(fields)
+        F0 = self._model.F(fields)
+        new_U = self._solver(J0, J0 @ U0 - F0)
+        if isinstance(new_U, tuple):
+            new_U = new_U[0]
+        fields = self._model.fields_from_U(new_U, fields)
+        return fields
