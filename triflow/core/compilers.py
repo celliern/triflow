@@ -12,8 +12,7 @@ import theano.tensor as tt
 from joblib import Memory
 from scipy.sparse import csc_matrix
 from sklearn.tree import DecisionTreeRegressor
-from sympy import (And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol,
-                   oo)
+from sympy import And, Idx, Indexed, Integer, KroneckerDelta, Number, Symbol, oo
 from sympy.printing.theanocode import TheanoPrinter, dim_handling, mapping
 from theano import clone, function, scan
 from theano.compile.ops import as_op
@@ -56,45 +55,43 @@ mapping[And] = theano_and
 class EnhancedTheanoPrinter(TheanoPrinter):
     @wraps(TheanoPrinter.doprint)
     def doprint(self, expr, **kwargs):
-        return self._print(
-            expr, dtypes=self._dtypes, broadcastables=self._broadcast)
+        return self._print(expr, dtypes=self._dtypes, broadcastables=self._broadcast)
 
     def _init_broadcast(self, system):
         dvar_broadcast = {
             dvar.discrete: list(
                 dim_handling(
-                    [dvar.discrete],
-                    dim=len(dvar.independent_variables)).values())
+                    [dvar.discrete], dim=len(dvar.independent_variables)
+                ).values()
+            )
             for dvar in chain(system.dependent_variables, system.parameters)
         }
         dvar_broadcast = {
-            key: value[0] if value else tuple()
-            for key, value in dvar_broadcast.items()
+            key: value[0] if value else tuple() for key, value in dvar_broadcast.items()
         }
         ivar_broadcast = dim_handling(
             list(
-                chain(*[(ivar.idx, ivar.discrete)
-                        for ivar in system.independent_variables])),
+                chain(
+                    *[
+                        (ivar.idx, ivar.discrete)
+                        for ivar in system.independent_variables
+                    ]
+                )
+            ),
             dim=1,
         )
         return {
             Symbol(str(key)): value
-            for key, value in chain(dvar_broadcast.items(),
-                                    ivar_broadcast.items())
+            for key, value in chain(dvar_broadcast.items(), ivar_broadcast.items())
         }
 
     def _init_dtypes(self, system):
-        sizes_dtypes = {
-            ivar.N: "int32"
-            for ivar in system.independent_variables
-        }
+        sizes_dtypes = {ivar.N: "int32" for ivar in system.independent_variables}
         idx_dtypes = {
-            Symbol(str(ivar.idx)): "int32"
-            for ivar in system.independent_variables
+            Symbol(str(ivar.idx)): "int32" for ivar in system.independent_variables
         }
         return {
-            key: value
-            for key, value in chain(sizes_dtypes.items(), idx_dtypes.items())
+            key: value for key, value in chain(sizes_dtypes.items(), idx_dtypes.items())
         }
 
     def __init__(self, system, *args, **kwargs):
@@ -106,36 +103,39 @@ class EnhancedTheanoPrinter(TheanoPrinter):
     def _print_Idx(self, idx, **kwargs):
         try:
             return tt.constant(
-                [self._print_Integer(Integer(str(idx)))],
-                dtype="int32",
-                ndim=1)
+                [self._print_Integer(Integer(str(idx)))], dtype="int32", ndim=1
+            )
         except ValueError:
             pass
         idx_symbol = idx.replace(Idx, idx_to_symbol)
         idx_th = self._print(
-            idx_symbol, dtypes=self._dtypes, broadcastables=self._broadcast)
+            idx_symbol, dtypes=self._dtypes, broadcastables=self._broadcast
+        )
         return idx_th
 
     def _print_IndexedBase(self, indexed_base, ndim=1, **kwargs):
         base_symbol = Symbol(str(indexed_base))
         return self._print_Symbol(
-            base_symbol, dtypes=self._dtypes, broadcastables=self._broadcast)
+            base_symbol, dtypes=self._dtypes, broadcastables=self._broadcast
+        )
 
     def _print_KroneckerDelta(self, kron, **kwargs):
         return ifelse(
-            tt.eq(*[
-                self._print(
-                    arg, dtypes=self._dtypes, broadcastables=self._broadcast)
-                for arg in kron.args
-            ]),
+            tt.eq(
+                *[
+                    self._print(
+                        arg, dtypes=self._dtypes, broadcastables=self._broadcast
+                    )
+                    for arg in kron.args
+                ]
+            ),
             1,
             0,
         )
 
     def _print_Indexed(self, indexed, **kwargs):
         idxs = [
-            self._print(
-                idx, dtypes=self._dtypes, broadcastables=self._broadcast)
+            self._print(idx, dtypes=self._dtypes, broadcastables=self._broadcast)
             for idx in indexed.indices
         ]
         idxs = [tt.cast(idx, dtype="int32") for idx in idxs]
@@ -144,11 +144,10 @@ class EnhancedTheanoPrinter(TheanoPrinter):
 
 
 def infer_lexsort_shape(node, input_shapes):
-    return [(input_shapes[0][0], )]
+    return [(input_shapes[0][0],)]
 
 
-@as_op(
-    itypes=[tt.imatrix], otypes=[tt.ivector], infer_shape=infer_lexsort_shape)
+@as_op(itypes=[tt.imatrix], otypes=[tt.ivector], infer_shape=infer_lexsort_shape)
 def th_lexsort(orders):
     return np.lexsort(orders)
 
@@ -169,38 +168,49 @@ class TheanoCompiler:
             map(
                 partial(th_depvar_printer, self.printer),
                 self.system.dependent_variables,
-            ))
+            )
+        )
         self.pars = list(
-            map(
-                partial(th_depvar_printer, self.printer),
-                self.system.parameters))
+            map(partial(th_depvar_printer, self.printer), self.system.parameters)
+        )
         self.ivars, self.idxs, self.th_steps, self.th_sizes = zip(
             *map(
                 partial(th_ivar_printer, self.printer),
                 self.system.independent_variables,
-            ))
+            )
+        )
         self.t = self.printer.doprint(self.system._t)
         self.dvar_idx = tt.bvector("dvar_idx")
         self.idxs_map = [
-            tuple([
-                self.system.independent_variables.index(ivar)
-                for ivar in dvar.independent_variables
-            ]) for dvar in self.system.dependent_variables
+            tuple(
+                [
+                    self.system.independent_variables.index(ivar)
+                    for ivar in dvar.independent_variables
+                ]
+            )
+            for dvar in self.system.dependent_variables
         ]
 
         self.inputs = [
-            self.t, *self.dvars, *self.pars, *self.ivars, self.dvar_idx,
-            *self.idxs
+            self.t,
+            *self.dvars,
+            *self.pars,
+            *self.ivars,
+            self.dvar_idx,
+            *self.idxs,
         ]
 
         self.shapes = [
             list(map(self.printer.doprint, self.system.shapes[dvar]))
             for dvar in self.system.dependent_variables
         ]
-        self.shapes = [[
-            tt.constant(size, dtype="int32") if isinstance(size, int) else size
-            for size in shape
-        ] for shape in self.shapes]
+        self.shapes = [
+            [
+                tt.constant(size, dtype="int32") if isinstance(size, int) else size
+                for size in shape
+            ]
+            for shape in self.shapes
+        ]
 
         self.sizes = [
             self.printer.doprint(self.system.sizes[dvar])
@@ -209,8 +219,7 @@ class TheanoCompiler:
         self.size = sum(self.sizes)
         self.indices = [th_indices(tt.stack(shape)) for shape in self.shapes]
         self.reshaped_idxs = [
-            tt.extra_ops.compress(
-                tt.eq(self.dvar_idx, i), tt.stack(self.idxs), axis=1)
+            tt.extra_ops.compress(tt.eq(self.dvar_idx, i), tt.stack(self.idxs), axis=1)
             for i in range(self.ndim)
         ]
 
@@ -234,12 +243,11 @@ class TheanoCompiler:
         )
 
     def _create_gridinfo(self):
-        dvar_info = tt.zeros((self.size, ), dtype="int32")
+        dvar_info = tt.zeros((self.size,), dtype="int32")
         idxs_info = tt.zeros((self.ndim, self.size), dtype="int32")
-        domains_info = tt.zeros((self.size, ), dtype="int32")
+        domains_info = tt.zeros((self.size,), dtype="int32")
 
-        self._cursors = list(
-            accumulate([tt.constant(0, dtype="int32"), *self.sizes]))
+        self._cursors = list(accumulate([tt.constant(0, dtype="int32"), *self.sizes]))
         domain_cursor = 0
         self._full_conds = []
         self._full_exprs = []
@@ -247,20 +255,21 @@ class TheanoCompiler:
 
         grids = []
         for i, (sys, cursor, shape, size, indice) in enumerate(
-                zip(
-                    self.system._system,
-                    self._cursors,
-                    self.shapes,
-                    self.sizes,
-                    self.indices,
-                )):
+            zip(
+                self.system._system,
+                self._cursors,
+                self.shapes,
+                self.sizes,
+                self.indices,
+            )
+        ):
 
             grids.append(indice.reshape(tt.stack([self.ndim, *shape])))
 
-            dvar_info = tt.set_subtensor(dvar_info[cursor:cursor + size],
-                                         tt.repeat(tt.constant(i), size))
-            idxs_info = tt.set_subtensor(idxs_info[:, cursor:cursor + size],
-                                         indice)
+            dvar_info = tt.set_subtensor(
+                dvar_info[cursor : cursor + size], tt.repeat(tt.constant(i), size)
+            )
+            idxs_info = tt.set_subtensor(idxs_info[:, cursor : cursor + size], indice)
 
             conds, exprs = zip(*sys)
             for j, (cond, expr) in enumerate(zip(conds, exprs)):
@@ -269,29 +278,30 @@ class TheanoCompiler:
                 self._domains.append(j + domain_cursor)
             th_conds = tt.stacklists(list(map(self.printer.doprint, conds)))
             th_conds_cloned = clone(
-                th_conds,
-                replace={idx: indice[i]
-                         for i, idx in enumerate(self.idxs)})
+                th_conds, replace={idx: indice[i] for i, idx in enumerate(self.idxs)}
+            )
 
             def get_domain(i):
                 return tt.flatten(
                     tt.extra_ops.compress(
                         tt.flatten(th_conds_cloned[:, i]),
                         tt.arange(
-                            domain_cursor,
-                            domain_cursor + len(conds),
-                            dtype="int32"),
-                    ))
+                            domain_cursor, domain_cursor + len(conds), dtype="int32"
+                        ),
+                    )
+                )
 
             domains, _ = scan(get_domain, sequences=tt.arange(size))
             domains = tt.flatten(domains)
-            domains_info = tt.set_subtensor(domains_info[cursor:cursor + size],
-                                            domains)
+            domains_info = tt.set_subtensor(
+                domains_info[cursor : cursor + size], domains
+            )
 
             domain_cursor += len(conds)
 
         self.grids = tt.concatenate(
-            [idxs_info[self.pivot_idx, :], dvar_info[None, :]], axis=0)
+            [idxs_info[self.pivot_idx, :], dvar_info[None, :]], axis=0
+        )
 
         self._perm_vector = th_lexsort(self.grids[::-1])
 
@@ -313,7 +323,8 @@ class TheanoCompiler:
         self.flat_maps = []
         for i, shape in enumerate(self.shapes):
             flat_map = tt.extra_ops.compress(
-                tt.eq(self._gridinfo[:, 0], i), self._gridinfo[:, -1], axis=0)
+                tt.eq(self._gridinfo[:, 0], i), self._gridinfo[:, -1], axis=0
+            )
             self.flat_maps.append(flat_map.reshape(shape))
 
         condlists = [tt.eq(self._gridinfo[:, -2], i) for i in self._domains]
@@ -325,15 +336,16 @@ class TheanoCompiler:
         self._idxs_grids = [
             self.th_get_flat_from_idxs(
                 tt.extra_ops.compress(
-                    tt.eq(self._gridinfo[:, 0], i),
-                    self._gridinfo[:, :-2],
-                    axis=0),
+                    tt.eq(self._gridinfo[:, 0], i), self._gridinfo[:, :-2], axis=0
+                ),
                 tt.stacklists(self.th_sizes),
-            ) for i in range(len(self.dvars))
+            )
+            for i in range(len(self.dvars))
         ]
 
         self._ptrs = self.th_get_idxs_from_flat(
-            tt.arange(self.size, dtype="int32"), tt.stacklists(self.th_sizes))
+            tt.arange(self.size, dtype="int32"), tt.stacklists(self.th_sizes)
+        )
         self._compile_grid_routines()
 
     def _compile_grid_routines(self):
@@ -418,13 +430,11 @@ class TheanoCompiler:
 
         self._get_flat_from_idxs_routine = function(
             [self._input_idxs, *self.th_sizes],
-            self.th_get_flat_from_idxs(self._input_idxs,
-                                       tt.stacklists(self.th_sizes)),
+            self.th_get_flat_from_idxs(self._input_idxs, tt.stacklists(self.th_sizes)),
         )
         self._get_idxs_from_flat_routine = function(
             [self._input_flat, *self.th_sizes],
-            self.th_get_idxs_from_flat(self._input_flat,
-                                       tt.stacklists(self.th_sizes)),
+            self.th_get_idxs_from_flat(self._input_flat, tt.stacklists(self.th_sizes)),
         )
 
         @memory.cache
@@ -440,9 +450,9 @@ class TheanoCompiler:
 
     def _build_flattener(self):
         _ptrs = tt.imatrix("ptrs")
-        U_ = tt.stack(
-            self.dvars,
-            axis=0)[tuple([_ptrs.T[i] for i in range(self.ndim + 1)])]
+        U_ = tt.stack(self.dvars, axis=0)[
+            tuple([_ptrs.T[i] for i in range(self.ndim + 1)])
+        ]
         self._U_routine = function(
             [*self.inputs, _ptrs],
             U_,
@@ -453,28 +463,31 @@ class TheanoCompiler:
 
         def U_from_fields(fields, t=0):
             dvars = [
-                fields[varname] for varname in
-                [dvar.name for dvar in self.system.dependent_variables]
+                fields[varname]
+                for varname in [dvar.name for dvar in self.system.dependent_variables]
             ]
             pars = [
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
             ivars = [
-                fields[varname] for varname in
-                [ivar.name for ivar in self.system.independent_variables]
+                fields[varname]
+                for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
             sizes = [ivar.size for ivar in ivars]
-            return self._U_routine(t, *dvars, *pars, *ivars,
-                                   *self.compute_idxs(*sizes),
-                                   self.compute_dvars_to_flat(*sizes))
+            return self._U_routine(
+                t,
+                *dvars,
+                *pars,
+                *ivars,
+                *self.compute_idxs(*sizes),
+                self.compute_dvars_to_flat(*sizes)
+            )
 
         self.U_from_fields = U_from_fields
 
         U_ = tt.fvector("U")
-        idxs_grids_ = [
-            tt.ivector("idxs_grid_%i" % i) for i in range(len(self.dvars))
-        ]
+        idxs_grids_ = [tt.ivector("idxs_grid_%i" % i) for i in range(len(self.dvars))]
         shapes = [
             tt.take(shape, tt.take(self.pivot_idx, idx_map))
             for idx_map, shape in zip(self.idxs_map, self.shapes)
@@ -496,16 +509,15 @@ class TheanoCompiler:
             fields = fields.copy()
 
             ivars = [
-                fields[varname] for varname in
-                [ivar.name for ivar in self.system.independent_variables]
+                fields[varname]
+                for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
             sizes = [ivar.size for ivar in ivars]
             pivots = self.compute_pivot(*sizes)
-            dvars = self._fields_routine(U, *sizes,
-                                         *self.compute_flat_to_dvars(*sizes))
+            dvars = self._fields_routine(U, *sizes, *self.compute_flat_to_dvars(*sizes))
             for varname, dvar, ivars in zip(
-                    varnames,
-                    dvars,
+                varnames,
+                dvars,
                 [
                     dvar.independent_variables
                     for dvar in self.system.dependent_variables
@@ -517,10 +529,12 @@ class TheanoCompiler:
         self.fields_from_U = fields_from_U
 
     def _build_idxs(self):
-        dvar_idx = tt.concatenate([
-            tt.repeat(tt.constant(i, dtype="int32"), size)
-            for i, size in enumerate(self.sizes)
-        ])
+        dvar_idx = tt.concatenate(
+            [
+                tt.repeat(tt.constant(i, dtype="int32"), size)
+                for i, size in enumerate(self.sizes)
+            ]
+        )
 
         indices = tt.concatenate(self.indices, axis=1)
         idxs = []
@@ -528,7 +542,8 @@ class TheanoCompiler:
             idxs.append(indices[tt.constant(i, dtype="int32")])
 
         self._compute_idxs = function(
-            self.th_sizes, [dvar_idx, *idxs], on_unused_input="ignore")
+            self.th_sizes, [dvar_idx, *idxs], on_unused_input="ignore"
+        )
 
         @lru_cache(maxsize=128)
         def compute_idxs(*sizes):
@@ -542,15 +557,11 @@ class TheanoCompiler:
             self.printer.doprint(expr) for expr in self._full_exprs
         ]
 
-        F_ = tt.alloc(
-            tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
+        F_ = tt.alloc(tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
         for grid, eq in zip(_subgrids, self.evolution_equations):
             eq = clone(
-                eq,
-                replace={
-                    self.idxs[i]: grid[:, i + 1]
-                    for i in range(self.ndim)
-                })
+                eq, replace={self.idxs[i]: grid[:, i + 1] for i in range(self.ndim)}
+            )
             F_ = tt.set_subtensor(F_[grid[:, -1]], eq)
         F_routine = function(
             [*self.inputs, *_subgrids],
@@ -563,28 +574,29 @@ class TheanoCompiler:
 
         def F(fields, t=0):
             dvars = [
-                fields[varname] for varname in
-                [dvar.name for dvar in self.system.dependent_variables]
+                fields[varname]
+                for varname in [dvar.name for dvar in self.system.dependent_variables]
             ]
             pars = [
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
             ivars = [
-                fields[varname] for varname in
-                [ivar.name for ivar in self.system.independent_variables]
+                fields[varname]
+                for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
             sizes = [ivar.size for ivar in ivars]
             subgrids = self.compute_subgrids(*sizes)
-            return F_routine(t, *dvars, *pars, *ivars,
-                             *self.compute_idxs(*sizes), *subgrids)
+            return F_routine(
+                t, *dvars, *pars, *ivars, *self.compute_idxs(*sizes), *subgrids
+            )
 
         self.F = F
 
     def sort_indexed(self, indexed):
-        dvar_idx = [dvar.name
-                    for dvar in self.system.dependent_variables].index(
-                        str(indexed.args[0]))
+        dvar_idx = [dvar.name for dvar in self.system.dependent_variables].index(
+            str(indexed.args[0])
+        )
         ivars = self.system.dependent_variables[dvar_idx].independent_variables
         idxs = indexed.args[1:]
         idxs = [
@@ -600,9 +612,7 @@ class TheanoCompiler:
 
     def _simplify_kron(self, *kron_args):
         kron = KroneckerDelta(*kron_args)
-        return kron.subs(
-            {ivar.N: oo
-             for ivar in self.system.independent_variables})
+        return kron.subs({ivar.N: oo for ivar in self.system.independent_variables})
 
     def _build_jacobian(self):
         self._full_jacs = []
@@ -610,18 +620,21 @@ class TheanoCompiler:
         for expr in self._full_exprs:
             wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
             wrts, grids = wrts, list(map(self.sort_indexed, wrts))
-            grids = [[
-                tt.constant(int(idx), dtype="int32") if isinstance(
-                    idx, (int, Number)) else self.printer.doprint(idx)
-                for idx in grid
-            ] for grid in grids]
+            grids = [
+                [
+                    tt.constant(int(idx), dtype="int32")
+                    if isinstance(idx, (int, Number))
+                    else self.printer.doprint(idx)
+                    for idx in grid
+                ]
+                for grid in grids
+            ]
             self._full_jacs_cols.append(grids)
             diffs = [
-                expr.diff(wrt).replace(KroneckerDelta,
-                                       self._simplify_kron).n() for wrt in wrts
+                expr.diff(wrt).replace(KroneckerDelta, self._simplify_kron).n()
+                for wrt in wrts
             ]
-            self._full_jacs.append(
-                [self.printer.doprint(diff) for diff in diffs])
+            self._full_jacs.append([self.printer.doprint(diff) for diff in diffs])
 
         rows = []
         cols = []
@@ -629,35 +642,30 @@ class TheanoCompiler:
 
         _subgrids = [tt.imatrix("sub%i" % i) for i in self._domains]
 
-        for grid, jacs, jac_cols in zip(_subgrids, self._full_jacs,
-                                        self._full_jacs_cols):
+        for grid, jacs, jac_cols in zip(
+            _subgrids, self._full_jacs, self._full_jacs_cols
+        ):
             for col_func, jac in zip(jac_cols, jacs):
-                J_ = tt.zeros((grid.shape[0], ))
+                J_ = tt.zeros((grid.shape[0],))
                 cols_ = tt.zeros((grid.shape[0], self.ndim + 1), dtype="int32")
                 jac = clone(
                     jac,
-                    replace={
-                        self.idxs[i]: grid[:, i + 1]
-                        for i in range(self.ndim)
-                    },
+                    replace={self.idxs[i]: grid[:, i + 1] for i in range(self.ndim)},
                 )
                 cols_idxs = clone(
                     col_func,
-                    replace={
-                        self.idxs[i]: grid[:, i + 1]
-                        for i in range(self.ndim)
-                    },
+                    replace={self.idxs[i]: grid[:, i + 1] for i in range(self.ndim)},
                 )
                 jac = tt.set_subtensor(J_[:], jac)
                 for i, col in enumerate(cols_idxs):
                     cols_ = tt.set_subtensor(cols_[:, i], col)
                 cols_idxs = tt.unbroadcast(cols_, 0)
-                flat_cols = self.th_get_flat_from_idxs(cols_idxs,
-                                                       tt.stacklists(
-                                                           self.th_sizes))
-                rows.append(grid[:, -1].reshape((-1, )))
-                cols.append(flat_cols.reshape((-1, )))
-                data.append(jac.reshape((-1, )))
+                flat_cols = self.th_get_flat_from_idxs(
+                    cols_idxs, tt.stacklists(self.th_sizes)
+                )
+                rows.append(grid[:, -1].reshape((-1,)))
+                cols.append(flat_cols.reshape((-1,)))
+                data.append(jac.reshape((-1,)))
 
         data = tt.concatenate(data)
         rows = tt.concatenate(rows)
@@ -672,7 +680,7 @@ class TheanoCompiler:
         prows = rows_[permutation]
         pcols = cols_[permutation]
 
-        count = tt.zeros((self.size + 1, ), dtype=int)
+        count = tt.zeros((self.size + 1,), dtype=int)
         uq, cnt = tt.extra_ops.Unique(False, False, True)(pcols)
         count = tt.set_subtensor(count[uq + 1], cnt)
 
@@ -707,36 +715,42 @@ class TheanoCompiler:
         @lru_cache(maxsize=128)
         def compute_J_coords(*sizes):
             subgrids = self.compute_subgrids(*sizes)
-            rows, cols = Jrows_routine(*sizes, *subgrids), Jcols_routine(
-                *sizes, *subgrids)
+            rows, cols = (
+                Jrows_routine(*sizes, *subgrids),
+                Jcols_routine(*sizes, *subgrids),
+            )
             perm = np.argsort(cols)
             return rows, cols, perm
 
         def compute_J_data(t, ivars, dvars, pars):
             sizes = [ivar.size for ivar in ivars]
-            return Jdata_routine(t, *dvars, *pars, *ivars,
-                                 *self.compute_idxs(*sizes),
-                                 *self.compute_subgrids(*sizes))
+            return Jdata_routine(
+                t,
+                *dvars,
+                *pars,
+                *ivars,
+                *self.compute_idxs(*sizes),
+                *self.compute_subgrids(*sizes)
+            )
 
         def J(fields, t=0):
             dvars = [
-                fields[varname] for varname in
-                [dvar.name for dvar in self.system.dependent_variables]
+                fields[varname]
+                for varname in [dvar.name for dvar in self.system.dependent_variables]
             ]
             pars = [
                 fields[varname]
                 for varname in [par.name for par in self.system.parameters]
             ]
             ivars = [
-                fields[varname] for varname in
-                [ivar.name for ivar in self.system.independent_variables]
+                fields[varname]
+                for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
             sizes = [ivar.size for ivar in ivars]
 
             data = compute_J_data(t, ivars, dvars, pars)
             rows, cols, perm = compute_J_coords(*sizes)
-            data, indices, indptr, shape = coo_to_csr(data, rows, cols, *sizes,
-                                                      perm)
+            data, indices, indptr, shape = coo_to_csr(data, rows, cols, *sizes, perm)
             return csc_matrix((data, indices, indptr), shape)
 
         self.J = J
