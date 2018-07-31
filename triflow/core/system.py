@@ -43,14 +43,14 @@ def _convert_pde_list(pdes):
         return pdes
 
 
-def filter_relevent_equations(bdc, vars):
+def _filter_relevent_equations(bdc, vars):
     for indexed in bdc.atoms(Indexed):
         if indexed in vars:
             return True
     return False
 
 
-def ensure_bool(cond, ivars):
+def _ensure_bool(cond, ivars):
     if isinstance(cond, bool):
         return cond
     else:
@@ -58,36 +58,36 @@ def ensure_bool(cond, ivars):
         return bool(cond)
 
 
-def is_in_bulk(indexed, ivars, all_ivars):
+def _is_in_bulk(indexed, ivars, all_ivars):
     ivar_idxs_value = indexed.args[1:]
     is_inside = []
     for ivar, value in zip(ivars, ivar_idxs_value):
         if ivar.idx in value.atoms(Idx):
             is_inside.append(True)
             continue
-        left_cond = ensure_bool(value >= ivar.idx.lower, all_ivars)
-        right_cond = ensure_bool(value <= ivar.idx.upper, all_ivars)
+        left_cond = _ensure_bool(value >= ivar.idx.lower, all_ivars)
+        right_cond = _ensure_bool(value <= ivar.idx.upper, all_ivars)
         is_inside.append(bool(left_cond & right_cond))
     return is_inside
 
 
-def get_domain(indexed, ivars, all_ivars):
+def _get_domain(indexed, ivars, all_ivars):
     ivar_idxs_value = indexed.args[1:]
     where = []
     for ivar, value in zip(ivars, ivar_idxs_value):
         if ivar.idx in value.atoms(Idx):
             where.append("bulk")
-        elif ensure_bool(value < ivar.idx.lower, all_ivars):
+        elif _ensure_bool(value < ivar.idx.lower, all_ivars):
             where.append("left")
-        elif ensure_bool(value > ivar.idx.upper, all_ivars):
+        elif _ensure_bool(value > ivar.idx.upper, all_ivars):
             where.append("right")
         else:
             where.append("bulk")
     return where
 
 
-def compute_bdc_on_ghost_node(indexed, ivars, bdcs, all_ivars):
-    domains = get_domain(indexed, ivars, all_ivars)
+def _compute_bdc_on_ghost_node(indexed, ivars, bdcs, all_ivars):
+    domains = _get_domain(indexed, ivars, all_ivars)
     ghost_node = indexed.args[1:]
     for ivar, node, domain in zip(ivars, ghost_node, domains):
         if domain == "left":
@@ -100,7 +100,7 @@ def compute_bdc_on_ghost_node(indexed, ivars, bdcs, all_ivars):
             )
 
 
-def include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
+def _include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
     all_idxs = set(
         [
             *chain(*[list(var.atoms(Idx)) for var in all_unavailable_vars]),
@@ -114,7 +114,7 @@ def include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
     all_available_bdcs_ = [
         bdc
         for bdc in all_available_bdcs_
-        if filter_relevent_equations(bdc, all_unavailable_vars_)
+        if _filter_relevent_equations(bdc, all_unavailable_vars_)
     ]
     logging.debug("ghost nodes: %s" % ", ".join(map(str, all_unavailable_vars_)))
     logging.debug(
@@ -143,7 +143,7 @@ def include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
     return local_eq, solved_variables
 
 
-def apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+def _apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     n = (order + 1) // 2 + accuracy - 2
     fdiff_equation = fdiff_equation.replace(
         deriv,
@@ -155,7 +155,7 @@ def apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     return fdiff_equation
 
 
-def apply_right_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+def _apply_right_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     n = accuracy + order
     fdiff_equation = fdiff_equation.replace(
         deriv,
@@ -166,7 +166,7 @@ def apply_right_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     return fdiff_equation
 
 
-def apply_left_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+def _apply_left_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     n = accuracy + order
     fdiff_equation = fdiff_equation.replace(
         deriv,
@@ -458,15 +458,15 @@ class PDEquation:
         ):
             order = deriv.args[1:].count(ivar.symbol)
             if self.scheme == "centered":
-                fdiff_equation = apply_centered_scheme(
+                fdiff_equation = _apply_centered_scheme(
                     order, ivar, deriv, self.accuracy_order, fdiff_equation
                 )
             elif self.scheme == "right":
-                fdiff_equation = apply_right_scheme(
+                fdiff_equation = _apply_right_scheme(
                     order, ivar, deriv, self.accuracy_order, fdiff_equation
                 )
             elif self.scheme == "left":
-                fdiff_equation = apply_left_scheme(
+                fdiff_equation = _apply_left_scheme(
                     order, ivar, deriv, self.accuracy_order, fdiff_equation
                 )
 
@@ -690,7 +690,7 @@ class PDESys:
                 unavailable_vars = [
                     indexed
                     for indexed in local_eq.atoms(Indexed)
-                    if not all(is_in_bulk(indexed, ivars, self.independent_variables))
+                    if not all(_is_in_bulk(indexed, ivars, self.independent_variables))
                 ]
 
                 subs_queue.put(unavailable_vars)
@@ -703,7 +703,7 @@ class PDESys:
                     available_bdcs = list(
                         chain(
                             *[
-                                compute_bdc_on_ghost_node(
+                                _compute_bdc_on_ghost_node(
                                     unavailable_var,
                                     bdc.keys(),
                                     bdc,
@@ -718,7 +718,7 @@ class PDESys:
                     available_bdcs = [
                         bdc
                         for bdc in available_bdcs
-                        if filter_relevent_equations(bdc, unavailable_vars)
+                        if _filter_relevent_equations(bdc, unavailable_vars)
                     ]
                     if i > 5:
                         raise AssertionError
@@ -737,9 +737,9 @@ class PDESys:
                     tosolve = [
                         idx
                         for idx in indexed
-                        if not all(is_in_bulk(idx, ivars, self.independent_variables))
+                        if not all(_is_in_bulk(idx, ivars, self.independent_variables))
                     ]
-                    local_eq, solved_variables_ = include_bdc_in_localeq(
+                    local_eq, solved_variables_ = _include_bdc_in_localeq(
                         tosolve, all_available_bdcs, local_eq
                     )
                     solved_variables.update(solved_variables_)
@@ -748,21 +748,21 @@ class PDESys:
                         indexed
                         for indexed in local_eq.atoms(Indexed)
                         if not all(
-                            is_in_bulk(indexed, ivars, self.independent_variables)
+                            _is_in_bulk(indexed, ivars, self.independent_variables)
                         )
                     ]
                     if remaining_ghosts:
                         subs_queue.put(set(tosolve).union(set(remaining_ghosts)))
                     else:
                         subs_queue.put([])
-                local_eq, solved_variables = include_bdc_in_localeq(
+                local_eq, solved_variables = _include_bdc_in_localeq(
                     all_unavailable_vars, all_available_bdcs, local_eq
                 )
 
                 remaining_ghosts = [
                     indexed
                     for indexed in local_eq.atoms(Indexed)
-                    if not all(is_in_bulk(indexed, ivars, self.independent_variables))
+                    if not all(_is_in_bulk(indexed, ivars, self.independent_variables))
                 ]
                 if remaining_ghosts:
                     logging.error("remaining ghosts nodes! : %s" % remaining_ghosts)
