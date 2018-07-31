@@ -231,15 +231,15 @@ version = "1.0.0"
 category = "main"
 description = "Stop plotting your data - annotate your data and let it visualize itself."
 name = "holoviews"
-optional = true
+optional = false
 platform = "Windows"
 python-versions = "*"
-version = "1.10.6"
+version = "1.10.7"
 
 [package.dependencies]
 numpy = ">=1.0"
 param = ">=1.6.1,<2.0"
-pyviz_comms = "*"
+pyviz-comms = "*"
 
 [[package]]
 category = "main"
@@ -626,7 +626,7 @@ version = "1.4.2"
 category = "main"
 description = "Declarative Python programming using Parameters."
 name = "param"
-optional = true
+optional = false
 platform = "Windows"
 python-versions = ">=2.7"
 version = "1.7.0"
@@ -861,7 +861,7 @@ version = "2018.5"
 category = "main"
 description = "Launch jobs, organize the output, and dissect the results."
 name = "pyviz-comms"
-optional = true
+optional = false
 platform = "Windows"
 python-versions = "*"
 version = "0.1.1"
@@ -1208,12 +1208,12 @@ version = "0.1.3"
 heapdict = "*"
 
 [extras]
-all = ["jupyter", "ipywidgets", "bokeh", "holoviews", "matplotlib"]
-display = ["bokeh", "holoviews", "matplotlib"]
-jupyter = ["jupyter", "ipywidgets", "bokeh", "holoviews"]
+all = ["jupyter", "ipywidgets", "bokeh", "matplotlib"]
+display = ["bokeh", "matplotlib"]
+jupyter = ["jupyter", "ipywidgets", "bokeh"]
 
 [metadata]
-content-hash = "7094d6bb29ec5688089480d69017523600a006a4e448d50826ada4360789a0bc"
+content-hash = "e594fe93385286eaf68a5d74d2473c8855540fc975dd1026d58ef90cc74fd557"
 platform = "*"
 python-versions = ">=3.5"
 
@@ -1240,7 +1240,7 @@ decorator = ["2c51dff8ef3c447388fe5e4453d24a2bf128d3a4c32af3fabef1f01c6851ab82",
 docutils = ["02aec4bd92ab067f6ff27a38a38a41173bf01bed8f89157768c1573f53e474a6", "51e64ef2ebfb29cae1faa133b3710143496eca21c530f3f71424d77687764274", "7a4bd47eaf6596e1295ecb11361139febe29b084a87bf005bf899f9a42edc3c6"]
 entrypoints = ["10ad569bb245e7e2ba425285b9fa3e8178a0dc92fc53b1e1c553805e15a8825b", "d2d587dde06f99545fb13a383d2cd336a8ff1f359c5839ce3a64c917d10c029f"]
 heapdict = ["40c9e3680616cfdf942f77429a3a9e0a76f31ce965d62f4ffbe63a83a5ef1b5a"]
-holoviews = ["dbb8855e66f71a751ab16c31f7991086518e0287b472f816782910c80b8287a5", "f7a4d69e98b55e6a58489ba91838e95f9366425b13cf7ed99b528857965815b8"]
+holoviews = ["4d1753ae27486e324e2ee5d6a239bf8cc4a9acafecc0e38cb60a476bd7b4abc9", "7996b25c6132b964cda1dfd2e90e85edc3c234b37ea5529f256013a8678dcbf5"]
 html5lib = ["20b159aa3badc9d5ee8f5c647e5efd02ed2a66ab8d354930bd9ff139fc1dc0a3", "66cb0dcfdbbc4f9c3ba1a63fdb511ffdbd4f513b2b6d81b80cd26ce6b3fb3736"]
 idna = ["156a6814fb5ac1fc6850fb002e0852d56c0c8d2531923a51032d1b70760e186e", "684a38a6f903c1d71d6d5fac066b58d7768af4de2b832e426ec79c30daa94a16"]
 imagesize = ["3620cc0cadba3f7475f9940d22431fc4d407269f1be59ec9b8edcca26440cf18", "5b326e4678b6925158ccc66a9fa3122b6106d7c876ee32d7de6ce59385b96315"]

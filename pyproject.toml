@@ -9,7 +9,7 @@ authors = [
     "Nicolas Cellier <contact@nicolas-cellier.net>"
 ]
 
-readme = 'README.md'  # Markdown files are supported
+readme = 'README.md'
 
 repository = "http://github.com/locie/triflow"
 documentation = "https://locie.github.io/triflow"
@@ -56,16 +56,17 @@ sklearn = "^0"
 python-forge = "^18"
 
 # interactive work with jupyter
+holoviews = "^1.10"
 jupyter = {version = "^1.0", optional = true}
 ipywidgets = {version = "^7.2", optional = true}
 bokeh = {version = "^0.13.0", optional = true}
-holoviews = {version = "^1.10", optional = true}
 matplotlib = {version = "^2.2", optional = true}
 
+
 [tool.poetry.extras]
-jupyter = ["jupyter", "ipywidgets", "bokeh", "holoviews"]
-display = ["bokeh", "holoviews", "matplotlib"]
-all = ["jupyter", "ipywidgets", "bokeh", "holoviews", "matplotlib"]
+jupyter = ["jupyter", "ipywidgets", "bokeh"]
+display = ["bokeh", "matplotlib"]
+all = ["jupyter", "ipywidgets", "bokeh", "matplotlib"]
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
