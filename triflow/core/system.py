@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
 
 import logging
 import re
@@ -143,6 +143,41 @@ def include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
     return local_eq, solved_variables
 
 
+def apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+    n = (order + 1) // 2 + accuracy - 2
+    fdiff_equation = fdiff_equation.replace(
+        deriv,
+        deriv.as_finite_difference(
+            points=[ivar.symbol + i * ivar.step for i in range(-n, n + 1)],
+            wrt=ivar.symbol,
+        ),
+    )
+    return fdiff_equation
+
+
+def apply_right_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+    n = accuracy + order
+    fdiff_equation = fdiff_equation.replace(
+        deriv,
+        deriv.as_finite_difference(
+            points=[ivar.symbol + i * ivar.step for i in range(0, n)], wrt=ivar.symbol
+        ),
+    )
+    return fdiff_equation
+
+
+def apply_left_scheme(order, ivar, deriv, accuracy, fdiff_equation):
+    n = accuracy + order
+    fdiff_equation = fdiff_equation.replace(
+        deriv,
+        deriv.as_finite_difference(
+            points=[ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)],
+            wrt=ivar.symbol,
+        ),
+    )
+    return fdiff_equation
+
+
 @attr.s(frozen=True, repr=False, hash=False)
 class IndependentVariable:
     name = attr.ib(type=str)
@@ -223,16 +258,16 @@ class DependentVariable:
 
     @property
     def discrete(self):
-        return IndexedBase(self.name) if self.independent_variables else Symbol(
-            self.name
+        return (
+            IndexedBase(self.name) if self.independent_variables else Symbol(self.name)
         )
 
     @property
     def discrete_i(self):
-        return self.discrete[
-            tuple([ivar.idx for ivar in self.independent_variables])
-        ] if self.independent_variables else Symbol(
-            self.name
+        return (
+            self.discrete[tuple([ivar.idx for ivar in self.independent_variables])]
+            if self.independent_variables
+            else Symbol(self.name)
         )
 
     def __repr__(self):
@@ -253,7 +288,6 @@ class DependentVariable:
 
 
 def _convert_depvar_list(dependent_variables):
-
     def convert_depvar(dependent_variable):
         if isinstance(dependent_variable, str):
             return DependentVariable(dependent_variable)
@@ -268,7 +302,6 @@ def _convert_depvar_list(dependent_variables):
 
 
 def _convert_indepvar_list(independent_variables):
-
     def convert_indepvar(independent_variable):
         if isinstance(independent_variable, str):
             return IndependentVariable(independent_variable)
@@ -370,18 +403,25 @@ class PDEquation:
         self.independent_variables = list(unique_everseen(self.independent_variables))
 
     def _build_sympify_namespace(self):
-
         def partial_derivative(expr, symbolic_independent_variables):
             return Derivative(expr, *symbolic_independent_variables)
 
         spatial_derivative_re = re.compile(
-            r"d(?P<derargs>\w+?)(?:(?P<depder>[%s]+)|\((?P<inder>.*?)\))"
-            % ",".join(
+            r"d(?P<derargs>\w+?)(?:(?P<depder>(?:%s)+)|\((?P<inder>.*?)\))"
+            % "|".join(
                 [var.name for var in chain(self.dependent_variables, self.parameters)]
             )
         )
-        spatial_derivative = spatial_derivative_re.findall(str(self.equation))
+        spatial_derivatives = spatial_derivative_re.findall(str(self.equation))
 
+        # they can be derivatives inside the dx(...), we check it until there is no more
+        queue = Queue()
+        [queue.put(sder[2]) for sder in spatial_derivatives if sder[2]]
+        while not queue.empty():
+            inside_derivative = queue.get()
+            new_derivatives = spatial_derivative_re.findall(inside_derivative)
+            [queue.put(sder[2]) for sder in new_derivatives if sder[2]]
+            spatial_derivatives.extend(new_derivatives)
         namespace = dict()
         namespace.update({var.name: var.symbol for var in self.independent_variables})
         namespace.update(
@@ -394,7 +434,7 @@ class PDEquation:
                 for var in chain(self.dependent_variables, self.parameters)
             }
         )
-        for ivar, dvar, inside in spatial_derivative:
+        for ivar, dvar, inside in spatial_derivatives:
             if dvar:
                 namespace["d%s%s" % (ivar, dvar)] = partial_derivative(
                     namespace[dvar], ivar
@@ -413,40 +453,22 @@ class PDEquation:
 
     def _as_finite_diff(self):
         fdiff_equation = self.symbolic_equation
-        for ivar in self.independent_variables:
-            for deriv in fdiff_equation.atoms(Derivative):
-                order = deriv.args[1:].count(ivar.symbol)
-                if self.scheme == "centered":
-                    n = (order + 1) // 2 + self.accuracy_order - 2
-                    fdiff_equation = fdiff_equation.replace(
-                        deriv,
-                        deriv.as_finite_difference(
-                            points=[
-                                ivar.symbol + i * ivar.step for i in range(-n, n + 1)
-                            ],
-                            wrt=ivar.symbol,
-                        ),
-                    )
-                elif self.scheme == "right":
-                    n = self.accuracy_order + order
-                    fdiff_equation = fdiff_equation.replace(
-                        deriv,
-                        deriv.as_finite_difference(
-                            points=[ivar.symbol + i * ivar.step for i in range(0, n)],
-                            wrt=ivar.symbol,
-                        ),
-                    )
-                elif self.scheme == "left":
-                    n = self.accuracy_order + order
-                    fdiff_equation = fdiff_equation.replace(
-                        deriv,
-                        deriv.as_finite_difference(
-                            points=[
-                                ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)
-                            ],
-                            wrt=ivar.symbol,
-                        ),
-                    )
+        for ivar, deriv in product(
+            self.independent_variables, fdiff_equation.atoms(Derivative)
+        ):
+            order = deriv.args[1:].count(ivar.symbol)
+            if self.scheme == "centered":
+                fdiff_equation = apply_centered_scheme(
+                    order, ivar, deriv, self.accuracy_order, fdiff_equation
+                )
+            elif self.scheme == "right":
+                fdiff_equation = apply_right_scheme(
+                    order, ivar, deriv, self.accuracy_order, fdiff_equation
+                )
+            elif self.scheme == "left":
+                fdiff_equation = apply_left_scheme(
+                    order, ivar, deriv, self.accuracy_order, fdiff_equation
+                )
 
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
@@ -514,16 +536,14 @@ class PDESys:
                 lower_conds = [
                     (indexed.args[i] - ivar.idx.lower).subs(ivar.idx, ivar.symbol)
                     for indexed in eq.atoms(Indexed)
-                    if indexed.args[0] not in [
-                        ivar.discrete for ivar in dvar.independent_variables
-                    ]
+                    if indexed.args[0]
+                    not in [ivar.discrete for ivar in dvar.independent_variables]
                 ]
                 upper_conds = [
                     (indexed.args[i] - ivar.idx.upper).subs(ivar.idx, ivar.symbol)
                     for indexed in eq.atoms(Indexed)
-                    if indexed.args[0] not in [
-                        ivar.discrete for ivar in dvar.independent_variables
-                    ]
+                    if indexed.args[0]
+                    not in [ivar.discrete for ivar in dvar.independent_variables]
                 ]
                 cond = (
                     Ge(
@@ -576,7 +596,6 @@ class PDESys:
         )
 
     def _ensure_bdc(self):
-
         def not_in_iter(iter, dvar):
             return dvar.name not in iter
 
