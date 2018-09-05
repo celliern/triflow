@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
 
 import logging
 from functools import lru_cache, partial, wraps
@@ -538,7 +538,7 @@ class TheanoCompiler:
 
         indices = tt.concatenate(self.indices, axis=1)
         idxs = []
-        for i, idx in enumerate(self.idxs):
+        for i in range(len(self.idxs)):
             idxs.append(indices[tt.constant(i, dtype="int32")])
 
         self._compute_idxs = function(
@@ -648,6 +648,7 @@ class TheanoCompiler:
             for col_func, jac in zip(jac_cols, jacs):
                 J_ = tt.zeros((grid.shape[0],))
                 cols_ = tt.zeros((grid.shape[0], self.ndim + 1), dtype="int32")
+                jac = tt.as_tensor_variable(jac)
                 jac = clone(
                     jac,
                     replace={self.idxs[i]: grid[:, i + 1] for i in range(self.ndim)},

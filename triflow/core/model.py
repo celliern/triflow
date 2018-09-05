@@ -8,7 +8,7 @@ import xarray as xr
 
 import forge
 
-from .compilers import TheanoCompiler
+from .compilers import get_compiler
 from .system import PDESys
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -76,11 +76,7 @@ class Model:
             parameters=parameters,
             boundary_conditions=boundary_conditions,
             auxiliary_definitions=auxiliary_definitions)
-
-        if compiler == "theano":
-            self.compiler = TheanoCompiler(self.pdesys)
-        else:
-            raise NotImplementedError("For now, only the theano compiler is available.")
+        self.compiler = get_compiler(compiler)(self.pdesys)
 
         self.F = self.compiler.F
         self.J = self.compiler.J

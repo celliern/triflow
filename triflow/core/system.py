@@ -14,6 +14,7 @@ import attr
 import numpy as np
 from more_itertools import unique_everseen
 from sympy import (
+    N,
     And,
     Derivative,
     Dummy,
@@ -602,6 +603,16 @@ class PDESys:
         def in_iter(iter, dvar):
             return dvar.name in iter
 
+        if self.boundary_conditions == "periodic":
+            self.boundary_conditions = dict()
+            for dvar in chain(self.dependent_variables, self.parameters):
+                self.boundary_conditions[dvar.name] = dict()
+                for ivar in self.independent_variables:
+                    self.boundary_conditions[dvar.name][ivar.name] = "periodic"
+
+        if self.boundary_conditions == "noflux":
+            self.boundary_conditions = dict()
+
         for dvar in filter(
             partial(not_in_iter, self.boundary_conditions),
             chain(self.dependent_variables, self.parameters),
@@ -622,7 +633,6 @@ class PDESys:
                 self.boundary_conditions[dvar][ivar.name] = [
                     "d%s%s" % (ivar.name, dvar.name)
                 ] * 2
-
         for dvar, bdc in self.boundary_conditions.items():
             keys = list(bdc.keys())
             new_keys = _convert_indepvar_list(keys)
@@ -781,7 +791,7 @@ class PDESys:
                     else:
                         domain_map.append(Eq(ivar.idx, coord))
                 domain_map = And(*domain_map)
-                system[domain_map] = local_eq
+                system[domain_map] = N(local_eq)
             self._system.append(list(system.items()))
 
     def _get_shapes(self):
