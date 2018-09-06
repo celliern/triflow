@@ -172,7 +172,7 @@ class NumpyCompiler:
             """
             compute the stepsize of all the independent variables.
             """
-            return [lenght / (size + 1) for lenght, size in zip(lenghts, sizes)]
+            return [lenght / (size - 1) for lenght, size in zip(lenghts, sizes)]
 
         @lru_cache(maxsize=128)
         def compute_sizes(*sizes):
