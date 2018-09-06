@@ -15,6 +15,7 @@ import numpy as np
 from more_itertools import unique_everseen
 from sympy import (
     N,
+    differentiate_finite,
     And,
     Derivative,
     Dummy,
@@ -145,37 +146,26 @@ def _include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
 
 
 def _apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
-    n = (order + 1) // 2 + accuracy - 2
-    fdiff_equation = fdiff_equation.replace(
-        deriv,
-        deriv.as_finite_difference(
-            points=[ivar.symbol + i * ivar.step for i in range(-n, n + 1)],
-            wrt=ivar.symbol,
-        ),
-    )
+    n = (order + 1) // 2 + accuracy - 1
+    points = [ivar.symbol + i * ivar.step for i in range(-n, n + 1)]
+    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
+    fdiff_equation = fdiff_equation.replace(deriv, discretized_deriv)
     return fdiff_equation
 
 
 def _apply_right_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     n = accuracy + order
-    fdiff_equation = fdiff_equation.replace(
-        deriv,
-        deriv.as_finite_difference(
-            points=[ivar.symbol + i * ivar.step for i in range(0, n)], wrt=ivar.symbol
-        ),
-    )
+    points = [ivar.symbol + i * ivar.step for i in range(0, n)]
+    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
+    fdiff_equation = fdiff_equation.replace(deriv, discretized_deriv)
     return fdiff_equation
 
 
 def _apply_left_scheme(order, ivar, deriv, accuracy, fdiff_equation):
     n = accuracy + order
-    fdiff_equation = fdiff_equation.replace(
-        deriv,
-        deriv.as_finite_difference(
-            points=[ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)],
-            wrt=ivar.symbol,
-        ),
-    )
+    points = [ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)]
+    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
+    fdiff_equation = fdiff_equation.replace(deriv, discretized_deriv)
     return fdiff_equation
 
 

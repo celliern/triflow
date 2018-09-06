@@ -37,11 +37,6 @@ logging = logging.getLogger(__name__)
 cachedir = mkdtemp()
 memory = Memory(location=cachedir)
 
-
-def np_and(*args):
-    return np.logical_and.reduce(args)
-
-
 def np_depvar_printer(printer, dvar):
     return printer.doprint(dvar.discrete)
 
@@ -208,7 +203,7 @@ class NumpyCompiler:
             lambda_cond = lambdify(
                 self.inputs_cond,
                 Matrix(conds),
-                modules=[dict(logical_and=np_and), "numpy"],
+                modules=["numpy"],
             )
             self._lambda_conds.append(lambda_cond)
 
@@ -494,7 +489,7 @@ class NumpyCompiler:
             self._full_jacs_cols.append(
                 [
                     lambdify(
-                        self.inputs_cond, self.printer.doprint(grid), modules="numpy"
+                        self.inputs_cond, grid, modules="numpy"
                     )
                     for grid in grids
                 ]

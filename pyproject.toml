@@ -23,7 +23,7 @@ python = ">=3.5"
 # core computation
 numpy = "^1"
 scipy = "^1"
-sympy = "1.1"
+sympy = "=1.2"
 theano = "^1"
 
 # pipeline for data and display
