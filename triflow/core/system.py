@@ -453,23 +453,32 @@ class PDEquation:
         self.symbolic_equation = self.symbolic_equation.doit()
 
     def _as_finite_diff(self):
+        def is_wrt(ivar_deriv):
+            ivar, deriv = ivar_deriv
+            return Symbol(str(ivar)) in deriv.args[1:]
+
         fdiff_equation = self.symbolic_equation
-        for ivar, deriv in product(
-            self.independent_variables, fdiff_equation.atoms(Derivative)
-        ):
-            order = deriv.args[1:].count(ivar.symbol)
-            if self.scheme == "centered":
-                fdiff_equation = _apply_centered_scheme(
-                    order, ivar, deriv, self.accuracy_order, fdiff_equation
-                )
-            elif self.scheme == "right":
-                fdiff_equation = _apply_right_scheme(
-                    order, ivar, deriv, self.accuracy_order, fdiff_equation
-                )
-            elif self.scheme == "left":
-                fdiff_equation = _apply_left_scheme(
-                    order, ivar, deriv, self.accuracy_order, fdiff_equation
-                )
+        while fdiff_equation.atoms(Derivative):
+            deriv_product = product(
+                self.independent_variables, fdiff_equation.atoms(Derivative)
+            )
+            deriv_product = filter(is_wrt, deriv_product)
+            for ivar, deriv in product(
+                self.independent_variables, fdiff_equation.atoms(Derivative)
+            ):
+                order = deriv.args[1:].count(ivar.symbol)
+                if self.scheme == "centered":
+                    fdiff_equation = _apply_centered_scheme(
+                        order, ivar, deriv, self.accuracy_order, fdiff_equation
+                    )
+                elif self.scheme == "right":
+                    fdiff_equation = _apply_right_scheme(
+                        order, ivar, deriv, self.accuracy_order, fdiff_equation
+                    )
+                elif self.scheme == "left":
+                    fdiff_equation = _apply_left_scheme(
+                        order, ivar, deriv, self.accuracy_order, fdiff_equation
+                    )
 
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
