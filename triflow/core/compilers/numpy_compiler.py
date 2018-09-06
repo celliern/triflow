@@ -315,8 +315,7 @@ class NumpyCompiler:
             system_sizes = self._compute_sizes(*sizes)
             idxs_grids = [
                 self.get_flat_from_idxs(
-                    np.compress(gridinfo[:, 0] == i, gridinfo[:, :-2], axis=0),
-                    sizes,
+                    np.compress(gridinfo[:, 0] == i, gridinfo[:, :-2], axis=0), sizes
                 )
                 for i in range(len(self.dvars))
             ]
@@ -329,9 +328,7 @@ class NumpyCompiler:
         def compute_dvars_to_flat(*sizes):
             system_sizes = self._compute_sizes(*sizes)
             system_size = sum(system_sizes)
-            ptrs = self.get_idxs_from_flat(
-                np.arange(system_size, dtype="int32"), sizes
-            )
+            ptrs = self.get_idxs_from_flat(np.arange(system_size, dtype="int32"), sizes)
             return ptrs
 
         self.compute_dvars_to_flat = compute_dvars_to_flat
@@ -360,7 +357,7 @@ class NumpyCompiler:
             _, exprs = zip(*sys)
             self._full_exprs.extend(exprs)
         evolution_equations = [
-            lambdify(self.inputs, expr.n().simplify(), modules="numpy")
+            lambdify(self.inputs, expr.n(), modules="numpy")
             for expr in self._full_exprs
         ]
 
@@ -440,8 +437,7 @@ class NumpyCompiler:
             ]
             sizes = [
                 fields[varname].size
-                for varname in
-                [ivar.name for ivar in self.system.independent_variables]
+                for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
 
             return U_routine(dvars, sizes)
@@ -453,7 +449,6 @@ class NumpyCompiler:
             shapeinfos = self._compute_shapes(*sizes)
             pivot_idx = self.compute_pivot_idx(shapeinfos)
             idxs_grids = self.compute_flat_to_dvars(*sizes)
-
 
             shapes = [
                 np.take(shape, np.take(pivot_idx, idx_map))
@@ -520,8 +515,12 @@ class NumpyCompiler:
             steps = self._compute_steps(
                 tuple(sizes), tuple([ivar.ptp() for ivar in ivars])
             )
-
-            data_size = sum([subgrid.size for subgrid in self.compute_subgrids(*sizes)])
+            data_size = sum(
+                [
+                    subgrid.shape[0] * len(jac_col)
+                    for subgrid, jac_col in zip(subgrids, self._full_jacs_cols)
+                ]
+            )
             data = np.zeros(data_size)
 
             cursor = 0
