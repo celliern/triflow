@@ -37,13 +37,14 @@ logging = logging.getLogger(__name__)
 cachedir = mkdtemp()
 memory = Memory(location=cachedir)
 
+
 def np_depvar_printer(printer, dvar):
-    return printer.doprint(dvar.discrete)
+    return printer.doprint(Symbol(str(dvar.discrete)))
 
 
 def np_ivar_printer(printer, ivar):
     return (
-        printer.doprint(ivar.discrete),
+        printer.doprint(Symbol(str(ivar.discrete))),
         printer.doprint(Symbol(str(ivar.idx))),
         printer.doprint(ivar.step),
         printer.doprint(ivar.N),
@@ -54,7 +55,7 @@ def np_ivar_printer(printer, ivar):
 class NumpyCompiler:
     Printer = NumPyPrinter
     system = attr.ib(type=PDESys)
-    n_jobs = attr.ib(-1, type=int)
+    n_jobs = attr.ib(1, type=int)
 
     def _convert_inputs(self):
         self.ndim = len(self.system.independent_variables)
@@ -200,11 +201,7 @@ class NumpyCompiler:
         domain_cursor = 0
         for sys in self.system._system:
             conds, _ = zip(*sys)
-            lambda_cond = lambdify(
-                self.inputs_cond,
-                Matrix(conds),
-                modules=["numpy"],
-            )
+            lambda_cond = lambdify(self.inputs_cond, Matrix(conds), modules=["numpy"])
             self._lambda_conds.append(lambda_cond)
 
             def get_domain(idxs, sizes, cursor=0):
@@ -487,12 +484,7 @@ class NumpyCompiler:
             wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
             wrts, grids = wrts, list(map(self.sort_indexed, wrts))
             self._full_jacs_cols.append(
-                [
-                    lambdify(
-                        self.inputs_cond, grid, modules="numpy"
-                    )
-                    for grid in grids
-                ]
+                [lambdify(self.inputs_cond, grid, modules="numpy") for grid in grids]
             )
             diffs = [
                 expr.diff(wrt).replace(KroneckerDelta, self._simplify_kron).n()
@@ -512,8 +504,8 @@ class NumpyCompiler:
             )
             data_size = sum(
                 [
-                    subgrid.shape[0] * len(jac_col)
-                    for subgrid, jac_col in zip(subgrids, self._full_jacs_cols)
+                    subgrid.shape[0] * len(jacs)
+                    for subgrid, jacs in zip(subgrids, self._full_jacs_cols)
                 ]
             )
             data = np.zeros(data_size)
@@ -521,7 +513,7 @@ class NumpyCompiler:
             cursor = 0
             for grid, jacs in zip(subgrids, self._full_jacs):
                 for jac_func in jacs:
-                    next_cursor = cursor + grid.size
+                    next_cursor = cursor + grid.shape[0]
                     jac = jac_func(
                         t, *dvars, *pars, *ivars, *grid[:, 1:-2].T, *steps, *sizes
                     )
@@ -553,13 +545,13 @@ class NumpyCompiler:
             cols = np.array(cols_list)
 
             perm = np.argsort(cols)
-            rows = rows[perm]
-            cols = cols[perm]
+            perm_rows = rows[perm]
+            perm_cols = cols[perm]
             count = np.zeros((system_size + 1), dtype="int32")
-            uq, cnt = np.unique(cols, False, False, True)
+            uq, cnt = np.unique(perm_cols, False, False, True)
             count[uq + 1] = cnt
             indptr = np.cumsum(count)
-            return rows, indptr, perm, (system_size, system_size)
+            return rows, cols, perm_rows, indptr, perm, (system_size, system_size)
 
         self.compute_jacobian_values = compute_jacobian_values
         self.compute_jacobian_coordinates = compute_jacobian_coordinates
@@ -580,9 +572,11 @@ class NumpyCompiler:
             sizes = [ivar.size for ivar in ivars]
 
             data = compute_jacobian_values(t, dvars, pars, ivars, sizes)
-            rows, indptr, perm, shape = compute_jacobian_coordinates(*sizes)
+            _, _, perm_rows, indptr, perm, shape = compute_jacobian_coordinates(
+                *sizes
+            )
 
-            return csc_matrix((data[perm], rows, indptr), shape=shape)
+            return csc_matrix((data[perm], perm_rows, indptr), shape=shape)
 
         self.J = J
 
