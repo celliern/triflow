@@ -33,7 +33,8 @@ class Timer:
 total:  {total}"""
         return repr.format(
             last=(now() - timedelta(seconds=self.last)),
-            total=(now() - timedelta(seconds=self.total)))
+            total=(now() - timedelta(seconds=self.total)),
+        )
 
 
 def null_hook(t, fields):
@@ -58,27 +59,26 @@ PostProcess = namedtuple("PostProcess", ["name", "function", "description"])
 
 
 def _reduce_simulation(
-        model,
-        fields,
-        dt,
-        t,
-        tmax,
-        i,
-        id,
-        _pprocesses,
-        _scheme,
-        status,
-        _total_running,
-        _last_running,
-        _created_timestamp,
-        _started_timestamp,
-        _last_timestamp,
-        _actual_timestamp,
-        _hook,
-        _container,
+    model,
+    fields,
+    dt,
+    t,
+    tmax,
+    i,
+    id,
+    _pprocesses,
+    _scheme,
+    status,
+    _total_running,
+    _last_running,
+    _created_timestamp,
+    _started_timestamp,
+    _last_timestamp,
+    _actual_timestamp,
+    _hook,
+    _container,
 ):
-    simul = Simulation(
-        model=model, fields=fields, dt=dt, t=t, tmax=tmax, id=id)
+    simul = Simulation(model=model, fields=fields, dt=dt, t=t, tmax=tmax, id=id)
     simul.i = i
     simul._pprocesses = cloudpickle.loads(_pprocesses)
     simul._scheme = cloudpickle.loads(_scheme)
@@ -192,17 +192,19 @@ class Simulation(object):
       50.0
       """  # noqa
 
-    def __init__(self,
-                 model,
-                 fields,
-                 dt,
-                 t=0,
-                 tmax=None,
-                 id=None,
-                 hook=null_hook,
-                 scheme=schemes.RODASPR,
-                 time_stepping=True,
-                 **kwargs):
+    def __init__(
+        self,
+        model,
+        fields,
+        dt,
+        t=0,
+        tmax=None,
+        id=None,
+        hook=null_hook,
+        scheme=schemes.RODASPR,
+        time_stepping=True,
+        **kwargs
+    ):
         def intersection_kwargs(kwargs, function):
             """Inspect the function signature to identify the relevant keys
             in a dictionary of named parameters.
@@ -210,8 +212,7 @@ class Simulation(object):
             func_signature = inspect.signature(function)
             func_parameters = func_signature.parameters
             kwargs = {
-                key: value
-                for key, value in kwargs.items() if key in func_parameters
+                key: value for key, value in kwargs.items() if key in func_parameters
             }
             return kwargs
 
@@ -219,8 +220,8 @@ class Simulation(object):
         self.id = str(uuid4())[:6] if not id else id
         self.model = model
         self.fields = model.fields_template(
-            **{var: fields[var]
-               for var in fields.variables})
+            **{var: fields[var] for var in fields.variables}
+        )
         self.t = t
         self.user_dt = self.dt = dt
         self.tmax = tmax
@@ -228,16 +229,15 @@ class Simulation(object):
         self._stream = streamz.Stream()
         self._pprocesses = []
 
-        self._scheme = scheme(model,
-                              **intersection_kwargs(kwargs, scheme.__init__))
-        if (time_stepping and self._scheme not in [
-                schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw, schemes.scipy_ode
-        ]):
-            self._scheme = schemes.time_stepping(self._scheme,
-                                                 **intersection_kwargs(
-                                                     kwargs,
-                                                     schemes.time_stepping))
-        self.status = 'created'
+        self._scheme = scheme(model, **intersection_kwargs(kwargs, scheme.__init__))
+        if time_stepping and not isinstance(
+            self._scheme,
+            (schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw, schemes.scipy_ode),
+        ):
+            self._scheme = schemes.time_stepping(
+                self._scheme, **intersection_kwargs(kwargs, schemes.time_stepping)
+            )
+        self.status = "created"
 
         self._total_running = 0
         self._last_running = 0
@@ -254,8 +254,7 @@ class Simulation(object):
         Compute one step of the simulation, then update the timers.
         """
         fields = self._hook(t, fields)
-        self.dt = (self.tmax - t
-                   if self.tmax and (t + self.dt >= self.tmax) else self.dt)
+        self.dt = self.tmax - t if self.tmax and (t + self.dt >= self.tmax) else self.dt
         before_compute = time.clock()
         t, fields = self._scheme(t, fields, self.dt, hook=self._hook)
         after_compute = time.clock()
@@ -295,7 +294,7 @@ class Simulation(object):
                     return
 
         except RuntimeError:
-            self.status = 'failed'
+            self.status = "failed"
             raise
 
     def _end_simulation(self):
@@ -374,18 +373,16 @@ Container
             step_time=self._last_running,
             running_time=self._total_running,
             created_date=(self._created_timestamp),
-            started_date=(self._started_timestamp
-                          if self._started_timestamp else "None"),
-            last_date=(self._last_timestamp
-                       if self._last_timestamp else "None"))
+            started_date=(
+                self._started_timestamp if self._started_timestamp else "None"
+            ),
+            last_date=(self._last_timestamp if self._last_timestamp else "None"),
+        )
         return repr
 
-    def attach_container(self,
-                         path=None,
-                         save="all",
-                         mode="w",
-                         nbuffer=50,
-                         force=False):
+    def attach_container(
+        self, path=None, save="all", mode="w", nbuffer=50, force=False
+    ):
         """add a Container to the simulation which allows some
         persistance to the simulation.
 
@@ -412,7 +409,8 @@ Container
             save=save,
             mode=mode,
             force=force,
-            nbuffer=nbuffer)
+            nbuffer=nbuffer,
+        )
         self._container.connect(self.stream)
         return self._container
 
@@ -451,8 +449,8 @@ Container
         """
 
         self._pprocesses.append(
-            PostProcess(
-                name=name, function=post_process, description=description))
+            PostProcess(name=name, function=post_process, description=description)
+        )
         self._pprocesses[-1].function(self)
 
     def remove_post_process(self, name):
@@ -464,7 +462,8 @@ Container
             name of the post-process to remove.
         """
         self._pprocesses = [
-            post_process for post_process in self._pprocesses
+            post_process
+            for post_process in self._pprocesses
             if post_process.name != name
         ]
 
@@ -475,23 +474,27 @@ Container
         return next(self._iterator)
 
     def __reduce__(self):
-        return (_reduce_simulation, (
-            self.model,
-            self.fields,
-            self.dt,
-            self.t,
-            self.tmax,
-            self.i,
-            self.id,
-            cloudpickle.dumps(self._pprocesses),
-            cloudpickle.dumps(self._scheme),
-            self.status,
-            self._total_running,
-            self._last_running,
-            self._created_timestamp,
-            self._started_timestamp,
-            self._last_timestamp,
-            self._actual_timestamp,
-            self._hook,
-            self._container,
-        ))
+        return (
+            _reduce_simulation,
+            (
+                self.model,
+                self.fields,
+                self.dt,
+                self.t,
+                self.tmax,
+                self.i,
+                self.id,
+                cloudpickle.dumps(self._pprocesses),
+                cloudpickle.dumps(self._scheme),
+                self.status,
+                self._total_running,
+                self._last_running,
+                self._created_timestamp,
+                self._started_timestamp,
+                self._last_timestamp,
+                self._actual_timestamp,
+                self._hook,
+                self._container,
+            ),
+        )
+
