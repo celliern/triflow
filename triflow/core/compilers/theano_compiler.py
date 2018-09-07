@@ -149,7 +149,7 @@ def infer_lexsort_shape(node, input_shapes):
 
 @as_op(itypes=[tt.imatrix], otypes=[tt.ivector], infer_shape=infer_lexsort_shape)
 def th_lexsort(orders):
-    return np.lexsort(orders)
+    return np.lexsort(orders).astype("int32")
 
 
 @as_op(itypes=[tt.ivector], otypes=[tt.imatrix])
@@ -229,7 +229,7 @@ class TheanoCompiler:
             for ivar, size in zip(self.ivars, self.th_sizes)
         }
         replacement_steps = {
-            step: tt.ptp(ivar) / (ivar.size - 1)
+            step: (tt.ptp(ivar) / (ivar.size - 1)).astype("floatX")
             for ivar, step in zip(self.ivars, self.th_steps)
         }
         self._replacement = {**replacement_sizes, **replacement_steps}
@@ -267,7 +267,7 @@ class TheanoCompiler:
             grids.append(indice.reshape(tt.stack([self.ndim, *shape])))
 
             dvar_info = tt.set_subtensor(
-                dvar_info[cursor : cursor + size], tt.repeat(tt.constant(i), size)
+                dvar_info[cursor : cursor + size], tt.repeat(tt.constant(i, dtype="int32"), size)
             )
             idxs_info = tt.set_subtensor(idxs_info[:, cursor : cursor + size], indice)
 
@@ -557,7 +557,7 @@ class TheanoCompiler:
             self.printer.doprint(expr) for expr in self._full_exprs
         ]
 
-        F_ = tt.alloc(tt.as_tensor_variable(np.nan), (tt.as_tensor_variable(self.size)))
+        F_ = tt.alloc(tt.constant(np.nan, dtype='floatX'), (tt.as_tensor_variable(self.size)))
         for grid, eq in zip(_subgrids, self.evolution_equations):
             eq = clone(
                 eq, replace={self.idxs[i]: grid[:, i + 1] for i in range(self.ndim)}
