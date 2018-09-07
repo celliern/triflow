@@ -304,7 +304,6 @@ class NumpyCompiler:
         @lru_cache(maxsize=128)
         def compute_flat_to_dvars(*sizes):
             gridinfo = self.compute_gridinfo(*sizes)
-            system_sizes = self._compute_sizes(*sizes)
             idxs_grids = [
                 self.get_flat_from_idxs(
                     np.compress(gridinfo[:, 0] == i, gridinfo[:, :-2], axis=0), sizes
@@ -492,7 +491,7 @@ class NumpyCompiler:
             ]
             self._full_jacs.append(
                 [
-                    lambdify(self.inputs, self.printer.doprint(diff), modules="numpy")
+                    lambdify(self.inputs, diff, modules="numpy")
                     for diff in diffs
                 ]
             )
