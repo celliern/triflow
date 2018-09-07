@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding=utf-8
+
 import logging
 from functools import lru_cache, partial, wraps
 from itertools import accumulate, chain

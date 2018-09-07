@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
 
 from tqdm import tqdm, tqdm_notebook
 import holoviews as hv

@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
 
 from .utils import enable_notebook, tqdm  # noqa
 from .core import schemes  # noqa
 from .core.schemes import Stationnary as StationnarySolver
 from .core.model import Model  # noqa
 from .core.simulation import Simulation  # noqa
+from .core.system import PDESys, PDEquation  # noqa
+from .core.grid_builder import GridBuilder  # noqa
+from .core import compilers
 
 from .plugins.container import TriflowContainer as Container  # noqa
 from .plugins.displays import TriflowDisplay as Display  # noqa
