@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
 """This module regroups all the implemented temporal schemes.
 They are written as callable class which take the model and some control
 arguments at the init, and perform a computation step every time they are
@@ -35,8 +35,8 @@ def time_stepping(scheme, tol=1E-1, ord=2, m=10, reject_factor=2):
     def one_step(t, fields, dt, hook):
         dt_ = dt
         while True:
-            t_, fields_ = scheme(t, fields, m * dt_, hook)
-            for i in range(10):
+            _, fields_ = scheme(t, fields, m * dt_, hook)
+            for _ in range(10):
                 t, fields = scheme(t, fields, dt_, hook)
             errs = [
                 np.linalg.norm(
