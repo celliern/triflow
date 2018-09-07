@@ -146,7 +146,7 @@ def _include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
 
 
 def _apply_centered_scheme(order, ivar, deriv, accuracy, fdiff_equation):
-    n = (order + 1) // 2 + accuracy - 1
+    n = (order + 1) // 2 + accuracy - 2
     points = [ivar.symbol + i * ivar.step for i in range(-n, n + 1)]
     discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
     fdiff_equation = fdiff_equation.replace(deriv, discretized_deriv)
@@ -456,7 +456,14 @@ class PDEquation:
             for ivar, deriv in product(
                 self.independent_variables, fdiff_equation.atoms(Derivative)
             ):
-                order = deriv.args[1:].count(ivar.symbol)
+                wrts = {}
+                for wrt in deriv.args[1:]:
+                    if isinstance(wrt, Symbol):
+                        wrts[wrt] = 1
+                    else:
+                        wrts[wrt[0]] = wrt[1]
+
+                order = wrts.get(ivar.symbol, 0)
                 if self.scheme == "centered":
                     fdiff_equation = _apply_centered_scheme(
                         order, ivar, deriv, self.accuracy_order, fdiff_equation
