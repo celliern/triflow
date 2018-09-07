@@ -10,6 +10,7 @@ import forge
 
 from .compilers import get_compiler
 from .system import PDESys
+from .grid_builder import GridBuilder
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class Model:
       ----------
       evolution_equations : iterable of str or str
           the right hand sides of the partial differential equations written
-          as :math:`\\frac{\partial U}{\partial t} = F(U)`, where the spatial
+          as :math:`\\frac{\\partial U}{\\partial t} = F(U)`, where the spatial
           derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy
           notation `Derivative(U, x, x)`
       dependent_variables : iterable of str or str
@@ -76,12 +77,13 @@ class Model:
             parameters=parameters,
             boundary_conditions=boundary_conditions,
             auxiliary_definitions=auxiliary_definitions)
-        self.compiler = get_compiler(compiler)(self.pdesys)
+        self.grid_builder = GridBuilder(self.pdesys)
+        self.compiler = get_compiler(compiler)(self.pdesys, self.grid_builder)
 
         self.F = self.compiler.F
         self.J = self.compiler.J
-        self.U_from_fields = self.compiler.U_from_fields
-        self.fields_from_U = self.compiler.fields_from_U
+        self.U_from_fields = self.grid_builder.U_from_fields
+        self.fields_from_U = self.grid_builder.fields_from_U
 
         dvar_names = [dvar.name for dvar in self.pdesys.dependent_variables]
         ivar_names = [ivar.name for ivar in self.pdesys.independent_variables]
