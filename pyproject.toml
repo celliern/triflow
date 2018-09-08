@@ -24,7 +24,7 @@ python = ">=3.5"
 numpy = "^1"
 scipy = "^1"
 sympy = "=1.2"
-theano = "^1"
+theano = {version = "^1", optional = true}
 
 # pipeline for data and display
 streamz = "^0.3"
@@ -55,18 +55,19 @@ sklearn = "^0"
 # allow dynamic function signature
 python-forge = "^18"
 
+# fields display (and save)
+matplotlib = "^2.2"
+
 # interactive work with jupyter
 holoviews = "^1.10"
 jupyter = {version = "^1.0", optional = true}
 ipywidgets = {version = "^7.2", optional = true}
 bokeh = {version = "^0.13.0", optional = true}
-matplotlib = {version = "^2.2", optional = true}
 
 
 [tool.poetry.extras]
 jupyter = ["jupyter", "ipywidgets", "bokeh"]
-display = ["bokeh", "matplotlib"]
-all = ["jupyter", "ipywidgets", "bokeh", "matplotlib"]
+theano = ["theano"]
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
