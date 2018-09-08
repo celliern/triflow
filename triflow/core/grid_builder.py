@@ -143,33 +143,28 @@ class GridBuilder:
         self._lambda_conds = []
         self._lambda_domain = []
         self._lambda_exprs = []
-        domain_cursor = 0
+
         for sys in self.system._system:
             conds, _ = zip(*sys)
             lambda_cond = lambdify(self.inputs_cond, Matrix(conds), modules=["numpy"])
             self._lambda_conds.append(lambda_cond)
-
-            def get_domain(idxs, sizes, cursor=0):
-                return np.select(
-                    lambda_cond(*idxs, *sizes), np.arange(cursor, cursor + len(conds))
-                ).squeeze()
-
-            local_domain_computation = partial(get_domain, cursor=domain_cursor)
-            self._lambda_domain.append(local_domain_computation)
-            domain_cursor = domain_cursor + len(conds)
 
         @lru_cache(maxsize=128)
         def compute_domains(*sizes):
             """
             compute grid indices of all the model fields.
             """
-            indices = compute_indices(*sizes)
-            return np.stack(
-                [
-                    lambda_domain(indice, sizes)
-                    for indice, lambda_domain in zip(indices, self._lambda_domain)
-                ]
-            )
+            indices = self.compute_indices(*sizes)
+            cursor = 0
+            domains = []
+            for lambda_cond, indice in zip(self._lambda_conds, indices):
+                cond_grid = lambda_cond(*indice, *sizes)
+                domain_grid = np.select(
+                    cond_grid, np.arange(cursor, cursor + cond_grid.shape[0])
+                ).squeeze()
+                cursor = domain_grid.max() + 1
+                domains.append(domain_grid)
+            return domains
 
         self.compute_domains = compute_domains
 
@@ -237,7 +232,13 @@ class GridBuilder:
         @lru_cache(maxsize=128)
         def compute_subgrids(*sizes):
             gridinfo = self.compute_gridinfo(*sizes)
-            domains = sorted(set(self.compute_domains(*sizes).flatten().tolist()))
+            domains = sorted(
+                set(
+                    np.concatenate(
+                        [domain.flatten() for domain in self.compute_domains(*sizes)]
+                    ).tolist()
+                )
+            )
             condlists = [gridinfo[:, -2] == i for i in domains]
             subgrids = [
                 np.compress(condlist, gridinfo, axis=0) for condlist in condlists
