@@ -143,6 +143,20 @@ pl.show()
 
 ### NEWS
 
+v0.6.0: This is a huge step for the software, and a lot of the API modification is expected. Beside that, the software name change
+(some other triflow was there before this one). All change will not be documented : they are numerous and it should be considered as
+a new, more capable and performant software. As the main improvement :
+
+- Real arbitrary boundary condition: complex boundary conditions are properly dealt with and the domain where they sould be applied
+are automaticaly detected by the solver.
+- Arbitrary dimension: the software is now able to deal with 2D / 3D (and more) and not only 1D cases.
+- Auxiliary definition allow the user to define intermediary variables, making the model writing easier.
+- The core dependencies have been decreased, and there is the possibility the select some extra dependency. In particular,
+theano is not mendatory anymore, allowing easier installation (especially for windows users).
+  - triflow[jupyter] allow interactive work with the jupyter notebook.
+  - triflow[theano] make the theano backend available, which provide slightly performance improvement due to the CSE capability
+  of that library.
+
 v0.5.1:
 
 - remove some model arguments (simplify, fdiff_jac) that was undocumented.
@@ -191,11 +205,14 @@ The following items are linked to a better use of solid external libs:
 
 These are linked to the triflow core
 
-- build a robust boundary condition API :todo:
-- work on dimension extension, allowing 2D resolution and more :todo:
-- allow auxiliary function to make some complex model easier to write :todo:
-- allow a choice on the finite difference scheme, on a global way or term by term :todo:
-- test and propose other compilers (Cython, numba, pythran?) :todo:
+- build a robust boundary condition API :done:
+- work on dimension extension, allowing 2D resolution and more :done:
+- allow heterogeneous grid (variable with different dimensions) :in-progress:
+  - internal computation that deal heterogeneous grid :todo:
+  - aggregation function (mean, integrate, min/max, localized probe) :todo:
+- allow auxiliary function to make some complex model easier to write :done:
+- allow a choice on the finite difference scheme, on a global way or term by term :in-progress: (core implemented, need user api)
+- test and propose other compilers (Cython, numba, pythran?) :in-progress:
 - work on adaptive spatial and temporal mesh :todo:
 
 These are far away but can be very interesting:
