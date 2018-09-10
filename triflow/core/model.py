@@ -4,7 +4,7 @@
 import logging
 import sys
 from itertools import chain
-import xarray as xr
+from xarray import Dataset
 
 from .compilers import get_compiler
 from .system import PDESys
@@ -91,26 +91,29 @@ class Model:
         par_names = [par.name for par in self.pdesys.parameters]
 
         _create_dataset_template = """
-def create_dataset(*, %s):
+def create_dataset(*, {args}):
     \"""Create a xarray Dataset as expected by the model input.\"""
-    dvars = {
-        dvar.name:
-        ([ivar.name for ivar in dvar.independent_variables],
-            kwargs[dvar.name])
-        for dvar in chain(
-            self.pdesys.dependent_variables,
-            self.pdesys.parameters,
-        )
-    }
-    coords = {
-        ivar.name: kwargs[ivar.name]
-        for ivar in self.pdesys.independent_variables
-    }
+    dvars = {dvars}
+    coords = {coords}
 
-    return xr.Dataset(data_vars=dvars, coords=coords)
+    return Dataset(data_vars=dvars, coords=coords)
 self.Fields = self.fields_template = create_dataset
-        """ % ", ".join(
-            [*ivar_names, *dvar_names, *par_names]
+        """.format(
+            args=", ".join([*ivar_names, *dvar_names, *par_names]),
+            coords="dict(%s)"
+            % ", ".join(["%s=%s" % (name, name) for name in ivar_names]),
+            dvars="dict(%s)"
+            % ", ".join(
+                [
+                    "{dvar_name}=({coords}, {dvar_name})".format(
+                        dvar_name=dvar.name,
+                        coords=["%s" % ivar for ivar in dvar.independent_variables],
+                    )
+                    for dvar in chain(
+                        self.pdesys.dependent_variables, self.pdesys.parameters
+                    )
+                ]
+            ),
         )
 
-        exec(_create_dataset_template)
+        exec(_create_dataset_template, dict(self=self, chain=chain, Dataset=Dataset))
