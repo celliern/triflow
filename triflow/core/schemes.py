@@ -12,11 +12,11 @@ The following solvers are implemented:
 """
 
 import logging
-from functools import wraps
+from functools import wraps, partial
 
 import numpy as np
 import scipy.sparse as sps
-from scipy.integrate import ode
+from scipy.integrate import ode, solve_ivp
 from scipy.interpolate import interp1d
 from scipy.linalg import norm
 from toolz import memoize
@@ -180,6 +180,8 @@ class ROW_general:
                 Utilde = luf(B)
             elif self._solver == "iteratif":
                 Utilde = sps.linalg.gcrotmk(A, B, U if not ks else ks[-1], atol=self._atol)[0]
+            else:
+                Utilde = self._solver(A, B)
             ks.append(Utilde)
         U = U + sum([bi * ki for bi, ki in zip(self._b, ks)])
 
@@ -534,6 +536,87 @@ class RODASPR(ROW_general):
             recompute_target=recompute_target,
             iteratif_atol=iteratif_atol,
         )
+
+
+class scipy_ivp:
+    """Proxy written around the scipy.integrate.solve_ivp function.
+      Give access to all
+      the scipy integrators.
+
+      Parameters
+      ----------
+      model : triflow.Model
+          triflow Model
+      method : str, optional, default 'RK45'
+          name of the chosen scipy integration scheme.
+      **integrator_kwargs
+          extra arguments provided to the scipy integration scheme.
+      """  # noqa
+
+    def __init__(self, model, use_jac=True, method='RK45', **integrator_kwargs):
+        self._model = model
+        self._method = method
+        self._use_jac = use_jac
+        self._integrator_kwargs = integrator_kwargs
+
+        def func_scipy_proxy(t, U, fields, hook):
+            fields = self._model.fields_from_U(U, fields)
+            fields = hook(t, fields)
+            return self._model.F(fields, t)
+
+        def jacob_scipy_proxy(t, U, fields, hook):
+            fields = self._model.fields_from_U(U, fields)
+            fields = hook(t, fields)
+            return self._model.J(fields, t)
+
+        self.func = func_scipy_proxy
+        self.jac = jacob_scipy_proxy
+
+    def __call__(self, t, fields, dt, hook=null_hook):
+        """Perform a step of the solver: took a time and a system state as a
+          triflow Fields container and return the next time step with updated
+          container.
+
+          Parameters
+          ----------
+          t : float
+              actual time step
+          fields : triflow.Fields
+              actual system state in a triflow Fields
+          dt : float
+              temporal step-size
+          pars : dict
+              physical parameters of the model
+          hook : callable, optional
+              any callable taking the actual time, fields and parameters and
+              return modified fields and parameters. Will be called every
+              internal time step and can be used to include time dependent or
+              conditionnal parameters, boundary conditions...
+          container
+
+          Returns
+          -------
+          tuple : t, fields
+              updated time and fields container
+
+          Raises
+          ------
+          RuntimeError
+              Description
+          """  # noqa
+
+        fields = hook(t, fields)
+        U = self._model.U_from_fields(fields)
+        results = solve_ivp(fun=partial(self.func, fields=fields, hook=hook),
+                            t_span=[t, t + dt], t_eval=[t + dt],
+                            y0=U,
+                            jac=(partial(self.jac, fields=fields, hook=hook)
+                                 if self._use_jac else None),
+                            method=self._method,
+                            **self._integrator_kwargs)
+        fields = self._model.fields_from_U(results.y, fields)
+        fields = hook(t + dt, fields)
+        return t + dt, fields
 
 
 class scipy_ode:
