@@ -6,8 +6,6 @@ import sys
 from itertools import chain
 import xarray as xr
 
-import forge
-
 from .compilers import get_compiler
 from .system import PDESys
 from .grid_builder import GridBuilder
@@ -61,14 +59,16 @@ class Model:
       ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
       """  # noqa
 
-    def __init__(self,
-                 evolution_equations,
-                 dependent_variables,
-                 parameters=[],
-                 independent_variables=[],
-                 boundary_conditions={},
-                 auxiliary_definitions={},
-                 compiler="theano"):
+    def __init__(
+        self,
+        evolution_equations,
+        dependent_variables,
+        parameters=[],
+        independent_variables=[],
+        boundary_conditions={},
+        auxiliary_definitions={},
+        compiler="theano",
+    ):
 
         self.pdesys = PDESys(
             evolution_equations=evolution_equations,
@@ -76,7 +76,8 @@ class Model:
             independent_variables=independent_variables,
             parameters=parameters,
             boundary_conditions=boundary_conditions,
-            auxiliary_definitions=auxiliary_definitions)
+            auxiliary_definitions=auxiliary_definitions,
+        )
         self.grid_builder = GridBuilder(self.pdesys)
         self.compiler = get_compiler(compiler)(self.pdesys, self.grid_builder)
 
@@ -89,25 +90,27 @@ class Model:
         ivar_names = [ivar.name for ivar in self.pdesys.independent_variables]
         par_names = [par.name for par in self.pdesys.parameters]
 
-        @forge.sign(*[
-            forge.arg(name)
-            for name in chain(dvar_names, ivar_names, par_names)
-        ])
-        def create_dataset(**kwargs):
-            dvars = {
-                dvar.name:
-                ([ivar.name for ivar in dvar.independent_variables],
-                 kwargs[dvar.name])
-                for dvar in chain(
-                    self.pdesys.dependent_variables,
-                    self.pdesys.parameters,
-                )
-            }
-            coords = {
-                ivar.name: kwargs[ivar.name]
-                for ivar in self.pdesys.independent_variables
-            }
+        _create_dataset_template = """
+def create_dataset(*, %s):
+    \"""Create a xarray Dataset as expected by the model input.\"""
+    dvars = {
+        dvar.name:
+        ([ivar.name for ivar in dvar.independent_variables],
+            kwargs[dvar.name])
+        for dvar in chain(
+            self.pdesys.dependent_variables,
+            self.pdesys.parameters,
+        )
+    }
+    coords = {
+        ivar.name: kwargs[ivar.name]
+        for ivar in self.pdesys.independent_variables
+    }
 
-            return xr.Dataset(data_vars=dvars, coords=coords)
+    return xr.Dataset(data_vars=dvars, coords=coords)
+self.Fields = self.fields_template = create_dataset
+        """ % ", ".join(
+            [*ivar_names, *dvar_names, *par_names]
+        )
 
-        self.fields_template = create_dataset
+        exec(_create_dataset_template)

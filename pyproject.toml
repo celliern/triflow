@@ -52,9 +52,6 @@ attrs = "^18.1"
 # needed for decision-tree building
 sklearn = "^0"
 
-# allow dynamic function signature
-python-forge = "^18"
-
 # fields display (and save)
 matplotlib = "^2.2"
 
