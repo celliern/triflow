@@ -17,7 +17,7 @@ install:
 	$(poetry) install
 
 test: clean dev
-	$(poetry) run pytest --cov=triflow --doctest-glob="*.rst" --cov-report term-missing --pylama
+	$(poetry) run pytest --cov=triflow --doctest-glob="*.rst" --cov-report term-missing --pylama -x
 
 lint: dev
 	$(poetry) run pylama
