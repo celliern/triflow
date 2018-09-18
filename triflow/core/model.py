@@ -523,7 +523,14 @@ parameters:     {pars}"""
             for derivative in func.find(Derivative):
                 var = Symbol(str(derivative.args[0].func))
                 logging.debug("{}, {}".format(derivative, var))
-                order = len(derivative.args) - 1
+                wrts = {}
+                for wrt in derivative.args[1:]:
+                    if isinstance(wrt, Symbol):
+                        wrts[wrt] = 1
+                    else:
+                        wrts[wrt[0]] = wrt[1]
+
+                order = wrts.get(symbolic_indep_vars[0], 0)
                 afunc = afunc.replace(
                     derivative,
                     self._finite_diff_scheme(var,

@@ -1381,7 +1381,7 @@ version = "0.1.3"
 heapdict = "*"
 
 [metadata]
-content-hash = "0cb8b6d1b9436e03865b95181a27361523b01f151ce771e21b02df420afa0145"
+content-hash = "3273d75e7fb2014097070744cb257a53dbd7c3a43f5aecb28303b7b071bf903e"
 platform = "*"
 python-versions = ">=3.5"  # Compatible python versions must be declared here
 
