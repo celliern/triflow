@@ -23,7 +23,7 @@ python = ">=3.5"  # Compatible python versions must be declared here
 # core computation
 numpy = "^1"
 scipy = "^1"
-sympy = "^1"
+sympy = "^1.1"
 theano = "^1"
 
 # plugins: displays and containers
@@ -55,7 +55,5 @@ nbsphinx = "^0.3.3"
 nbconvert = "^5.3"
 sphinx_rtd_theme = "^0.3.0"
 doc8 = "^0.8.0"
-scikit-image = "^0.13.1"
 python-coveralls = "^2.9"
 pytest-cov = "^2.5"
-
