@@ -31,6 +31,8 @@ from sympy import (
     oo,
     solve,
     sympify,
+    Min,
+    Max
 )
 from sympy.logic.boolalg import BooleanTrue
 
@@ -476,26 +478,42 @@ class PDEquation:
                         order, ivar, deriv, self.accuracy_order, fdiff_equation
                     )
 
+        def upwind(velocity, dvar, ivar, accuracy=1):
+            def left_deriv(ivar, dvar):
+                deriv = Derivative(dvar, (ivar, 1))
+                n = accuracy + 1
+                points = [ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)]
+                discretized_deriv = deriv.as_finite_difference(
+                    points=points, wrt=ivar.symbol
+                )
+                return discretized_deriv
 
-        def upwind(velocity, dvar, ivars, accuracy=1):
-            up = 0
-            for ivar in ivars:
-                ivar = IndependentVariable(ivar)
-                n = accuracy - 1
-                points = [ivar.symbol + i * ivar.step for i in range(-n, n + 1)]
-                discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
-                up = up + velocity * discretized_deriv
-            return up
-        print(fdiff_equation.atoms(Function))
-        fdiff_equation = fdiff_equation.subs("upwind", upwind)
-        print(fdiff_equation)
+            def right_deriv(ivar, dvar):
+                deriv = Derivative(dvar, (ivar, 1))
+                n = accuracy + 1
+                points = [ivar.symbol + i * ivar.step for i in range(0, n)]
+                discretized_deriv = deriv.as_finite_difference(
+                    points=points, wrt=ivar.symbol
+                )
+                return discretized_deriv
+
+            ap = Max(velocity, 0)
+            am = Min(velocity, 0)
+
+            ivar = IndependentVariable(str(ivar))
+
+            deriv_left = left_deriv(ivar, dvar)
+            deriv_right = right_deriv(ivar, dvar)
+            discretized_deriv = ap * deriv_left + am * deriv_right
+            return discretized_deriv
+
+        fdiff_equation = fdiff_equation.replace(Function("upwind"), upwind)
 
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
             fdiff_equation = fdiff_equation.replace(
                 ivar.symbol + a * ivar.step, ivar.idx + a
             )
-
 
         for var in chain(self.dependent_variables, self.parameters):
 
@@ -510,7 +528,6 @@ class PDEquation:
                 {ivar.symbol: ivar.idx for ivar in self.independent_variables}
             )
             fdiff_equation = fdiff_equation.subs(indexed, new_indexed)
-
 
         fdiff_equation = fdiff_equation.subs(
             {
