@@ -44,7 +44,7 @@ class F_Routine(ModelRoutine):
         F = self._ufunc(*uargs, *pargs)
         return F
 
-    def diff_approx(self, fields, pars, eps=1E-8):
+    def diff_approx(self, fields, pars, eps=1E-3):
         fpars = {key: pars[key] for key in self.pars}
         fpars['dx'] = (fields['x'][-1] - fields['x'][0]) / fields['x'].size
         U = fields.uflat
