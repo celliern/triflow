@@ -32,7 +32,7 @@ from sympy import (
     solve,
     sympify,
     Min,
-    Max
+    Max,
 )
 from sympy.logic.boolalg import BooleanTrue
 
@@ -504,7 +504,7 @@ class PDEquation:
 
             deriv_left = left_deriv(ivar, dvar)
             deriv_right = right_deriv(ivar, dvar)
-            discretized_deriv = ap * deriv_left + am * deriv_right
+            discretized_deriv = am * deriv_left + ap * deriv_right
             return discretized_deriv
 
         fdiff_equation = fdiff_equation.replace(Function("upwind"), upwind)

@@ -37,6 +37,20 @@ def np_ivar_printer(ivar):
     return (Symbol(str(ivar.discrete)), Symbol(str(ivar.idx)), ivar.step, ivar.N)
 
 
+def np_Min(args):
+    a, b = args
+    return np.where(a < b, a, b)
+
+
+def np_Max(args):
+    a, b = args
+    return np.where(a < b, b, a)
+
+
+def np_Heaviside(a):
+    return np.where(a < 0, 1, 1)
+
+
 @attr.s
 class NumpyCompiler:
     system = attr.ib(type=PDESys)
@@ -80,7 +94,14 @@ class NumpyCompiler:
             _, exprs = zip(*sys)
             self._full_exprs.extend(exprs)
         evolution_equations = [
-            lambdify(self.inputs, expr.n(), modules="numpy")
+            lambdify(
+                self.inputs,
+                expr.n(),
+                modules=[
+                    {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
+                    "numpy",
+                ],
+            )
             for expr in self._full_exprs
         ]
 
@@ -146,14 +167,34 @@ class NumpyCompiler:
             wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
             grids = list(map(self.sort_indexed, wrts))
             self._full_jacs_cols.append(
-                [lambdify(self.inputs_cond, grid, modules="numpy") for grid in grids]
+                [
+                    lambdify(
+                        self.inputs_cond,
+                        grid,
+                        modules=[
+                            {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
+                            "numpy",
+                        ],
+                    )
+                    for grid in grids
+                ]
             )
             diffs = [
                 expr.diff(wrt).replace(KroneckerDelta, self._simplify_kron).n()
                 for wrt in wrts
             ]
             self._full_jacs.append(
-                [lambdify(self.inputs, diff, modules="numpy") for diff in diffs]
+                [
+                    lambdify(
+                        self.inputs,
+                        diff,
+                        modules=[
+                            {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
+                            "numpy",
+                        ],
+                    )
+                    for diff in diffs
+                ]
             )
 
         def compute_jacobian_values(t, dvars, pars, ivars, sizes):
