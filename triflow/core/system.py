@@ -349,7 +349,6 @@ class PDEquation:
         self._build_sympify_namespace()
         self._sympify_equation()
         self._as_finite_diff()
-        self._extract_bounds()
 
     def _fill_incomplete_dependent_vars(self):
         """fill every dependent variables that lack information on
@@ -477,11 +476,26 @@ class PDEquation:
                         order, ivar, deriv, self.accuracy_order, fdiff_equation
                     )
 
+
+        def upwind(velocity, dvar, ivars, accuracy=1):
+            up = 0
+            for ivar in ivars:
+                ivar = IndependentVariable(ivar)
+                n = accuracy - 1
+                points = [ivar.symbol + i * ivar.step for i in range(-n, n + 1)]
+                discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
+                up = up + velocity * discretized_deriv
+            return up
+        print(fdiff_equation.atoms(Function))
+        fdiff_equation = fdiff_equation.subs("upwind", upwind)
+        print(fdiff_equation)
+
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
             fdiff_equation = fdiff_equation.replace(
                 ivar.symbol + a * ivar.step, ivar.idx + a
             )
+
 
         for var in chain(self.dependent_variables, self.parameters):
 
@@ -497,6 +511,7 @@ class PDEquation:
             )
             fdiff_equation = fdiff_equation.subs(indexed, new_indexed)
 
+
         fdiff_equation = fdiff_equation.subs(
             {
                 ivar.symbol: ivar.discrete[ivar.idx]
@@ -505,10 +520,6 @@ class PDEquation:
         )
 
         self.fdiff_equation = fdiff_equation
-
-    def _extract_bounds(self):
-        for indexed in self.fdiff_equation.atoms(Indexed):
-            pass
 
     def __str__(self):
         return self.__repr__()
