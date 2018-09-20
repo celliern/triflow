@@ -571,14 +571,12 @@ class PDESys:
                 lower_conds = [
                     (indexed.args[i] - ivar.idx.lower).subs(ivar.idx, ivar.symbol)
                     for indexed in eq.atoms(Indexed)
-                    if indexed.args[0]
-                    not in [ivar.discrete for ivar in dvar.independent_variables]
+                    if ivar in self.dependent_dict[str(indexed.args[0])].independent_variables
                 ]
                 upper_conds = [
                     (indexed.args[i] - ivar.idx.upper).subs(ivar.idx, ivar.symbol)
                     for indexed in eq.atoms(Indexed)
-                    if indexed.args[0]
-                    not in [ivar.discrete for ivar in dvar.independent_variables]
+                    if ivar in self.dependent_dict[str(indexed.args[0])].independent_variables
                 ]
                 cond = (
                     Ge(
@@ -590,6 +588,7 @@ class PDESys:
                         min([solve(cond, ivar.symbol)[0] for cond in upper_conds]),
                     ),
                 )
+
                 domain[ivar] = cond
             self._domains.append(domain)
         self._unknown_nodes = []
