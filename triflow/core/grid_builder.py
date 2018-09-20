@@ -289,11 +289,25 @@ class GridBuilder:
         self.compute_idxs = compute_idxs
 
     def _build_flattener(self):
-        def U_routine(dvars, sizes):
+        @lru_cache(maxsize=128)
+        def get_relevant_ptrs(i, *sizes):
+            system_sizes = self.compute_sizes(*sizes)
+            system_size = sum(system_sizes)
+            idxs = np.arange(system_size)
             ptrs = self.compute_dvars_to_flat(*sizes)
-            return np.stack(dvars, axis=0)[
-                tuple([ptrs.T[i] for i in range(self.ndim + 1)])
-            ]
+            relevant_idxs = np.extract(ptrs[:, 0] == i, idxs)
+            relevant_ptrs = ptrs[relevant_idxs, 1:].T
+            return relevant_idxs, tuple(relevant_ptrs)
+
+        def U_routine(dvars, sizes):
+            system_sizes = self.compute_sizes(*sizes)
+            system_size = sum(system_sizes)
+            U = np.empty(system_size)
+
+            for i, dvar in enumerate(dvars):
+                relevant_idxs, relevant_ptrs = get_relevant_ptrs(i, *sizes)
+                U[relevant_idxs] = dvar[relevant_ptrs]
+            return U
 
         def U_from_fields(fields, t=0):
             dvars = [
@@ -304,9 +318,19 @@ class GridBuilder:
                 fields[varname].size
                 for varname in [ivar.name for ivar in self.system.independent_variables]
             ]
+            shapeinfos = self.compute_shapes(*sizes)
+            pivot_idx = self.compute_pivot_idx(shapeinfos)
+            ivars = map(str, np.array(self.system.independent_variables)[pivot_idx])
 
+            dvars = [
+                dvar.expand_dims(set(fields.dims).difference(set(dvar.dims)))
+                .transpose(*ivars)
+                .values
+                for dvar in dvars
+            ]
             return U_routine(dvars, sizes)
 
+        self._U_routine = U_routine
         self.U_from_fields = U_from_fields
 
         def fields_routine(U, sizes):
@@ -337,6 +361,7 @@ class GridBuilder:
             shapes = self.compute_shapes(*sizes)
             pivots = self.compute_pivot_idx(shapes)
             dvars = fields_routine(U, sizes)
+            sys_ivars = self.system.independent_variables
             for varname, dvar, ivars in zip(
                 varnames,
                 dvars,
@@ -345,7 +370,8 @@ class GridBuilder:
                     for dvar in self.system.dependent_variables
                 ],
             ):
-                fields[varname] = [ivars[i].name for i in pivots], dvar
+                coords = [sys_ivars[i].name for i in pivots if sys_ivars[i] in ivars]
+                fields[varname] = coords, dvar
             return fields
 
         self.fields_from_U = fields_from_U
