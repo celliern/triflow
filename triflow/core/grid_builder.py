@@ -293,10 +293,12 @@ class GridBuilder:
         def get_relevant_ptrs(i, *sizes):
             system_sizes = self.compute_sizes(*sizes)
             system_size = sum(system_sizes)
+            shapeinfos = self.compute_shapes(*sizes)
+            pivot_idx = self.compute_pivot_idx(shapeinfos)
             idxs = np.arange(system_size)
             ptrs = self.compute_dvars_to_flat(*sizes)
             relevant_idxs = np.extract(ptrs[:, 0] == i, idxs)
-            relevant_ptrs = ptrs[relevant_idxs, 1:].T
+            relevant_ptrs = ptrs[relevant_idxs, 1:].T[pivot_idx]
             return relevant_idxs, tuple(relevant_ptrs)
 
         def U_routine(dvars, sizes):
@@ -320,7 +322,9 @@ class GridBuilder:
             ]
             shapeinfos = self.compute_shapes(*sizes)
             pivot_idx = self.compute_pivot_idx(shapeinfos)
-            ivars = map(str, np.array(self.system.independent_variables)[pivot_idx])
+            ivars = list(
+                map(str, np.array(self.system.independent_variables)[pivot_idx])
+            )
 
             dvars = [
                 dvar.expand_dims(set(fields.dims).difference(set(dvar.dims)))
@@ -328,25 +332,20 @@ class GridBuilder:
                 .values
                 for dvar in dvars
             ]
+
             return U_routine(dvars, sizes)
 
         self._U_routine = U_routine
         self.U_from_fields = U_from_fields
 
         def fields_routine(U, sizes):
-            # FIXME better naming
-            shapeinfos = self.compute_shapes(*sizes)
-            pivot_idx = self.compute_pivot_idx(shapeinfos)
+            shapes = self.compute_shapes(*sizes)
             idxs_grids = self.compute_flat_to_dvars(*sizes)
-
-            shapes = [
-                np.take(shape, np.take(pivot_idx, idx_map))
-                for idx_map, shape in zip(self.idxs_map, shapeinfos)
-            ]
+            pivots = self.compute_pivot_idx(shapes)
 
             return [
-                U[grid].reshape(shape)
-                for grid, shape, shapeinfo in zip(idxs_grids, shapes, shapeinfos)
+                U[grid].reshape(shape[pivots])
+                for grid, shape in zip(idxs_grids, shapes)
             ]
 
         def fields_from_U(U, fields, t=None):
@@ -371,8 +370,8 @@ class GridBuilder:
                 ],
             ):
                 coords = [sys_ivars[i].name for i in pivots if sys_ivars[i] in ivars]
-                fields[varname] = coords, dvar
-            return fields
+                fields[varname] = coords, dvar.squeeze()
+            return fields.transpose(*[ivar.name for ivar in sys_ivars])
 
         self.fields_from_U = fields_from_U
 
