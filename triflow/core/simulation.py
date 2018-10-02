@@ -306,6 +306,7 @@ class Simulation(object):
         with tqdm(initial=initial, total=total_iter) as pbar:
             for t, fields in self:
                 pbar.update(1)
+                t.set_description("%s running: t: %g" % (self.id, t))
                 log("%s running: t: %g" % (self.id, t))
             try:
                 return t, fields
@@ -497,4 +498,3 @@ Container
                 self._container,
             ),
         )
-
