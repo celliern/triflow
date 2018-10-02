@@ -67,7 +67,7 @@ class Model:
         independent_variables=[],
         boundary_conditions={},
         auxiliary_definitions={},
-        compiler="theano",
+        compiler="numpy",
     ):
 
         self.pdesys = PDESys(
