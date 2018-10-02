@@ -81,7 +81,7 @@ class TriflowContainer:
             raise FileNotFoundError("Container not found.")
         path.makedirs_p()
 
-        with open(self.path / 'metadata.yml', 'w') as yaml_file:
+        with open(self.path / 'info.yml', 'w') as yaml_file:
             yaml.dump(self._metadata,
                       yaml_file, default_flow_style=False)
 
@@ -171,7 +171,7 @@ class TriflowContainer:
     def metadata(self):
         try:
             if self.path:
-                with open(self.path / 'metadata.yml', 'r') as yaml_file:
+                with open(self.path / 'info.yml', 'r') as yaml_file:
                     return yaml.load(yaml_file)
             return self._metadata
         except OSError:
@@ -198,7 +198,7 @@ class TriflowContainer:
             data = open_mfdataset(path / "data*.nc",
                                   concat_dim="t").sortby("t")
         try:
-            with open(Path(path) / 'metadata.yml', 'r') as yaml_file:
+            with open(Path(path) / 'info.yml', 'r') as yaml_file:
                 metadata = yaml.load(yaml_file)
         except FileNotFoundError:
             # Ensure retro-compatibility with older version

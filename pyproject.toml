@@ -33,6 +33,7 @@ more-itertools = "^4"
 # data container
 xarray = "^0.10"
 dask = "^0.18"
+pyyaml = "^3"
 
 # memoization for ndarray input
 joblib = "^0.12"
