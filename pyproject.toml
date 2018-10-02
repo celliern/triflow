@@ -76,7 +76,7 @@ black = "^18"
 pytest = "^3"
 
 # doc generation
-sphinx = "^"
+sphinx = "*"
 matplotlib = "^3"
 
 # coverage

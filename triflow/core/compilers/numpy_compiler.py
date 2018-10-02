@@ -8,7 +8,6 @@ from tempfile import mkdtemp
 
 import attr
 import numpy as np
-import theano.tensor as tt
 from scipy.sparse import csc_matrix
 from sympy import (
     Matrix,
