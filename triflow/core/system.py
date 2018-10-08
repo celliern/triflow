@@ -483,6 +483,11 @@ class PDEquation:
                 deriv = Derivative(dvar, (ivar, 1))
                 n = accuracy + 1
                 points = [ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)]
+                elif accuracy == 3:
+                    points = [ivar.symbol + i * ivar.step for i in range(-(n - 2), 2)]
+                else:
+                    raise NotImplementedError("Upwind is only available for n <= 3")
+                print(points)
                 discretized_deriv = deriv.as_finite_difference(
                     points=points, wrt=ivar.symbol
                 )
@@ -491,7 +496,12 @@ class PDEquation:
             def right_deriv(ivar, dvar):
                 deriv = Derivative(dvar, (ivar, 1))
                 n = accuracy + 1
+                if accuracy < 3:
                 points = [ivar.symbol + i * ivar.step for i in range(0, n)]
+                elif accuracy == 3:
+                    points = [ivar.symbol + i * ivar.step for i in range(-1, n - 1)]
+                else:
+                    raise NotImplementedError("Upwind is only available for n <= 3")
                 discretized_deriv = deriv.as_finite_difference(
                     points=points, wrt=ivar.symbol
                 )
