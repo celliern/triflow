@@ -93,25 +93,25 @@ def test_domain_dependent_variable():
 
     N_x, N_y = dvar.i_Ns
 
-    assert dvar.domains(-1, -1) == ("left", "left")
-    assert dvar.domains(-1, 0) == ("left", "bulk")
-    assert dvar.domains(3, -2) == ("bulk", "left")
-    assert dvar.domains(0, 0) == ("bulk", "bulk")
-    assert dvar.domains(5, 2) == ("bulk", "bulk")
-    assert dvar.domains(N_x, -2) == ("right", "left")
-    assert dvar.domains(5, N_y) == ("bulk", "right")
-    assert dvar.domains(N_x - 1, N_y - 1) == ("bulk", "bulk")
-    assert dvar.domains(N_x, N_y) == ("right", "right")
+    assert dvar.domains(x=-1, y=-1) == ("left", "left")
+    assert dvar.domains(x=-1, y=0) == ("left", "bulk")
+    assert dvar.domains(x=3, y=-2) == ("bulk", "left")
+    assert dvar.domains(x=0, y=0) == ("bulk", "bulk")
+    assert dvar.domains(x=5, y=2) == ("bulk", "bulk")
+    assert dvar.domains(x=N_x, y=-2) == ("right", "left")
+    assert dvar.domains(x=5, y=N_y) == ("bulk", "right")
+    assert dvar.domains(x=N_x - 1, y=N_y - 1) == ("bulk", "bulk")
+    assert dvar.domains(x=N_x, y=N_y) == ("right", "right")
 
-    assert not dvar.is_in_bulk(-1, -1)
-    assert not dvar.is_in_bulk(-1, 0)
-    assert not dvar.is_in_bulk(3, -2)
-    assert dvar.is_in_bulk(0, 0)
-    assert dvar.is_in_bulk(5, 2)
-    assert not dvar.is_in_bulk(N_x, -2)
-    assert not dvar.is_in_bulk(5, N_y)
-    assert dvar.is_in_bulk(N_x - 1, N_y - 1)
-    assert not dvar.is_in_bulk(N_x, N_y)
+    assert not dvar.is_in_bulk(x=-1, y=-1)
+    assert not dvar.is_in_bulk(x=-1, y=0)
+    assert not dvar.is_in_bulk(x=3, y=-2)
+    assert dvar.is_in_bulk(x=0, y=0)
+    assert dvar.is_in_bulk(x=5, y=2)
+    assert not dvar.is_in_bulk(x=N_x, y=-2)
+    assert not dvar.is_in_bulk(x=5, y=N_y)
+    assert dvar.is_in_bulk(x=N_x - 1, y=N_y - 1)
+    assert not dvar.is_in_bulk(x=N_x, y=N_y)
 
 
 def test_pde_equation_1D():
@@ -240,3 +240,6 @@ def test_upwind():
     up = (-U.discrete[x.idx + 2] + 6 * U.discrete[x.idx + 1] - 3 * U.discrete[x.idx] - 2 * U.discrete[x.idx - 1]) / (6 * x.step)
     um = (2 * U.discrete[x.idx + 1] + 3 * U.discrete[x.idx] - 6 * U.discrete[x.idx - 1] + U.discrete[x.idx - 2]) / (6 * x.step)
     assert (ap * up + am * um - pde.fdiff).expand() == 0
+
+def test_pdesys():
+    pass
