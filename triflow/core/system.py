@@ -7,13 +7,14 @@ import string
 import typing
 from functools import partial, reduce
 from itertools import chain, product
-from operator import mul
+from operator import mul, and_
 from queue import Queue
 
 import attr
 import numpy as np
 from more_itertools import unique_everseen
 from sympy import (
+    Expr,
     N,
     differentiate_finite,
     And,
@@ -45,106 +46,6 @@ def _convert_pde_list(pdes):
         return [pdes]
     else:
         return pdes
-
-
-def _filter_relevent_equations(bdc, vars):
-    for indexed in bdc.atoms(Indexed):
-        if indexed in vars:
-            return True
-    return False
-
-
-def _ensure_bool(cond, ivars):
-    if isinstance(cond, bool):
-        return cond
-    else:
-        cond = cond.subs({ivar.N: oo for ivar in ivars})
-        return bool(cond)
-
-
-def _is_in_bulk(indexed, ivars, all_ivars):
-    ivar_idxs_value = indexed.args[1:]
-    is_inside = []
-    for ivar, value in zip(ivars, ivar_idxs_value):
-        if ivar.idx in value.atoms(Idx):
-            is_inside.append(True)
-            continue
-        left_cond = _ensure_bool(value >= ivar.idx.lower, all_ivars)
-        right_cond = _ensure_bool(value <= ivar.idx.upper, all_ivars)
-        is_inside.append(bool(left_cond & right_cond))
-    return is_inside
-
-
-def _get_domain(indexed, ivars, all_ivars):
-    ivar_idxs_value = indexed.args[1:]
-    where = []
-    for ivar, value in zip(ivars, ivar_idxs_value):
-        if ivar.idx in value.atoms(Idx):
-            where.append("bulk")
-        elif _ensure_bool(value < ivar.idx.lower, all_ivars):
-            where.append("left")
-        elif _ensure_bool(value > ivar.idx.upper, all_ivars):
-            where.append("right")
-        else:
-            where.append("bulk")
-    return where
-
-
-def _compute_bdc_on_ghost_node(indexed, ivars, bdcs, all_ivars):
-    domains = _get_domain(indexed, ivars, all_ivars)
-    ghost_node = indexed.args[1:]
-    for ivar, _, domain in zip(ivars, ghost_node, domains):
-        if domain == "left":
-            yield bdcs[ivar][0].fdiff.subs(
-                {ivar.idx: coord for ivar, coord in zip(ivars, ghost_node)}
-            )
-        if domain == "right":
-            yield bdcs[ivar][1].fdiff.subs(
-                {ivar.idx: coord for ivar, coord in zip(ivars, ghost_node)}
-            )
-
-
-def _include_bdc_in_localeq(all_unavailable_vars, all_available_bdcs, local_eq):
-    all_idxs = set(
-        [
-            *chain(*[list(var.atoms(Idx)) for var in all_unavailable_vars]),
-            *chain(*[list(bdc.atoms(Idx)) for bdc in all_available_bdcs]),
-        ]
-    )
-    dummy_map = {idx: Dummy() for idx in all_idxs}
-    reverse_dummy_map = {value: key for key, value in dummy_map.items()}
-    all_unavailable_vars_ = set([var.subs(dummy_map) for var in all_unavailable_vars])
-    all_available_bdcs_ = set([bdc.subs(dummy_map) for bdc in all_available_bdcs])
-    all_available_bdcs_ = [
-        bdc
-        for bdc in all_available_bdcs_
-        if _filter_relevent_equations(bdc, all_unavailable_vars_)
-    ]
-    logging.debug("ghost nodes: %s" % ", ".join(map(str, all_unavailable_vars_)))
-    logging.debug(
-        "using bdc to replace ghost nodes: %s"
-        % ", ".join(map(str, all_available_bdcs_))
-    )
-
-    solved_variables = dict()
-    for solved_ in list(
-        solve(all_available_bdcs_, all_unavailable_vars_, dict=True, set=True)
-    ):
-        solved_variables.update(solved_)
-
-    solved_variables = {
-        key.subs(reverse_dummy_map): value.subs(reverse_dummy_map)
-        for key, value in solved_variables.items()
-    }
-
-    logging.debug(
-        "ghost nodes values: %s"
-        % ", ".join(
-            ["%s: %s" % (key, value) for key, value in solved_variables.items()]
-        )
-    )
-    local_eq = local_eq.subs(solved_variables)
-    return local_eq, solved_variables
 
 
 def _apply_centered_scheme(order, ivar, deriv, accuracy, fdiff):
@@ -229,6 +130,106 @@ def _build_sympy_namespace(
     return namespace
 
 
+def get_domains(indexed, mapper):
+    dvar = mapper[str(indexed.args[0])]
+    coords = extract_coord(indexed, mapper)
+    return dvar.domains(*[coords[ivar.name] for ivar in dvar.ivars])
+
+
+def get_distances(indexed, mapper):
+    dvar = mapper[str(indexed.args[0])]
+    coords = extract_coord(indexed, mapper)
+    return [ivar.distance_from_domain(coords[ivar.name]) for ivar in dvar.ivars]
+
+
+def extract_coord(indexed, mapper):
+    dvar = mapper[str(indexed.args[0])]
+    keys = dvar.i_names
+    coords = indexed.args[1:]
+    return dict(zip(keys, coords))
+
+
+def list_coords(domain):
+    available_coords = {}
+    for ivar, (left_cond, right_cond) in domain.items():
+        coords = []
+        coords.append(ivar.idx)
+        coords.extend(np.arange(ivar.idx.lower, left_cond.rhs))
+        coords.extend(
+            np.arange(right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1) + ivar.N
+        )
+        available_coords[ivar] = coords
+    return available_coords
+
+
+def list_conditions(domain):
+    available_conds = {}
+    for ivar, (left_cond, right_cond) in domain.items():
+        conds = []
+        conds.append(left_cond & right_cond)
+        conds.extend(
+            [Eq(ivar.idx, coord) for coord in np.arange(ivar.idx.lower, left_cond.rhs)]
+        )
+        conds.extend(
+            [
+                Eq(ivar.idx, coord)
+                for coord in np.arange(
+                    right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1
+                )
+                + ivar.N
+            ]
+        )
+        available_conds[ivar] = conds
+    return available_conds
+
+
+def analyse_local_eq(expr, node, mapper):
+    local_eq = expr.subs(
+        {ivar.idx: coord for ivar, coord in zip(self.dvar.ivars, node)}
+    )
+    indexed = local_eq.atoms(Indexed)
+    info = []
+    for idx in indexed:
+        domains = get_domains(idx, mapper)
+        distances = get_distances(idx, mapper)
+        if not all([domain == "bulk" for domain in domains]):
+            info.append((idx, domains, distances))
+    return info
+
+
+def extract_bounds(indexed, mapper):
+    dvar = mapper[str(indexed.args[0])]
+    ivars = dvar.ivars
+    coords = extract_coord(indexed, mapper)
+    bounds = {}
+    for coord_value, ivar in zip(coords.values(), ivars):
+        bounds[ivar] = (
+            solve(coord_value - ivar.idx.lower, ivar.idx)[0],
+            solve(coord_value - ivar.idx.upper, ivar.idx)[0],
+        )
+    return bounds
+
+
+def bounds_to_conds(bounds):
+    ivars = set(chain(*[bound.keys() for bound in bounds]))
+    conds = {}
+    for ivar in ivars:
+        lefts, rights = zip(*[bound[ivar] for bound in bounds])
+        conds[ivar] = max(lefts), min(rights)
+    return {
+        ivar: (ivar.idx >= conds[ivar][0], ivar.idx <= conds[ivar][1])
+        for ivar, cond in conds.items()
+    }
+
+def extract_outside_variables(idxs, mapper):
+    outside_variables = []
+    for idx in idxs:
+        domains = get_domains(idx, mapper)
+        distances = get_distances(idx, mapper)
+        if not all([domain == "bulk" for domain in domains]):
+            outside_variables.append((idx, domains, distances))
+    return outside_variables
+
 @attr.s(frozen=True, repr=False, hash=False)
 class IndependentVariable:
     name = attr.ib(type=str)
@@ -259,9 +260,23 @@ class IndependentVariable:
         return (0, self.N - 1)
 
     def domain(self, coord):
-        is_left = (coord < self.idx.lower).subs(self.N, 500)
-        is_right = (coord > self.idx.upper).subs(self.N, 500)
-        if not is_left and not is_right:
+        def to_bool(cond):
+            try:
+                cond = cond.subs(self.N, 500)
+            except AttributeError:
+                pass
+            return cond
+
+        is_left = to_bool(coord < self.idx.lower)
+        is_right = to_bool(coord > self.idx.upper)
+        # if x_idx is in the coord, it belong to the bulk.
+        # Otherwise, it's only if it's neither into the left and the right.
+        try:
+            if str(self.idx) in map(str, coord.atoms()):
+                return "bulk"
+        except AttributeError:
+            pass
+        if (not is_left and not is_right):
             return "bulk"
         if is_left:
             return "left"
@@ -270,6 +285,14 @@ class IndependentVariable:
 
     def is_in_bulk(self, coord):
         return True if self.domain(coord) == "bulk" else False
+
+    def distance_from_domain(self, coord):
+        if self.domain(coord) == "bulk":
+            return 0
+        if self.domain(coord) == "left":
+            return int(self.idx.lower - coord)
+        if self.domain(coord) == "right":
+            return int(coord - self.idx.upper)
 
     @property
     def idx(self):
@@ -335,6 +358,10 @@ class DependentVariable:
         return tuple([ivar.symbol for ivar in self.ivars])
 
     @property
+    def i_names(self):
+        return tuple([ivar.name for ivar in self.ivars])
+
+    @property
     def i_steps(self):
         return tuple([ivar.step for ivar in self.ivars])
 
@@ -362,7 +389,7 @@ class DependentVariable:
         return tuple([ivar.domain(coord) for ivar, coord in zip(self.ivars, coords)])
 
     def is_in_bulk(self, *coords):
-        return all([ivar.is_in_bulk(coord) for ivar, coord in zip(self.ivars, coords)])
+        return tuple([ivar.is_in_bulk(coord) for ivar, coord in zip(self.ivars, coords)])
 
     @property
     def symbol(self):
@@ -528,9 +555,7 @@ class PDEquation:
 
         fdiff = self.symbolic_equation
         while fdiff.atoms(Derivative):
-            deriv_product = product(
-                self.independent_variables, fdiff.atoms(Derivative)
-            )
+            deriv_product = product(self.independent_variables, fdiff.atoms(Derivative))
             deriv_product = filter(is_wrt, deriv_product)
             for ivar, deriv in product(
                 self.independent_variables, fdiff.atoms(Derivative)
@@ -566,7 +591,6 @@ class PDEquation:
                     points = [ivar.symbol + i * ivar.step for i in range(-(n - 2), 2)]
                 else:
                     raise NotImplementedError("Upwind is only available for n <= 3")
-                print(points)
                 discretized_deriv = deriv.as_finite_difference(
                     points=points, wrt=ivar.symbol
                 )
@@ -600,9 +624,7 @@ class PDEquation:
 
         for ivar in self.independent_variables:
             a = Wild("a", exclude=[ivar.step, ivar.symbol, 0])
-            fdiff = fdiff.replace(
-                ivar.symbol + a * ivar.step, ivar.idx + a
-            )
+            fdiff = fdiff.replace(ivar.symbol + a * ivar.step, ivar.idx + a)
 
         for var in chain(self.dependent_variables, self.parameters):
 
@@ -631,6 +653,53 @@ class PDEquation:
         return self.__repr__()
 
 
+@attr.s(auto_attribs=True)
+class Node:
+    eq: Expr
+    dvar: DependentVariable
+    coords: tuple
+    conds: Expr
+    mapper: dict
+    available_boundaries: dict
+    outside_variables = None
+    linked_nodes = None
+
+    def __attrs_post_init__(self):
+        self.local_eq = self.eq.subs(
+            {ivar.idx: coord for ivar, coord in zip(self.dvar.ivars, self.coords)}
+        )
+        self.linked_nodes = []
+        while self.outside_variables:
+            self.apply_boundary()
+
+    @property
+    def outside_variables(self):
+        indexed = self.local_eq.atoms(Indexed)
+        return extract_outside_variables(indexed, self.mapper)
+
+    def apply_boundary(self):
+        def get_proper_boundary(boundaries, domains):
+            for ivar, domain in zip(dvar.ivars, domains):
+                left_bdc, right_bdc = boundaries[ivar]
+                if domain == "left":
+                    yield left_bdc.fdiff
+                if domain == "right":
+                    yield right_bdc.fdiff
+
+        subs = {}
+        for idx, domains, distances in self.outside_variables:
+            dvar = self.mapper[str(idx.args[0])]
+            bdcs = list(get_proper_boundary(self.available_boundaries[dvar], domains))
+            bdcs = [
+                bdc.subs(
+                    {ivar.idx: coord for ivar, coord in zip(dvar.ivars, idx.args[1:])}
+                )
+                for bdc in bdcs
+            ]
+            subs.update(solve(bdcs, idx))
+        self.local_eq = self.local_eq.subs(subs)
+
+
 @attr.s
 class PDESys:
     evolution_equations = attr.ib(type=typing.List[str], converter=_convert_pde_list)
@@ -652,52 +721,13 @@ class PDESys:
 
     def _compute_domain(self):
         self._domains = []
-        for dvar, pde in zip(self.dependent_variables, self):
-            ivars = dvar.independent_variables
-            eq = pde.fdiff
-            domain = {}
-            for i, ivar in enumerate(ivars, 1):
-                lower_conds = [
-                    (indexed.args[i] - ivar.idx.lower).subs(ivar.idx, ivar.symbol)
-                    for indexed in eq.atoms(Indexed)
-                    if ivar
-                    in self.dependent_dict[str(indexed.args[0])].independent_variables
-                ]
-                upper_conds = [
-                    (indexed.args[i] - ivar.idx.upper).subs(ivar.idx, ivar.symbol)
-                    for indexed in eq.atoms(Indexed)
-                    if ivar
-                    in self.dependent_dict[str(indexed.args[0])].independent_variables
-                ]
-                cond = (
-                    Ge(
-                        ivar.idx,
-                        max([solve(cond, ivar.symbol)[0] for cond in lower_conds]),
-                    ),
-                    Le(
-                        ivar.idx,
-                        min([solve(cond, ivar.symbol)[0] for cond in upper_conds]),
-                    ),
-                )
-
-                domain[ivar] = cond
-            self._domains.append(domain)
         self._unknown_nodes = []
-        for domain in self._domains:
-            unodes = {}
-            for ivar, (lower_cond, upper_cond) in domain.items():
-                if isinstance(lower_cond, (bool, BooleanTrue)):
-                    left_unodes = []
-                else:
-                    left_unodes = np.arange(ivar.idx.lower, lower_cond.rhs).tolist()
-                if isinstance(upper_cond, (bool, BooleanTrue)):
-                    right_unodes = []
-                else:
-                    right_unodes = np.arange(
-                        ivar.idx.upper, upper_cond.rhs, -1
-                    ).tolist()
-                unodes[ivar] = (left_unodes, right_unodes)
-            self._unknown_nodes.append(unodes)
+        for dvar, pde in zip(self.dependent_variables, self):
+            bounds = [
+                extract_bounds(indexed, self.dependent_dict)
+                for indexed in pde.fdiff.atoms(Indexed)
+            ]
+            self._domains.append(bounds_to_conds(bounds))
 
     def _coerce_equations(self):
         self.evolution_equations = [
@@ -797,126 +827,22 @@ class PDESys:
             self.boundary_conditions[dvar] = bdc
 
     def _build_system(self):
-        for eq, sysdomain, dvar, unodes in zip(
-            self, self._domains, self.dependent_variables, self._unknown_nodes
-        ):
-            system = {}
-            ivars = dvar.independent_variables
-
-            _unknown_nodes = unodes
-
-            idxs = []
-            for ivar, unode in _unknown_nodes.items():
-                left_nodes, right_nodes = unode
-                bulk_nodes = [ivar.idx]
-                idx = chain(*[left_nodes, bulk_nodes, right_nodes])
-                idxs.append(idx)
-            coords_to_compute = list(product(*idxs))
-
-            bdcs = self.boundary_conditions.values()
-
-            for coords in coords_to_compute:
-                logging.debug("evaluate coord: %s" % ", ".join(map(str, coords)))
-                local_eq = eq.fdiff.subs(
-                    {ivar.idx: coord for ivar, coord in zip(ivars, coords)}
-                )
-                subs_queue = Queue()
-                unavailable_vars = [
-                    indexed
-                    for indexed in local_eq.atoms(Indexed)
-                    if not all(_is_in_bulk(indexed, ivars, self.independent_variables))
-                ]
-
-                subs_queue.put(unavailable_vars)
-
-                all_unavailable_vars = set()
-                all_available_bdcs = set()
-                solved_variables = dict()
-
-                for i, unavailable_vars in enumerate(iter(subs_queue.get, [])):
-                    available_bdcs = list(
-                        chain(
-                            *[
-                                _compute_bdc_on_ghost_node(
-                                    unavailable_var,
-                                    bdc.keys(),
-                                    bdc,
-                                    self.independent_variables,
-                                )
-                                for unavailable_var, bdc in product(
-                                    unavailable_vars, bdcs
-                                )
-                            ]
-                        )
-                    )
-                    available_bdcs = [
-                        bdc
-                        for bdc in available_bdcs
-                        if _filter_relevent_equations(bdc, unavailable_vars)
-                    ]
-                    if i > 5:
-                        raise AssertionError
-                    available_bdcs = set(
-                        [bdc.subs(solved_variables) for bdc in available_bdcs]
-                    )
-
-                    all_available_bdcs = all_available_bdcs.union(set(available_bdcs))
-                    all_unavailable_vars = all_unavailable_vars.union(
-                        set(unavailable_vars)
-                    )
-                    indexed = set(
-                        list(chain(*[bdc.atoms(Indexed) for bdc in all_available_bdcs]))
-                    )
-                    # indexed = local_eq.atoms(Indexed)
-                    tosolve = [
-                        idx
-                        for idx in indexed
-                        if not all(_is_in_bulk(idx, ivars, self.independent_variables))
-                    ]
-                    local_eq, solved_variables_ = _include_bdc_in_localeq(
-                        tosolve, all_available_bdcs, local_eq
-                    )
-                    solved_variables.update(solved_variables_)
-
-                    remaining_ghosts = [
-                        indexed
-                        for indexed in local_eq.atoms(Indexed)
-                        if not all(
-                            _is_in_bulk(indexed, ivars, self.independent_variables)
-                        )
-                    ]
-                    if remaining_ghosts:
-                        subs_queue.put(set(tosolve).union(set(remaining_ghosts)))
-                    else:
-                        subs_queue.put([])
-                local_eq, solved_variables = _include_bdc_in_localeq(
-                    all_unavailable_vars, all_available_bdcs, local_eq
-                )
-
-                remaining_ghosts = [
-                    indexed
-                    for indexed in local_eq.atoms(Indexed)
-                    if not all(_is_in_bulk(indexed, ivars, self.independent_variables))
-                ]
-                if remaining_ghosts:
-                    logging.error("remaining ghosts nodes! : %s" % remaining_ghosts)
-                    raise RuntimeError(
-                        "Solver not able to eliminate all ghost nodes."
-                        " Check your boundary conditions !"
-                    )
-
-                logging.debug("local equation after subs: %s" % local_eq)
-                logging.debug("Indexed in local eq: %s" % local_eq.atoms(Indexed))
-
-                domain_map = []
-                for coord, ivar in zip(coords, dvar.independent_variables):
-                    if coord == ivar.idx:
-                        domain_map.append(And(*sysdomain[ivar]))
-                    else:
-                        domain_map.append(Eq(ivar.idx, coord))
-                domain_map = And(*domain_map)
-                system[domain_map] = N(local_eq)
-            self._system.append(list(system.items()))
+        self.nodes = []
+        self._system = []
+        for dvar, domain, pde in zip(self.dependent_variables, self._domains, self):
+            nodes = []
+            coords_ = list_coords(domain)
+            conds = list_conditions(domain)
+            all_coords = list(product(*[coords_[ivar] for ivar in dvar.ivars]))
+            all_conds = list(product(*[conds[ivar] for ivar in dvar.ivars]))
+            for coords, conds in zip(all_coords, all_conds):
+                conds = reduce(and_, conds)
+                node = Node(eq=pde.fdiff, dvar=dvar, coords=coords, conds=conds,
+                            mapper=self.dependent_dict,
+                            available_boundaries=self.boundary_conditions)
+                nodes.append(node)
+            self.nodes.append(nodes)
+            self._system.append([(node.conds, node.local_eq) for node in nodes])
 
     def _get_shapes(self):
         self.pivot = None
@@ -953,11 +879,11 @@ class PDESys:
         self._coerce_equations()
         logging.info("compute domain...")
         self._compute_domain()
-        logging.info("get shapes...")
-        self._get_shapes()
         logging.info("ensure bdc...")
         self._ensure_bdc()
         logging.info("build system...")
+        self._get_shapes()
+        logging.info("get shapes...")
         self._build_system()
         logging.info("done")
 

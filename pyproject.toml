@@ -83,3 +83,4 @@ matplotlib = "^3"
 # coverage
 python-coveralls = "^2"
 pytest-cov = "^2"
+ipykernel = "^5.1"
