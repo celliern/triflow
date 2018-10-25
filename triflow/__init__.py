@@ -2,8 +2,8 @@
 # coding=utf-8
 
 from .utils import enable_notebook, tqdm  # noqa
-from .core import schemes  # noqa
-from .core.schemes import Stationnary as StationnarySolver
+from .core import temporal_schemes as schemes  # noqa
+from .core.temporal_schemes import Stationnary as StationnarySolver
 from .core.model import Model  # noqa
 from .core.simulation import Simulation  # noqa
 from .core.system import PDESys, PDEquation  # noqa

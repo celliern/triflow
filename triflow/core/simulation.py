@@ -14,7 +14,7 @@ import streamz
 from ..utils import tqdm
 from numpy import isclose
 
-from . import schemes
+from . import temporal_schemes as schemes
 from ..plugins.container import TriflowContainer
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

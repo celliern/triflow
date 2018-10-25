@@ -114,6 +114,15 @@ six = ">=1.5.2"
 tornado = ">=4.3"
 
 [[package]]
+category = "main"
+description = "When they're not builtins, they're boltons."
+name = "boltons"
+optional = false
+platform = "any"
+python-versions = "*"
+version = "18.0.1"
+
+[[package]]
 category = "dev"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
@@ -1321,7 +1330,7 @@ jupyter = ["jupyter", "ipywidgets", "bokeh"]
 theano = ["theano"]
 
 [metadata]
-content-hash = "6177ed73b2eebc47118ea2ab9d0c8825357e651fd3a276a4746a3026e34f36a4"
+content-hash = "8bfa7e60c78cd5be7eafaba97372eecef1693d2e809bf85b028884042d274967"
 platform = "*"
 python-versions = ">=3.5"
 
@@ -1336,6 +1345,7 @@ backcall = ["38ecd85be2c1e78f77fd91700c76e14667dc21e2713b63876c0eb901196e01e4", 
 black = ["817243426042db1d36617910df579a54f1afd659adb96fc5032fcf4b36209739", "e030a9a28f542debc08acceb273f228ac422798e5215ba2a791a6ddeaaca22a5"]
 bleach = ["0ee95f6167129859c5dce9b1ca291ebdb5d8cd7e382ca0e237dfd0dad63f63d8", "24754b9a7d530bf30ce7cbc805bc6cce785660b4a10ff3a43633728438c105ab"]
 bokeh = ["d0cf59774d7c74b7173b82ce36bde35b8fe9da0f960364ba3c4df0d1fbd874d6"]
+boltons = ["1b7dd3892e949e7979f9ec4696b29e47e5b8f5ec0c231719bfb5e467202d04d1", "b385b022ab7e23492f1aaed816c3591eb7efc75659046ba85aabd993a5a92891"]
 certifi = ["376690d6f16d32f9d1fe8932551d80b23e9d393a8578c5633a2ed39a64861638", "456048c7e371c089d0a77a5212fb37a2c2dce1e24146e3b7e0261736aaeaa22a"]
 chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"]
 click = ["2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13", "5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7"]

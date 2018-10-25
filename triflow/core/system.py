@@ -3,39 +3,35 @@
 
 import logging
 import re
-import string
 import typing
 from functools import partial, reduce
 from itertools import chain, product
-from operator import mul, and_
+from operator import and_, mul
 from queue import Queue
 
 import attr
 import numpy as np
 from more_itertools import unique_everseen
+
 from sympy import (
-    Expr,
-    N,
-    differentiate_finite,
-    And,
     Derivative,
-    Dummy,
     Eq,
+    Expr,
     Function,
-    Ge,
-    Idx,
     Indexed,
-    IndexedBase,
-    Le,
+    Max,
+    Min,
     Symbol,
     Wild,
-    oo,
     solve,
     sympify,
-    Min,
-    Max,
 )
-from sympy.logic.boolalg import BooleanTrue
+
+from ..utils import solve_with_dummy
+from .spatial_schemes import FiniteDifferenceScheme, chain_schemes
+from .variables import DependentVariable as DVar
+from .variables import IndependentVariable as IVar
+from .variables import _convert_depvar_list, _convert_indepvar_list
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -46,30 +42,6 @@ def _convert_pde_list(pdes):
         return [pdes]
     else:
         return pdes
-
-
-def _apply_centered_scheme(order, ivar, deriv, accuracy, fdiff):
-    n = (order + 1) // 2 + accuracy - 2
-    points = [ivar.symbol + i * ivar.step for i in range(-n, n + 1)]
-    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
-    fdiff = fdiff.replace(deriv, discretized_deriv)
-    return fdiff
-
-
-def _apply_right_scheme(order, ivar, deriv, accuracy, fdiff):
-    n = accuracy + order
-    points = [ivar.symbol + i * ivar.step for i in range(0, n)]
-    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
-    fdiff = fdiff.replace(deriv, discretized_deriv)
-    return fdiff
-
-
-def _apply_left_scheme(order, ivar, deriv, accuracy, fdiff):
-    n = accuracy + order
-    points = [ivar.symbol + i * ivar.step for i in range(-(n - 1), 1)]
-    discretized_deriv = deriv.as_finite_difference(points=points, wrt=ivar.symbol)
-    fdiff = fdiff.replace(deriv, discretized_deriv)
-    return fdiff
 
 
 def _partial_derivative(expr, symbolic_independent_variables):
@@ -154,10 +126,19 @@ def list_coords(domain):
     for ivar, (left_cond, right_cond) in domain.items():
         coords = []
         coords.append(ivar.idx)
-        coords.extend(np.arange(ivar.idx.lower, left_cond.rhs))
-        coords.extend(
-            np.arange(right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1) + ivar.N
-        )
+        # for both side, left|right_cond can be true : in that case, no coords has to
+        # be added : all that side is in the bulk.
+        try:
+            coords.extend(np.arange(ivar.idx.lower, left_cond.rhs))
+        except AttributeError:
+            pass
+        try:
+            coords.extend(
+                np.arange(right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1)
+                + ivar.N
+            )
+        except AttributeError:
+            pass
         available_coords[ivar] = coords
     return available_coords
 
@@ -167,34 +148,31 @@ def list_conditions(domain):
     for ivar, (left_cond, right_cond) in domain.items():
         conds = []
         conds.append(left_cond & right_cond)
-        conds.extend(
-            [Eq(ivar.idx, coord) for coord in np.arange(ivar.idx.lower, left_cond.rhs)]
-        )
-        conds.extend(
-            [
-                Eq(ivar.idx, coord)
-                for coord in np.arange(
-                    right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1
-                )
-                + ivar.N
-            ]
-        )
+        # for both side, left|right_cond can be true : in that case, no coords has to
+        # be added : all that side is in the bulk.
+        try:
+            conds.extend(
+                [
+                    Eq(ivar.idx, coord)
+                    for coord in np.arange(ivar.idx.lower, left_cond.rhs)
+                ]
+            )
+        except AttributeError:
+            pass
+        try:
+            conds.extend(
+                [
+                    Eq(ivar.idx, coord)
+                    for coord in np.arange(
+                        right_cond.rhs - ivar.N + 1, ivar.idx.upper - ivar.N + 1
+                    )
+                    + ivar.N
+                ]
+            )
+        except AttributeError:
+            pass
         available_conds[ivar] = conds
     return available_conds
-
-
-def analyse_local_eq(expr, node, mapper):
-    local_eq = expr.subs(
-        {ivar.idx: coord for ivar, coord in zip(self.dvar.ivars, node)}
-    )
-    indexed = local_eq.atoms(Indexed)
-    info = []
-    for idx in indexed:
-        domains = get_domains(idx, mapper)
-        distances = get_distances(idx, mapper)
-        if not all([domain == "bulk" for domain in domains]):
-            info.append((idx, domains, distances))
-    return info
 
 
 def extract_bounds(indexed, mapper):
@@ -214,12 +192,13 @@ def bounds_to_conds(bounds):
     ivars = set(chain(*[bound.keys() for bound in bounds]))
     conds = {}
     for ivar in ivars:
-        lefts, rights = zip(*[bound[ivar] for bound in bounds])
+        lefts, rights = zip(*[bound.get(ivar, ivar.bound) for bound in bounds])
         conds[ivar] = max(lefts), min(rights)
     return {
         ivar: (ivar.idx >= conds[ivar][0], ivar.idx <= conds[ivar][1])
         for ivar, cond in conds.items()
     }
+
 
 def extract_outside_variables(idxs, mapper):
     outside_variables = []
@@ -230,252 +209,36 @@ def extract_outside_variables(idxs, mapper):
             outside_variables.append((idx, domains, distances))
     return outside_variables
 
-@attr.s(frozen=True, repr=False, hash=False)
-class IndependentVariable:
-    name = attr.ib(type=str)
-
-    @name.validator
-    def check(self, attrs, value):
-        if value not in string.ascii_letters or len(value) > 1:
-            raise ValueError(
-                "independant variables have to be 1 char "
-                "lenght and be an ascii letter "
-                '(is "%s")' % value
-            )
-
-    @property
-    def symbol(self):
-        return Symbol(self.name)
-
-    @property
-    def discrete(self):
-        return IndexedBase("%s_i" % self.name)
-
-    @property
-    def N(self):
-        return Symbol("N_%s" % self.name, integer=True)
-
-    @property
-    def bound(self):
-        return (0, self.N - 1)
-
-    def domain(self, coord):
-        def to_bool(cond):
-            try:
-                cond = cond.subs(self.N, 500)
-            except AttributeError:
-                pass
-            return cond
-
-        is_left = to_bool(coord < self.idx.lower)
-        is_right = to_bool(coord > self.idx.upper)
-        # if x_idx is in the coord, it belong to the bulk.
-        # Otherwise, it's only if it's neither into the left and the right.
-        try:
-            if str(self.idx) in map(str, coord.atoms()):
-                return "bulk"
-        except AttributeError:
-            pass
-        if (not is_left and not is_right):
-            return "bulk"
-        if is_left:
-            return "left"
-        if is_right:
-            return "right"
-
-    def is_in_bulk(self, coord):
-        return True if self.domain(coord) == "bulk" else False
-
-    def distance_from_domain(self, coord):
-        if self.domain(coord) == "bulk":
-            return 0
-        if self.domain(coord) == "left":
-            return int(self.idx.lower - coord)
-        if self.domain(coord) == "right":
-            return int(coord - self.idx.upper)
-
-    @property
-    def idx(self):
-        return Idx("%s_idx" % self.name, self.N)
-
-    @property
-    def step(self):
-        return Symbol("d%s" % self.name)
-
-    @property
-    def step_value(self):
-        return (self.discrete[self.idx.upper] - self.discrete[self.idx.lower]) / (
-            self.N - 1
-        )
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __hash__(self):
-        return hash(self.name)
-
-
-_dependent_var_re = re.compile(r"^(?P<dvar>\w+)(?:\((?P<dvararg>[^\)]*)\))?$")
-
-
-@attr.s(frozen=True, repr=False, hash=False)
-class DependentVariable:
-    name = attr.ib(type=str)
-    independent_variables = attr.ib(init=False, type=typing.Tuple[IndependentVariable])
-
-    def __attrs_post_init__(self):
-        name, independent_variables = DependentVariable._convert(self.name)
-        object.__setattr__(self, "name", name)
-        object.__setattr__(self, "independent_variables", independent_variables)
-
-    @staticmethod
-    def _convert(var):
-        match = _dependent_var_re.match(var)
-        if not match:
-            raise ValueError("Dependent variable not properly formatted.")
-
-        depvar, indepvars = _dependent_var_re.findall(var)[0]
-        return (
-            depvar,
-            tuple(
-                [
-                    IndependentVariable(indepvar.strip())
-                    for indepvar in indepvars.split(",")
-                    if indepvar != ""
-                ]
-            ),
-        )
-
-    @property
-    def ivars(self):
-        return self.independent_variables
-
-    @property
-    def i_symbols(self):
-        return tuple([ivar.symbol for ivar in self.ivars])
-
-    @property
-    def i_names(self):
-        return tuple([ivar.name for ivar in self.ivars])
-
-    @property
-    def i_steps(self):
-        return tuple([ivar.step for ivar in self.ivars])
-
-    @property
-    def i_step_values(self):
-        return tuple([ivar.step_value for ivar in self.ivars])
-
-    @property
-    def i_discs(self):
-        return tuple([ivar.discrete for ivar in self.ivars])
-
-    @property
-    def i_idxs(self):
-        return tuple([ivar.idx for ivar in self.ivars])
-
-    @property
-    def i_Ns(self):
-        return tuple([ivar.N for ivar in self.ivars])
-
-    @property
-    def i_bounds(self):
-        return tuple([ivar.bound for ivar in self.ivars])
-
-    def domains(self, *coords):
-        return tuple([ivar.domain(coord) for ivar, coord in zip(self.ivars, coords)])
-
-    def is_in_bulk(self, *coords):
-        return tuple([ivar.is_in_bulk(coord) for ivar, coord in zip(self.ivars, coords)])
-
-    @property
-    def symbol(self):
-        return Function(self.name) if self.ivars else Symbol(self.name)
-
-    @property
-    def discrete(self):
-        return IndexedBase(self.name) if self.ivars else Symbol(self.name)
-
-    def __len__(self):
-        return len(self.ivars)
-
-    @property
-    def discrete_i(self):
-        return self.discrete[self.i_idxs] if self.ivars else Symbol(self.name)
-
-    def __repr__(self):
-        return "{}{}".format(
-            self.name, ("(%s)" % ", ".join(map(str, self.ivars)) if self.ivars else "")
-        )
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-
-def _convert_depvar_list(dependent_variables):
-    def convert_depvar(dependent_variable):
-        if isinstance(dependent_variable, str):
-            return DependentVariable(dependent_variable)
-        if isinstance(dependent_variable, DependentVariable):
-            return dependent_variable
-        raise ValueError("dependent var should be string or DependentVariable")
-
-    if not isinstance(dependent_variables, (list, tuple)):
-        return [convert_depvar(dependent_variables)]
-    else:
-        return tuple(list(map(convert_depvar, dependent_variables)))
-
-
-def _convert_indepvar_list(independent_variables):
-    def convert_indepvar(independent_variable):
-        if isinstance(independent_variable, str):
-            return IndependentVariable(independent_variable)
-        if isinstance(independent_variable, IndependentVariable):
-            return independent_variable
-        raise ValueError("dependent var should be string or IndependentVariable")
-
-    if not isinstance(independent_variables, (list, tuple)):
-        return [convert_indepvar(independent_variables)]
-    else:
-        return tuple(list(map(convert_indepvar, independent_variables)))
-
 
 @attr.s
 class PDEquation:
     equation = attr.ib(type=str)
     dependent_variables = attr.ib(
-        type=typing.Tuple[DependentVariable], converter=_convert_depvar_list
+        type=typing.Tuple[DVar], converter=_convert_depvar_list
     )
     parameters = attr.ib(
-        type=typing.Tuple[DependentVariable], converter=_convert_depvar_list, default=[]
+        type=typing.Tuple[DVar], converter=_convert_depvar_list, default=[]
     )
     independent_variables = attr.ib(
-        type=typing.Tuple[IndependentVariable],
+        type=typing.Tuple[IVar],
         default=[],
         converter=_convert_indepvar_list,
         repr=False,
     )
     auxiliary_definitions = attr.ib(type=dict, default={})
-    scheme = attr.ib(type=str, default="centered")
-    accuracy_order = attr.ib(type=int, default=2)
+    schemes = attr.ib(
+        type=typing.Tuple[FiniteDifferenceScheme, ...],
+        default=(FiniteDifferenceScheme(),),
+    )
     symbolic_equation = attr.ib(init=False, repr=False)
     fdiff = attr.ib(init=False, repr=False)
     raw = attr.ib(type=bool, default=False, repr=False)
 
-    @scheme.validator
-    def check_scheme(self, attrs, scheme):
-        return scheme in ["left", "right", "centered"]
+    # @scheme.validator
+    # def check_scheme(self, attrs, scheme):
+    #     return scheme in ["left", "right", "centered"]
 
     def __attrs_post_init__(self):
-        if self.scheme == "centered":
-            # For the same number of point, the centered scheme is more accurate
-            self.accuracy_order = self.accuracy_order + self.accuracy_order % 2
         for aux_key, aux_value in self.auxiliary_definitions.items():
             # substitute the auxiliary definition as string
             # FIXME : obviously not stable, should be replace as sympy expr
@@ -549,37 +312,9 @@ class PDEquation:
         self.symbolic_equation = self.symbolic_equation.doit()
 
     def _as_finite_diff(self):
-        def is_wrt(ivar_deriv):
-            ivar, deriv = ivar_deriv
-            return Symbol(str(ivar)) in deriv.args[1:]
 
         fdiff = self.symbolic_equation
-        while fdiff.atoms(Derivative):
-            deriv_product = product(self.independent_variables, fdiff.atoms(Derivative))
-            deriv_product = filter(is_wrt, deriv_product)
-            for ivar, deriv in product(
-                self.independent_variables, fdiff.atoms(Derivative)
-            ):
-                wrts = {}
-                for wrt in deriv.args[1:]:
-                    if isinstance(wrt, Symbol):
-                        wrts[wrt] = 1
-                    else:
-                        wrts[wrt[0]] = wrt[1]
-
-                order = wrts.get(ivar.symbol, 0)
-                if self.scheme == "centered":
-                    fdiff = _apply_centered_scheme(
-                        order, ivar, deriv, self.accuracy_order, fdiff
-                    )
-                elif self.scheme == "right":
-                    fdiff = _apply_right_scheme(
-                        order, ivar, deriv, self.accuracy_order, fdiff
-                    )
-                elif self.scheme == "left":
-                    fdiff = _apply_left_scheme(
-                        order, ivar, deriv, self.accuracy_order, fdiff
-                    )
+        fdiff = chain_schemes(self.schemes, fdiff)
 
         def upwind(velocity, dvar, ivar, accuracy=1):
             def left_deriv(ivar, dvar):
@@ -613,7 +348,7 @@ class PDEquation:
             ap = Max(velocity, 0)
             am = Min(velocity, 0)
 
-            ivar = IndependentVariable(str(ivar))
+            ivar = IVar(str(ivar))
 
             deriv_left = left_deriv(ivar, dvar)
             deriv_right = right_deriv(ivar, dvar)
@@ -656,15 +391,18 @@ class PDEquation:
 @attr.s(auto_attribs=True)
 class Node:
     eq: Expr
-    dvar: DependentVariable
+    dvar: DVar
     coords: tuple
     conds: Expr
     mapper: dict
     available_boundaries: dict
-    outside_variables = None
-    linked_nodes = None
+    threshold: int = 2
 
     def __attrs_post_init__(self):
+        logging.info(
+            "process node %s - %s (cond %s)" % (self.dvar, self.coords, self.conds)
+        )
+        self.subs = {}
         self.local_eq = self.eq.subs(
             {ivar.idx: coord for ivar, coord in zip(self.dvar.ivars, self.coords)}
         )
@@ -678,6 +416,13 @@ class Node:
         return extract_outside_variables(indexed, self.mapper)
 
     def apply_boundary(self):
+        def sign_distance(distance, domain):
+            if domain == "bulk":
+                return 0
+            if domain == "left":
+                return -distance
+            return distance
+
         def get_proper_boundary(boundaries, domains):
             for ivar, domain in zip(dvar.ivars, domains):
                 left_bdc, right_bdc = boundaries[ivar]
@@ -686,34 +431,36 @@ class Node:
                 if domain == "right":
                     yield right_bdc.fdiff
 
-        subs = {}
-        for idx, domains, distances in self.outside_variables:
+        for idx, domains, _ in self.outside_variables:
+            logging.debug("evaluate ghost node %s (%s)" % (idx, domains))
             dvar = self.mapper[str(idx.args[0])]
             bdcs = list(get_proper_boundary(self.available_boundaries[dvar], domains))
             bdcs = [
                 bdc.subs(
-                    {ivar.idx: coord for ivar, coord in zip(dvar.ivars, idx.args[1:])}
-                )
+                    {
+                        ivar.idx: coord - sign_distance(1, domain)
+                        for ivar, coord, domain in zip(
+                            dvar.ivars, idx.args[1:], domains
+                        )
+                    }
+                ).subs(self.subs)
                 for bdc in bdcs
             ]
-            subs.update(solve(bdcs, idx))
-        self.local_eq = self.local_eq.subs(subs)
+
+            solved = solve_with_dummy(bdcs, idx)
+            self.subs.update(solved)
+        self.local_eq = self.local_eq.subs(self.subs)
 
 
 @attr.s
 class PDESys:
     evolution_equations = attr.ib(type=typing.List[str], converter=_convert_pde_list)
     dependent_variables = attr.ib(
-        type=typing.List[DependentVariable], converter=_convert_depvar_list
+        type=typing.List[DVar], converter=_convert_depvar_list
     )
-    parameters = attr.ib(
-        type=typing.List[DependentVariable], converter=_convert_depvar_list
-    )
+    parameters = attr.ib(type=typing.List[DVar], converter=_convert_depvar_list)
     independent_variables = attr.ib(
-        type=typing.List[IndependentVariable],
-        default=[],
-        converter=_convert_indepvar_list,
-        repr=False,
+        type=typing.List[IVar], default=[], converter=_convert_indepvar_list, repr=False
     )
     boundary_conditions = attr.ib(type=dict, default=None)
     auxiliary_definitions = attr.ib(type=dict, default=None)
@@ -724,7 +471,7 @@ class PDESys:
         self._unknown_nodes = []
         for dvar, pde in zip(self.dependent_variables, self):
             bounds = [
-                extract_bounds(indexed, self.dependent_dict)
+                extract_bounds(indexed, self.mapper)
                 for indexed in pde.fdiff.atoms(Indexed)
             ]
             self._domains.append(bounds_to_conds(bounds))
@@ -815,14 +562,24 @@ class PDESys:
                         ),
                     )
                 else:
+
+                    def target_relevant_ivar(derivative, wrt):
+                        return wrt == ivar.symbol
+
                     bdc[ivar] = [
                         PDEquation(
                             eq if eq else "d%s%s" % (ivar.name, dvar.name),
                             dependent_variables=self.dependent_variables,
                             independent_variables=dvar.independent_variables,
-                            scheme=scheme,
+                            schemes=(
+                                FiniteDifferenceScheme(
+                                    scheme=scheme,
+                                    offset=offset,
+                                    pattern=target_relevant_ivar,
+                                ),
+                            ),
                         )
-                        for scheme, eq in zip(["right", "left"], eqs)
+                        for scheme, offset, eq in zip(["right", "left"], [-1, 1], eqs)
                     ]
             self.boundary_conditions[dvar] = bdc
 
@@ -837,9 +594,14 @@ class PDESys:
             all_conds = list(product(*[conds[ivar] for ivar in dvar.ivars]))
             for coords, conds in zip(all_coords, all_conds):
                 conds = reduce(and_, conds)
-                node = Node(eq=pde.fdiff, dvar=dvar, coords=coords, conds=conds,
-                            mapper=self.dependent_dict,
-                            available_boundaries=self.boundary_conditions)
+                node = Node(
+                    eq=pde.fdiff,
+                    dvar=dvar,
+                    coords=coords,
+                    conds=conds,
+                    mapper=self.mapper,
+                    available_boundaries=self.boundary_conditions,
+                )
                 nodes.append(node)
             self.nodes.append(nodes)
             self._system.append([(node.conds, node.local_eq) for node in nodes])
@@ -881,9 +643,9 @@ class PDESys:
         self._compute_domain()
         logging.info("ensure bdc...")
         self._ensure_bdc()
-        logging.info("build system...")
-        self._get_shapes()
         logging.info("get shapes...")
+        self._get_shapes()
+        logging.info("build system...")
         self._build_system()
         logging.info("done")
 
@@ -893,7 +655,20 @@ class PDESys:
 
     @property
     def independent_dict(self):
-        return {depvar.name: depvar.ivars for depvar in self.dependent_variables}
+        return {
+            ivar.name: ivar
+            for ivar in set(chain(*[dvar.ivars for dvar in self.dependent_variables]))
+        }
+
+    @property
+    def parameters_dict(self):
+        return {par.name: par for par in self.parameters}
+
+    @property
+    def mapper(self):
+        return dict(
+            **self.dependent_dict, **self.parameters_dict, **self.independent_dict
+        )
 
     @property
     def equation_dict(self):
