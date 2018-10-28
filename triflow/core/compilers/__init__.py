@@ -2,17 +2,16 @@
 # coding=utf-8
 
 import warnings
-from .numpy_compiler import NumpyCompiler
-
-compilers = {"numpy": NumpyCompiler}
+from .base_compiler import get_compiler, available_compilers
 
 try:
-from .theano_compiler import TheanoCompiler    compilers["theano"] = TheanoCompiler
+    from .theano_compiler import TheanoCompiler
 except ImportError:
     warnings.warn("Theano cannot be imported: theano compiler will not be available.")
 
-def get_compiler(compiler):
-    try:
-        return compilers[compiler]
-    except KeyError:
-        raise NotImplementedError("compiler %s not implemented yet." % compiler)
+try:
+    from .numba_compiler import NumbaCompiler
+except ImportError:
+    warnings.warn("Numba cannot be imported: numba compiler will not be available.")
+
+from .numpy_compiler import NumpyCompiler
