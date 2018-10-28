@@ -35,7 +35,7 @@ def get_compiler(name):
 
 def register_compiler(CustomCompiler):
     global available_compilers
-    if Compiler not in CustomCompiler.__bases__:
+    if Compiler not in CustomCompiler.__mro__:
         raise AttributeError("The provider compiler should inherit from the "
                              "Compiler base class.")
     available_compilers[CustomCompiler.name] = CustomCompiler
