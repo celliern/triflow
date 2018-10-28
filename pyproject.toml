@@ -18,7 +18,7 @@ keywords = ['PDE', 'finite-difference', 'physic',
             'modelling', 'interactive']
 
 [tool.poetry.dependencies]
-python = ">=3.5"
+python = ">=3.6"
 
 # core computation
 numpy = "^1"
