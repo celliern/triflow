@@ -29,6 +29,7 @@ from theano.compile.ops import as_op
 from theano.ifelse import ifelse
 from ..system import PDESys
 from ..grid_builder import GridBuilder
+from .base_compiler import Compiler, register_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -168,8 +169,9 @@ class EnhancedTheanoPrinter(TheanoPrinter):
 #     return np.indices(shape, dtype="int32").reshape(len(shape), -1)
 
 
+@register_compiler
 @attr.s
-class TheanoCompiler:
+class TheanoCompiler(Compiler):
     Printer = EnhancedTheanoPrinter
     system = attr.ib(type=PDESys)
     grid_builder = attr.ib(type=GridBuilder)

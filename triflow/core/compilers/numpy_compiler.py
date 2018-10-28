@@ -9,20 +9,13 @@ from tempfile import mkdtemp
 import attr
 import numpy as np
 from scipy.sparse import csc_matrix
-from sympy import (
-    Matrix,
-    And,
-    Idx,
-    Indexed,
-    Integer,
-    KroneckerDelta,
-    Number,
-    Symbol,
-    lambdify,
-    oo,
-)
-from ..system import PDESys
+
+from sympy import (And, Idx, Indexed, Integer, KroneckerDelta, Matrix, Number,
+                   Symbol, lambdify, oo)
+
 from ..grid_builder import GridBuilder
+from ..system import PDESys
+from .base_compiler import Compiler, register_compiler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -50,10 +43,10 @@ def np_Heaviside(a):
     return np.where(a < 0, 1, 1)
 
 
+@register_compiler
 @attr.s
-class NumpyCompiler:
-    system = attr.ib(type=PDESys)
-    grid_builder = attr.ib(type=GridBuilder)
+class NumpyCompiler(Compiler):
+    name = "numpy"
 
     def _convert_inputs(self):
         self.ndim = len(self.system.independent_variables)

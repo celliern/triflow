@@ -7,8 +7,7 @@ from .numpy_compiler import NumpyCompiler
 compilers = {"numpy": NumpyCompiler}
 
 try:
-    from .theano_compiler import TheanoCompiler
-    compilers["theano"] = TheanoCompiler
+from .theano_compiler import TheanoCompiler    compilers["theano"] = TheanoCompiler
 except ImportError:
     warnings.warn("Theano cannot be imported: theano compiler will not be available.")
 
