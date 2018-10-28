@@ -14,7 +14,7 @@ import streamz
 from ..utils import tqdm
 from numpy import isclose
 
-from . import temporal_schemes as schemes
+from .temporal_schemes import get_temporal_scheme, add_time_stepping
 from ..plugins.container import TriflowContainer
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -201,7 +201,7 @@ class Simulation(object):
         tmax=None,
         id=None,
         hook=null_hook,
-        scheme=schemes.RODASPR,
+        scheme="RODASPR",
         time_stepping=True,
         **kwargs
     ):
@@ -228,14 +228,11 @@ class Simulation(object):
         self.i = 0
         self._stream = streamz.Stream()
         self._pprocesses = []
-
+        scheme = get_temporal_scheme(scheme)
         self._scheme = scheme(model, **intersection_kwargs(kwargs, scheme.__init__))
-        if time_stepping and not isinstance(
-            self._scheme,
-            (schemes.RODASPR, schemes.ROS3PRL, schemes.ROS3PRw, schemes.scipy_ode),
-        ):
-            self._scheme = schemes.time_stepping(
-                self._scheme, **intersection_kwargs(kwargs, schemes.time_stepping)
+        if time_stepping and not self._scheme.embeded_timestepping:
+            self._scheme = add_time_stepping(
+                self._scheme, **intersection_kwargs(kwargs, add_time_stepping)
             )
         self.status = "created"
 

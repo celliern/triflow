@@ -22,22 +22,67 @@ from scipy.interpolate import interp1d
 from scipy.linalg import norm
 from toolz import memoize
 
+from fuzzywuzzy import process
+
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
+
+
+available_temporal_schemes = {}
+
+
+def get_temporal_scheme(name):
+    """get a temporal_scheme by its name
+
+    Arguments:
+        name {str} -- temporal_scheme name
+
+    Raises:
+        NotImplementedError -- raised if the temporal_scheme is not available.
+
+    Returns:
+        TemporalScheme -- the requested temporal_scheme
+    """
+    try:
+        return available_temporal_schemes[name.lower()]
+    except KeyError:
+        err_msg = "%s temporal_scheme is not registered." % name
+        (suggest, score), = process.extract(
+            name, available_temporal_schemes.keys(), limit=1
+        )
+        if score > 70:
+            err_msg += (
+                "\n%s is available and seems to be close. "
+                "It may be what you are looking for !" % suggest
+            )
+        err_msg += "\nFull list of available temporal_schemes:\n\t- %s" % (
+            "\n\t- ".join(available_temporal_schemes.keys())
+        )
+        raise NotImplementedError(err_msg)
+
+
+def register_temporal_scheme(CustomTemporalScheme):
+    global available_temporal_schemes
+    if TemporalScheme not in CustomTemporalScheme.__mro__:
+        raise AttributeError(
+            "The provider temporal_scheme should inherit from the "
+            "TemporalScheme base class."
+        )
+    available_temporal_schemes[CustomTemporalScheme.name.lower()] = CustomTemporalScheme
 
 
 def null_hook(t, fields):
     return fields
 
 
-def time_stepping(scheme, tol=1E-1, ord=2, m=10, reject_factor=2):
+def add_time_stepping(scheme, tol=1e-2, ord=2, m=20, reject_factor=2):
     internal_dt = None
 
     def one_step(t, fields, dt, hook):
         dt_ = dt
         while True:
             _, fields_ = scheme(t, fields, m * dt_, hook)
-            for _ in range(10):
+            for _ in range(m):
                 t, fields = scheme(t, fields, dt_, hook)
             errs = [
                 np.linalg.norm(
@@ -67,7 +112,11 @@ def time_stepping(scheme, tol=1E-1, ord=2, m=10, reject_factor=2):
     return adaptatif_scheme
 
 
-class ROW_general:
+class TemporalScheme:
+    pass
+
+
+class ROW_general(TemporalScheme):
     """Rosenbrock Wanner class of temporal solvers
 
     The implementation and the different parameters can be found in
@@ -93,7 +142,7 @@ class ROW_general:
         safety_factor=0.9,
         solver="auto",
         recompute_target=True,
-        iteratif_atol=1E-3,
+        iteratif_atol=1e-3,
     ):
         self._internal_dt = None
         self._model = model
@@ -180,7 +229,9 @@ class ROW_general:
             if self._solver == "direct":
                 Utilde = luf(B)
             elif self._solver == "iteratif":
-                Utilde = sps.linalg.gcrotmk(A, B, U if not ks else ks[-1], atol=self._atol)[0]
+                Utilde = sps.linalg.gcrotmk(
+                    A, B, U if not ks else ks[-1], atol=self._atol
+                )[0]
             else:
                 Utilde = self._solver(A, B)
             ks.append(Utilde)
@@ -210,11 +261,11 @@ class ROW_general:
             pass
         if not self._recompute_target:
             dt = self._internal_dt = (
-                1E-6 if self._internal_dt is None else self._internal_dt
+                1e-6 if self._internal_dt is None else self._internal_dt
             )
         else:
             dt = self._internal_dt = min(
-                (1E-6 if self._internal_dt is None else self._internal_dt), dt
+                (1e-6 if self._internal_dt is None else self._internal_dt), dt
             )
         while True:
             self._err = None
@@ -256,19 +307,19 @@ class ROW_general:
             t = new_t
             fields = new_fields.copy()
             self._internal_iter += 1
-            if (
-                self._internal_iter
-                > (self._max_iter if self._max_iter else self._internal_iter + 1)
+            if self._internal_iter > (
+                self._max_iter if self._max_iter else self._internal_iter + 1
             ):
                 raise RuntimeError(
                     "Rosebrock internal iteration " "above max iterations authorized"
                 )
-            if dt < (self._dt_min if self._dt_min else dt * .5):
+            if dt < (self._dt_min if self._dt_min else dt * 0.5):
                 raise RuntimeError(
                     "Rosebrock internal time step " "less than authorized"
                 )
 
 
+@register_temporal_scheme
 class ROS2(ROW_general):
     """Second order Rosenbrock scheme, without time stepping
 
@@ -278,15 +329,19 @@ class ROS2(ROW_general):
         triflow Model
     """
 
+    name = "ROS2"
+    embeded_timestepping = False
+
     def __init__(self, model):
         gamma = np.array(
-            [[2.928932188134E-1, 0], [-5.857864376269E-1, 2.928932188134E-1]]
+            [[2.928932188134e-1, 0], [-5.857864376269e-1, 2.928932188134e-1]]
         )
         alpha = np.array([[0, 0], [1, 0]])
         b = np.array([1 / 2, 1 / 2])
         super().__init__(model, alpha, gamma, b, time_stepping=False)
 
 
+@register_temporal_scheme
 class ROS3PRw(ROW_general):
     """Third order Rosenbrock scheme, with time stepping
 
@@ -310,31 +365,36 @@ class ROS3PRw(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
+    name = "ROS3PRw"
+    embeded_timestepping = True
+
     def __init__(
         self,
         model,
-        tol=1E-1,
+        tol=1e-1,
         time_stepping=True,
         max_iter=None,
         dt_min=None,
         safety_factor=0.9,
         solver="auto",
         recompute_target=True,
-        iteratif_atol=1E-3,
+        iteratif_atol=1e-3,
     ):
         alpha = np.zeros((3, 3))
         gamma = np.zeros((3, 3))
         gamma_i = 7.8867513459481287e-01
         b = [5.0544867840851759e-01, -1.1571687603637559e-01, 6.1026819762785800e-01]
         b_pred = [
-            2.8973180237214197e-01, 1.0000000000000001e-01, 6.1026819762785800e-01
+            2.8973180237214197e-01,
+            1.0000000000000001e-01,
+            6.1026819762785800e-01,
         ]
 
-        alpha[1, 0] = 2.3660254037844388e+00
+        alpha[1, 0] = 2.3660254037844388e00
         alpha[2, 0] = 5.0000000000000000e-01
         alpha[2, 1] = 7.6794919243112270e-01
         gamma[0, 0] = gamma[1, 1] = gamma[2, 2] = gamma_i
-        gamma[1, 0] = -2.3660254037844388e+00
+        gamma[1, 0] = -2.3660254037844388e00
         gamma[2, 0] = -8.6791218280355165e-01
         gamma[2, 1] = -8.7306695894642317e-01
         super().__init__(
@@ -354,6 +414,7 @@ class ROS3PRw(ROW_general):
         )
 
 
+@register_temporal_scheme
 class ROS3PRL(ROW_general):
     """4th order Rosenbrock scheme, with time stepping
 
@@ -377,17 +438,20 @@ class ROS3PRL(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
+    name = "ROS3PRL"
+    embeded_timestepping = True
+
     def __init__(
         self,
         model,
-        tol=1E-1,
+        tol=1e-1,
         time_stepping=True,
         max_iter=None,
         dt_min=None,
         safety_factor=0.9,
         solver="auto",
         recompute_target=True,
-        iteratif_atol=1E-3,
+        iteratif_atol=1e-3,
     ):
         alpha = np.zeros((4, 4))
         gamma = np.zeros((4, 4))
@@ -405,11 +469,11 @@ class ROS3PRL(ROW_general):
             -2.0949226315045236e-01,
             3.2196803361747034e-01,
         ]
-        alpha[1, 0] = .5
-        alpha[2, 0] = .5
-        alpha[2, 1] = .5
-        alpha[3, 0] = .5
-        alpha[3, 1] = .5
+        alpha[1, 0] = 0.5
+        alpha[2, 0] = 0.5
+        alpha[2, 1] = 0.5
+        alpha[3, 0] = 0.5
+        alpha[3, 1] = 0.5
         alpha[3, 2] = 0
         for i in range(len(b)):
             gamma[i, i] = gamma_i
@@ -436,6 +500,7 @@ class ROS3PRL(ROW_general):
         )
 
 
+@register_temporal_scheme
 class RODASPR(ROW_general):
     """6th order Rosenbrock scheme, with time stepping
 
@@ -459,26 +524,29 @@ class RODASPR(ROW_general):
           interpolation used otherwise.
       """  # noqa
 
+    name = "RODASPR"
+    embeded_timestepping = True
+
     def __init__(
         self,
         model,
-        tol=1E-1,
+        tol=1e-1,
         time_stepping=True,
         max_iter=None,
         dt_min=None,
         safety_factor=0.9,
         solver="auto",
         recompute_target=True,
-        iteratif_atol=1E-3,
+        iteratif_atol=1e-3,
     ):
         alpha = np.zeros((6, 6))
         gamma = np.zeros((6, 6))
         b = [
-            -7.9683251690137014E-1,
-            6.2136401428192344E-2,
-            1.1198553514719862E00,
+            -7.9683251690137014e-1,
+            6.2136401428192344e-2,
+            1.1198553514719862e00,
             4.7198362114404874e-1,
-            -1.0714285714285714E-1,
+            -1.0714285714285714e-1,
             2.5e-1,
         ]
         b_pred = [
@@ -489,9 +557,9 @@ class RODASPR(ROW_general):
             2.5e-1,
             0,
         ]
-        alpha[1, 0] = 7.5E-1
-        alpha[2, 0] = 7.5162877593868457E-2
-        alpha[2, 1] = 2.4837122406131545E-2
+        alpha[1, 0] = 7.5e-1
+        alpha[2, 0] = 7.5162877593868457e-2
+        alpha[2, 1] = 2.4837122406131545e-2
         alpha[3, 0] = 1.6532708886396510e0
         alpha[3, 1] = 2.1545706385445562e-1
         alpha[3, 2] = -1.3157488872766792e0
@@ -504,7 +572,7 @@ class RODASPR(ROW_general):
         alpha[5, 2] = 7.8622074209377981e0
         alpha[5, 3] = 5.7817993590145966e-1
         alpha[5, 4] = 2.5e-1
-        gamma_i = .25
+        gamma_i = 0.25
         for i in range(len(b)):
             gamma[i, i] = gamma_i
         gamma[1, 0] = -7.5e-1
@@ -539,7 +607,8 @@ class RODASPR(ROW_general):
         )
 
 
-class scipy_ivp:
+@register_temporal_scheme
+class scipy_ivp(TemporalScheme):
     """Proxy written around the scipy.integrate.solve_ivp function.
       Give access to all
       the scipy integrators.
@@ -554,14 +623,20 @@ class scipy_ivp:
           extra arguments provided to the scipy integration scheme.
       """  # noqa
 
-    def __init__(self, model, use_jac=True, method='RK45', **integrator_kwargs):
+    name = "scipy_ivp"
+    embeded_timestepping = True
+
+    def __init__(self, model, use_jac=True, method="RK45", **integrator_kwargs):
         self._model = model
         self._method = method
-        try: model.J
+        try:
+            model.J
         except AttributeError:
             if method not in ["RK45", "RK23"]:
-                warnings.warn("Jacobian computation routine not available. Scipy will try to estimate it, it can be really expensive. "
-                            "It's advised to switch to an explicite method, or to change the compiler.")
+                warnings.warn(
+                    "Jacobian computation routine not available. Scipy will try to estimate it, it can be really expensive. "
+                    "It's advised to switch to an explicite method, or to change the compiler."
+                )
             use_jac = False
         self._use_jac = use_jac if method not in ["RK45", "RK23"] else False
         self._integrator_kwargs = integrator_kwargs
@@ -614,19 +689,25 @@ class scipy_ivp:
 
         fields = hook(t, fields)
         U = self._model.U_from_fields(fields)
-        results = solve_ivp(fun=partial(self.func, fields=fields, hook=hook),
-                            t_span=[t, t + dt], t_eval=[t + dt],
-                            y0=U,
-                            jac=(partial(self.jac, fields=fields, hook=hook)
-                                 if self._use_jac else None),
-                            method=self._method,
-                            **self._integrator_kwargs)
+
+        if self._use_jac:
+            self._integrator_kwargs["jac"] = partial(self.jac, fields=fields, hook=hook)
+
+        results = solve_ivp(
+            fun=partial(self.func, fields=fields, hook=hook),
+            t_span=[t, t + dt],
+            t_eval=[t + dt],
+            y0=U,
+            method=self._method,
+            **self._integrator_kwargs
+        )
         fields = self._model.fields_from_U(results.y, fields)
         fields = hook(t + dt, fields)
         return t + dt, fields
 
 
-class Theta:
+@register_temporal_scheme
+class Theta(TemporalScheme):
     """Simple theta-based scheme where theta is a weight
           if theta = 0, the scheme is a forward-euler scheme
           if theta = 1, the scheme is a backward-euler scheme
@@ -642,6 +723,9 @@ class Theta:
           method able to solve a Ax = b linear equation with A a sparse matrix.
           Take A and b as argument and return x.
       """  # noqa
+
+    name = "theta"
+    embeded_timestepping = False
 
     def __init__(self, model, theta=1, solver=sps.linalg.spsolve):
         self._model = model
@@ -677,14 +761,19 @@ class Theta:
 
         fields = fields.copy()
         fields = hook(t, fields)
-        F = self._model.F(fields, t)
-        J = self._model.J(fields, t)
         U = self._model.U_from_fields(fields)
-        B = dt * (F - self._theta * J @ U) + U
-        J = (sps.identity(U.size, format="csc") - self._theta * dt * J)
-        new_U = self._solver(J, B)
+        F = self._model.F(fields, t)
+        if self._theta != 0:
+            J = self._model.J(fields, t)
+            B = dt * (F - self._theta * J @ U) + U
+            J = sps.identity(U.size, format="csc") - self._theta * dt * J
+            new_U = self._solver(J, B)
+        else:
+            new_U = dt * F + U
+
         if isinstance(new_U, tuple):
             new_U = new_U[0]
+
         fields = self._model.fields_from_U(new_U, fields)
         fields = hook(t + dt, fields)
         return t + dt, fields
