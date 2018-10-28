@@ -4,6 +4,7 @@
 import logging
 import sys
 from copy import deepcopy
+import warnings
 from itertools import chain
 
 from xarray import Dataset
@@ -16,7 +17,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
 
 sys.setrecursionlimit(40000)
-EPS = 1E-6
+EPS = 1e-6
 
 
 class Model:
@@ -96,7 +97,13 @@ class Model:
         self.compiler = get_compiler(compiler)(self.pdesys, self.grid_builder)
 
         self.F = self.compiler.F
-        self.J = self.compiler.J
+        try:
+            self.J = self.compiler.J
+        except AttributeError:
+            warnings.warn(
+                "current compiler %s lack of routine to compute the jacobian matrix. "
+                "Only explicite scheme will be working." % self.compiler.name
+            )
         self.U_from_fields = self.grid_builder.U_from_fields
         self.fields_from_U = self.grid_builder.fields_from_U
 
