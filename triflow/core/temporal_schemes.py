@@ -559,10 +559,11 @@ class scipy_ivp:
         self._method = method
         try: model.J
         except AttributeError:
-            warnings.warn("Jacobian computation routine not available. Scipy will try to estimate it, it can be really expensive. "
-                          "It's advised to switch to an explicite method, or to change the compiler.")
+            if method not in ["RK45", "RK23"]:
+                warnings.warn("Jacobian computation routine not available. Scipy will try to estimate it, it can be really expensive. "
+                            "It's advised to switch to an explicite method, or to change the compiler.")
             use_jac = False
-        self._use_jac = use_jac if method not in ["RK45"] else False
+        self._use_jac = use_jac if method not in ["RK45", "RK23"] else False
         self._integrator_kwargs = integrator_kwargs
 
         def func_scipy_proxy(t, U, fields, hook):
@@ -621,80 +622,6 @@ class scipy_ivp:
                             method=self._method,
                             **self._integrator_kwargs)
         fields = self._model.fields_from_U(results.y, fields)
-        fields = hook(t + dt, fields)
-        return t + dt, fields
-
-
-class scipy_ode:
-    """Proxy written around the scipy.integrate.ode class. Give access to all
-      the scpy integrators.
-
-      Parameters
-      ----------
-      model : triflow.Model
-          triflow Model
-      integrator : str, optional, default 'vode'
-          name of the chosen scipy integration scheme.
-      **integrator_kwargs
-          extra arguments provided to the scipy integration scheme.
-      """  # noqa
-
-    def __init__(self, model, jac=False, integrator="vode", **integrator_kwargs):
-        self._model = model
-
-        def func_scipy_proxy(t, U, fields, hook):
-            fields = self._model.fields_from_U(U, fields)
-            fields = hook(t, fields)
-            return self._model.F(fields, t)
-
-        def jacob_scipy_proxy(t, U, fields, hook):
-            fields = self._model.fields_from_U(U, fields)
-            fields = hook(t, fields)
-            return self._model.J(fields, t)
-
-        self._solv = ode(func_scipy_proxy, jac=jacob_scipy_proxy if jac else None)
-        self._solv.set_integrator(integrator, **integrator_kwargs)
-
-    def __call__(self, t, fields, dt, hook=null_hook):
-        """Perform a step of the solver: took a time and a system state as a
-          triflow Fields container and return the next time step with updated
-          container.
-
-          Parameters
-          ----------
-          t : float
-              actual time step
-          fields : triflow.Fields
-              actual system state in a triflow Fields
-          dt : float
-              temporal step-size
-          pars : dict
-              physical parameters of the model
-          hook : callable, optional
-              any callable taking the actual time, fields and parameters and
-              return modified fields and parameters. Will be called every
-              internal time step and can be used to include time dependent or
-              conditionnal parameters, boundary conditions...
-          container
-
-          Returns
-          -------
-          tuple : t, fields
-              updated time and fields container
-
-          Raises
-          ------
-          RuntimeError
-              Description
-          """  # noqa
-
-        solv = self._solv
-        fields = hook(t, fields)
-        solv.set_initial_value(self._model.U_from_fields(fields), t)
-        solv.set_f_params(fields, hook)
-        solv.set_jac_params(fields, hook)
-        U = solv.integrate(t + dt)
-        fields = self._model.fields_from_U(U, fields)
         fields = hook(t + dt, fields)
         return t + dt, fields
 
