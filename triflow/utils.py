@@ -31,7 +31,6 @@ def solve_with_dummy(exprs, var, *args, **kwargs):
         except AttributeError:
             pass
         return key, value
-
     dummy_map, reverse_dummy_map = generate_dummy_map(exprs)
     dummy_exprs = [expr.subs(dummy_map) for expr in exprs]
     dummy_var = var.subs(dummy_map)
