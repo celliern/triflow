@@ -12,7 +12,8 @@ The following solvers are implemented:
 """
 
 import logging
-from functools import wraps, partial
+import warnings
+from functools import partial, wraps
 
 import numpy as np
 import scipy.sparse as sps
@@ -556,7 +557,12 @@ class scipy_ivp:
     def __init__(self, model, use_jac=True, method='RK45', **integrator_kwargs):
         self._model = model
         self._method = method
-        self._use_jac = use_jac
+        try: model.J
+        except AttributeError:
+            warnings.warn("Jacobian computation routine not available. Scipy will try to estimate it, it can be really expensive. "
+                          "It's advised to switch to an explicite method, or to change the compiler.")
+            use_jac = False
+        self._use_jac = use_jac if method not in ["RK45"] else False
         self._integrator_kwargs = integrator_kwargs
 
         def func_scipy_proxy(t, U, fields, hook):
