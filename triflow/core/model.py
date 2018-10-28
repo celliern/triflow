@@ -3,12 +3,14 @@
 
 import logging
 import sys
+from copy import deepcopy
 from itertools import chain
+
 from xarray import Dataset
 
 from .compilers import get_compiler
-from .system import PDESys
 from .grid_builder import GridBuilder
+from .system import PDESys
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -63,12 +65,24 @@ class Model:
         self,
         evolution_equations,
         dependent_variables,
-        parameters=[],
-        independent_variables=[],
-        boundary_conditions={},
-        auxiliary_definitions={},
+        parameters=None,
+        independent_variables=None,
+        boundary_conditions=None,
+        auxiliary_definitions=None,
         compiler="numpy",
     ):
+        if parameters is None:
+            parameters = []
+        if independent_variables is None:
+            independent_variables = []
+        if boundary_conditions is None:
+            boundary_conditions = {}
+        if auxiliary_definitions is None:
+            auxiliary_definitions = {}
+        parameters = deepcopy(parameters)
+        independent_variables = deepcopy(independent_variables)
+        boundary_conditions = deepcopy(boundary_conditions)
+        auxiliary_definitions = deepcopy(auxiliary_definitions)
 
         self.pdesys = PDESys(
             evolution_equations=evolution_equations,
