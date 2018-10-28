@@ -431,23 +431,36 @@ class Node:
                 if domain == "right":
                     yield right_bdc.fdiff
 
+        def select_coord(bdc, dvar, idx, domains):
+            subs_coord = {
+                ivar.idx: coord - sign_distance(1, domain)
+                for ivar, coord, domain in zip(dvar.ivars, idx.args[1:], domains)
+            }
+            # try to guess if we have a dirichlet condition, in that case, evaluate
+            # directly on the unknown coordinate.
+            if idx not in bdc.subs(subs_coord).atoms(Indexed):
+                subs_coord = {
+                    ivar.idx: coord
+                    for ivar, coord, domain in zip(dvar.ivars, idx.args[1:], domains)
+                }
+            return subs_coord
+
         for idx, domains, _ in self.outside_variables:
-            logging.debug("evaluate ghost node %s (%s)" % (idx, domains))
+            logging.debug("evaluate ghost node %s %s" % (idx, domains))
             dvar = self.mapper[str(idx.args[0])]
             bdcs = list(get_proper_boundary(self.available_boundaries[dvar], domains))
             bdcs = [
-                bdc.subs(
-                    {
-                        ivar.idx: coord - sign_distance(1, domain)
-                        for ivar, coord, domain in zip(
-                            dvar.ivars, idx.args[1:], domains
-                        )
-                    }
-                ).subs(self.subs)
+                bdc.subs(select_coord(bdc, dvar, idx, domains)).subs(self.subs)
                 for bdc in bdcs
             ]
-
             solved = solve_with_dummy(bdcs, idx)
+            # If we have periodic condition, sometime, the solver cannot
+            # choose between two way to obtain the solution :
+            # U[-1, -1] can be solved by replacing the first coord then the
+            # second, or the opposite. In that case, we arbitrary choose
+            # one way.
+            if not solved:
+                solved = solve_with_dummy([bdcs[0]], idx)
             self.subs.update(solved)
         self.local_eq = self.local_eq.subs(self.subs)
 
@@ -549,20 +562,19 @@ class PDESys:
                     )
                     bdc[ivar] = (
                         PDEquation(
-                            left_cond,
+                            left_cond.subs(ivar.idx, ivar.idx),
                             dependent_variables=self.dependent_variables,
                             independent_variables=dvar.independent_variables,
                             raw=True,
                         ),
                         PDEquation(
-                            right_cond,
+                            right_cond.subs(ivar.idx, ivar.idx),
                             dependent_variables=self.dependent_variables,
                             independent_variables=dvar.independent_variables,
                             raw=True,
                         ),
                     )
                 else:
-
                     def target_relevant_ivar(derivative, wrt):
                         return wrt == ivar.symbol
 
