@@ -172,6 +172,7 @@ class EnhancedTheanoPrinter(TheanoPrinter):
 @register_compiler
 @attr.s
 class TheanoCompiler(Compiler):
+    name = "theano"
     Printer = EnhancedTheanoPrinter
     system = attr.ib(type=PDESys)
     grid_builder = attr.ib(type=GridBuilder)
