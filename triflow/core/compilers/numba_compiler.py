@@ -41,17 +41,8 @@ def np_ivar_printer(ivar):
     return (Symbol(str(ivar.discrete)), Symbol(str(ivar.idx)), ivar.step, ivar.N)
 
 
-def np_Min(args):
-    a, b = args
-    return np.where(a < b, a, b)
-
-
-def np_Max(args):
-    a, b = args
-    return np.where(a < b, b, a)
-
-
-def np_Heaviside(a):
+@numba.jit(nopython=True, parallel=True, fastmath=False)
+def Heaviside(a):
     return np.where(a < 0, 1, 1)
 
 
@@ -95,10 +86,10 @@ class NumbaCompiler(Compiler):
         self._full_exprs = []
         for sys in self.system._system:
             _, exprs = zip(*sys)
-            self._full_exprs.extend(exprs)
+            self._full_exprs.extend([str(expr).replace("Min", "min").replace("Max", "max") for expr in exprs])
         template = Template(
             """
-@numba.jit(nopython=True, parallel=True, fastmath=False)
+@numba.jit(nopython=True, parallel=True, fastmath=False, cache=True)
 def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
     N = grid.shape[0]
     F = np.empty(N)
@@ -113,10 +104,12 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
         var_names = self.inputs
         var_unpacking = self.idxs
         _scope = {}
-        exec(template.render(var_names=var_names,
-             var_unpacking=var_unpacking,
-             exprs=enumerate(self._full_exprs)),
-             globals(), _scope)
+        F_routine_str = template.render(
+            var_names=var_names,
+            var_unpacking=var_unpacking,
+            exprs=enumerate(self._full_exprs),
+        )
+        exec(F_routine_str, globals(), _scope)
         self.compute_F_vector = _scope["compute_F_vector"]
 
         def F(fields, t=0):
@@ -128,6 +121,7 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
                 fields[varname].values
                 for varname in [par.name for par in self.system.parameters]
             ]
+            pars = [par if par.shape else float(par) for par in pars]
             ivars = [
                 fields[varname].values
                 for varname in [ivar.name for ivar in self.system.independent_variables]
@@ -138,9 +132,70 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
                 tuple(sizes), tuple([ivar.ptp() for ivar in ivars])
             )
 
-            return _scope["compute_F_vector"](t, *dvars, *pars, *ivars, *steps, *sizes, grid)
+            return _scope["compute_F_vector"](
+                t, *dvars, *pars, *ivars, *steps, *sizes, grid
+            )
 
         self.F = F
+
+    def sort_indexed(self, indexed):
+        dvar_idx = [dvar.name for dvar in self.system.dependent_variables].index(
+            str(indexed.args[0])
+        )
+        ivars = self.system.dependent_variables[dvar_idx].independent_variables
+        idxs = indexed.args[1:]
+        idxs = [
+            idxs[ivars.index(ivar)] if ivar in ivars else 0
+            for ivar in self.system.independent_variables
+        ]
+        return [dvar_idx, *idxs]
+
+    def filter_dvar_indexed(self, indexed):
+        return indexed.base in [
+            dvar.discrete for dvar in self.system.dependent_variables
+        ]
+
+    def _simplify_kron(self, *kron_args):
+        kron = KroneckerDelta(*kron_args)
+        return kron.subs({ivar.N: oo for ivar in self.system.independent_variables})
+
+    # def _build_jacobian(self):
+    #     self._full_jacs = []
+    #     self._full_jacs_cols = []
+    #     for expr in self._full_exprs:
+    #         wrts = list(filter(self.filter_dvar_indexed, expr.atoms(Indexed)))
+    #         grids = list(map(self.sort_indexed, wrts))
+    #         self._full_jacs_cols.append(
+    #             [
+    #                 lambdify(
+    #                     self.inputs_cond,
+    #                     grid,
+    #                     modules=[
+    #                         {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
+    #                         "numpy",
+    #                     ],
+    #                 )
+    #                 for grid in grids
+    #             ]
+    #         )
+    #         diffs = [
+    #             expr.diff(wrt).replace(KroneckerDelta, self._simplify_kron).n()
+    #             for wrt in wrts
+    #         ]
+    #         self._full_jacs.append(
+    #             [
+    #                 lambdify(
+    #                     self.inputs,
+    #                     diff,
+    #                     modules=[
+    #                         {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
+    #                         "numpy",
+    #                     ],
+    #                 )
+    #                 for diff in diffs
+    #             ]
+    #         )
+
     def __attrs_post_init__(self):
         logging.info("fortran compiler: convert_inputs...")
         self._convert_inputs()
