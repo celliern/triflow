@@ -46,43 +46,48 @@ class GridBuilder:
 
         self.inputs_cond = [*self.idxs, *self.sizes]
 
-    def _build_decision_trees(self):
+    def _build_mapper(self):
         @lru_cache(maxsize=128)
-        def build_flat_from_idxs_decision_tree(*sizes):
+        def build_flat_from_idxs_mapper(*sizes):
+            mapper = {}
             gridinfo = self.compute_gridinfo(*sizes)
-            X = gridinfo[:, :-2]
-            y = gridinfo[:, -1]
-            reg = DecisionTreeRegressor()
-            reg.fit(X, y)
-            return reg
+            for row in gridinfo:
+                mapper[tuple(row[:-2])] = row[-1]
+            return mapper
 
         @lru_cache(maxsize=128)
-        def build_idxs_from_flat_decision_tree(*sizes):
+        @lru_cache(maxsize=128)
+        def build_idxs_from_flat_mapper(*sizes):
+            mapper = {}
             gridinfo = self.compute_gridinfo(*sizes)
-            X = gridinfo[:, -1:]
-            y = gridinfo[:, :-2]
-            reg = DecisionTreeRegressor()
-            reg.fit(X, y)
-            return reg
+            for row in gridinfo:
+                mapper[int(row[-1])] = row[:-2]
+            return mapper
 
         def get_flat_from_idxs(idxs, sizes):
-            reg = build_flat_from_idxs_decision_tree(*sizes)
-            return reg.predict(idxs).astype("int32")
+            mapper = build_flat_from_idxs_mapper(*sizes)
+            if np.array(idxs).ndim == 1:
+                return mapper[tuple(idxs)]
+            else:
+                return np.array([mapper[tuple(idx)] for idx in idxs])
 
         def get_idxs_from_flat(flatindex, sizes):
-            reg = build_idxs_from_flat_decision_tree(*sizes)
-            return reg.predict(flatindex.reshape(-1, 1)).astype("int32")
+            mapper = build_idxs_from_flat_mapper(*sizes)
+            if np.array(flatindex).ndim == 0:
+                return mapper[int(flatindex)]
+            else:
+                return np.array([mapper[int(idx)] for idx in flatindex])
 
         self.get_flat_from_idxs = get_flat_from_idxs
         self.get_idxs_from_flat = get_idxs_from_flat
 
         @memory.cache
         def compute_flat_from_idxs(idxs, *sizes):
-            return self.get_flat_from_idxs(idxs, *sizes)
+            return self.get_flat_from_idxs(idxs, sizes)
 
         @memory.cache
         def compute_idxs_from_flat(flat, *sizes):
-            return self.get_idxs_from_flat(flat, *sizes)
+            return self.get_idxs_from_flat(flat, sizes)
 
         self.compute_flat_from_idxs = compute_flat_from_idxs
         self.compute_idxs_from_flat = compute_idxs_from_flat
@@ -378,8 +383,8 @@ class GridBuilder:
     def __attrs_post_init__(self):
         logging.info("grid builder: convert_inputs...")
         self._convert_inputs()
-        logging.info("grid builder: build_decision_trees...")
-        self._build_decision_trees()
+        logging.info("grid builder: build_mappers...")
+        self._build_mapper()
         logging.info("grid builder: create_base_routines...")
         self._create_base_routines()
         logging.info("grid builder: create_grid_routines...")

@@ -399,7 +399,7 @@ class Node:
     threshold: int = 2
 
     def __attrs_post_init__(self):
-        logging.info(
+        logging.debug(
             "process node %s - %s (cond %s)" % (self.dvar, self.coords, self.conds)
         )
         self.subs = {}
