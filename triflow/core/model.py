@@ -71,6 +71,7 @@ class Model:
         boundary_conditions=None,
         auxiliary_definitions=None,
         compiler="numpy",
+        compiler_kwargs=None,
     ):
         if parameters is None:
             parameters = []
@@ -80,6 +81,9 @@ class Model:
             boundary_conditions = {}
         if auxiliary_definitions is None:
             auxiliary_definitions = {}
+        if compiler_kwargs is None:
+            compiler_kwargs = {}
+
         parameters = deepcopy(parameters)
         independent_variables = deepcopy(independent_variables)
         boundary_conditions = deepcopy(boundary_conditions)
@@ -94,7 +98,10 @@ class Model:
             auxiliary_definitions=auxiliary_definitions,
         )
         self.grid_builder = GridBuilder(self.pdesys)
-        self.compiler = get_compiler(compiler)(self.pdesys, self.grid_builder)
+
+        self.compiler = get_compiler(compiler)(
+            self.pdesys, self.grid_builder, **compiler_kwargs
+        )
 
         self.F = self.compiler.F
         try:

@@ -43,15 +43,40 @@ def np_ivar_printer(ivar):
     return (Symbol(str(ivar.discrete)), Symbol(str(ivar.idx)), ivar.step, ivar.N)
 
 
-@numba.jit(nopython=True, parallel=True, fastmath=False)
-def Heaviside(a):
-    return np.where(a < 0, 1, 1)
+# @numba.jit(nopython=True, parallel=True, fastmath=True)
+@numba.vectorize(
+    [numba.float64(numba.float64, numba.float64)], nopython=True, fastmath=True
+)
+def Min(a, b):
+    if a < b:
+        return a
+    else:
+        return b
+
+
+# @numba.jit(nopython=True, parallel=True, fastmath=True)
+@numba.vectorize([numba.float64(numba.float64, numba.float64)], nopython=True)
+def Max(a, b):
+    if a > b:
+        return a
+    else:
+        return b
+
+
+@numba.vectorize([numba.float64(numba.float64)], nopython=True)
+def Heaviside(x):
+    if x < 0:
+        return 0
+    else:
+        return 1
 
 
 @register_compiler
-@attr.s
+@attr.s()
 class NumbaCompiler(Compiler):
     name = "numba"
+    parallel = attr.ib(default=True, type=bool)
+    fastmath = attr.ib(default=True, type=bool)
 
     def _convert_inputs(self):
         self.ndim = len(self.system.independent_variables)
@@ -91,7 +116,7 @@ class NumbaCompiler(Compiler):
             self._full_exprs.extend(exprs)
         template = Template(
             """
-@numba.jit(nopython=True, parallel=True, fastmath=False, cache=True)
+@numba.jit(nopython=True, parallel={{parallel}}, fastmath={{fastmath}})
 def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
     N = grid.shape[0]
     F = np.empty(N)
@@ -105,13 +130,16 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
         )
         var_names = self.inputs
         var_unpacking = self.idxs
-        F_routine_str = template.render(
+        self._F_routine_str = template.render(
             var_names=var_names,
             var_unpacking=var_unpacking,
             exprs=enumerate(self._full_exprs),
+            parallel=self.parallel,
+            fastmath=self.fastmath,
         )
-        exec(F_routine_str, globals(), self.__dict__)
-        # self.compute_F_vector = _scope["compute_F_vector"]
+
+        # the routine will be added to the class scope
+        exec(self._F_routine_str, globals(), self.__dict__)
 
         def F(fields, t=0):
             dvars = [
@@ -133,9 +161,7 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
                 tuple(sizes), tuple([ivar.ptp() for ivar in ivars])
             )
 
-            return self.compute_F_vector(
-                t, *dvars, *pars, *ivars, *steps, *sizes, grid
-            )
+            return self.compute_F_vector(t, *dvars, *pars, *ivars, *steps, *sizes, grid)
 
         self.F = F
 
@@ -186,14 +212,14 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
             self._full_jacs.append(diffs)
 
         template = Template(
-                    """
+            """
 @numba.jit(nopython=True, parallel=True, fastmath=True)
 def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}subgrids, data_size):
     N = len(subgrids)
     data = np.zeros(data_size)
     cursor = 0
     jacs_lenght = {{ jacs_len }}
-    
+
     cursors = [0]
     for i in range(len(subgrids)):
         grid = subgrids[i]
@@ -212,20 +238,25 @@ def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}s
                 data[cursor + j] = {{ jac_func }}
             cursor = next_cursor
             {% endfor %} {% endfor %}
-            
+
     return data
-        """)
-            
+        """
+        )
+
         var_names = self.inputs
         var_unpacking = self.idxs
-        J_routine_str = template.render(
+        self._J_routine_str = template.render(
             var_names=var_names,
             var_unpacking=var_unpacking,
             full_jacs=self._full_jacs,
             jacs_len=[len(jacs) for jacs in self._full_jacs],
         )
-        exec(J_routine_str, globals(), self.__dict__)
 
+        # the routine will be added to the class scope
+        exec(self._J_routine_str, globals(), self.__dict__)
+
+        # the routine is the same as the numpy compiler: they only have to be executed
+        # for the first evaluation: no need to rewrite a numba (complex) implementation.
         @lru_cache(maxsize=128)
         def compute_jacobian_coordinates(*sizes):
             subgrids = self.grid_builder.compute_subgrids(*sizes)
@@ -276,17 +307,21 @@ def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}s
             ]
             sizes = [ivar.size for ivar in ivars]
             steps = self.grid_builder.compute_steps(
-                        tuple(sizes), tuple([ivar.ptp() for ivar in ivars])
-                    )
+                tuple(sizes), tuple([ivar.ptp() for ivar in ivars])
+            )
             subgrids = self.grid_builder.compute_subgrids(*sizes)
             data_size = sum(
-                        [
-                            subgrid.shape[0] * len(jacs)
-                            for subgrid, jacs in zip(subgrids, self._full_jacs_cols)
-                        ]
-                    )
-            data = self.compute_jacobian_values(t, *dvars, *pars, *ivars, *steps, *sizes, subgrids, data_size)
-            _, _, perm_rows, indptr, perm, shape = self.compute_jacobian_coordinates(*sizes)
+                [
+                    subgrid.shape[0] * len(jacs)
+                    for subgrid, jacs in zip(subgrids, self._full_jacs_cols)
+                ]
+            )
+            data = self.compute_jacobian_values(
+                t, *dvars, *pars, *ivars, *steps, *sizes, subgrids, data_size
+            )
+            _, _, perm_rows, indptr, perm, shape = self.compute_jacobian_coordinates(
+                *sizes
+            )
 
             return csc_matrix((data[perm], perm_rows, indptr), shape=shape)
 
