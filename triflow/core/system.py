@@ -388,15 +388,15 @@ class PDEquation:
         return self.__repr__()
 
 
-@attr.s(auto_attribs=True)
+@attr.s()
 class Node:
-    eq: Expr
-    dvar: DVar
-    coords: tuple
-    conds: Expr
-    mapper: dict
-    available_boundaries: dict
-    threshold: int = 2
+    eq = attr.ib(type=Expr)
+    dvar = attr.ib(type=DVar)
+    coords = attr.ib(type=tuple)
+    conds = attr.ib(type=Expr)
+    mapper = attr.ib(type=dict)
+    available_boundaries = attr.ib(type=dict)
+    threshold = attr.ib(default=2, type=int)
 
     def __attrs_post_init__(self):
         logging.debug(

@@ -7,12 +7,12 @@ from .variables import IndependentVariable
 from itertools import product, chain
 
 
-@attr.s(auto_attribs=True)
+@attr.s()
 class FiniteDifferenceScheme:
-    scheme: str = "centered"
-    accuracy: int = 2
-    offset: int = 0
-    pattern: callable = lambda derivative, wrt: True
+    scheme = attr.ib(type=str, default="centered")
+    accuracy = attr.ib(type=int, default=2)
+    offset = attr.ib(type=int, default=0)
+    pattern = attr.ib(default=lambda derivative, wrt: True)
 
     def as_finite_diff(self, derivative, ivar):
         try:
