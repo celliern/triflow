@@ -7,29 +7,19 @@ from itertools import accumulate, chain
 from tempfile import mkdtemp
 
 import attr
-import numba
+import numpy
 from jinja2 import Template
-import numpy as np
 from scipy.sparse import csc_matrix
 
-from sympy import (
-    And,
-    Idx,
-    Indexed,
-    Integer,
-    KroneckerDelta,
-    Matrix,
-    Number,
-    Symbol,
-    lambdify,
-    oo,
-)
+import numba
+from sympy import (And, Idx, Indexed, Integer, KroneckerDelta, Matrix, Number,
+                   Symbol, lambdify, oo)
+from sympy.printing.lambdarepr import NumPyPrinter, LambdaPrinter
 
 from ..grid_builder import GridBuilder
 from ..system import PDESys
 from .base_compiler import Compiler, register_compiler
-from .numpy_compiler import np_Max, np_Min, np_Heaviside
-
+from .numpy_compiler import np_Heaviside, np_Max, np_Min
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 logging = logging.getLogger(__name__)
@@ -71,12 +61,29 @@ def Heaviside(x):
         return 1
 
 
+class EnhancedNumPyPrinter(NumPyPrinter):
+
+    def _print_Idx(self, idx, **kwargs):
+        return str(idx)
+
+    def _print_Indexed(self, indexed, **kwargs):
+        return str(indexed)
+
+    def _print_Min(self, expr):
+        return '{0}({1})'.format(self._module_format('Min'), ','.join(self._print(i) for i in expr.args))
+
+    def _print_Max(self, expr):
+        return '{0}({1})'.format(self._module_format('Max'), ','.join(self._print(i) for i in expr.args))
+
+
 @register_compiler
 @attr.s()
 class NumbaCompiler(Compiler):
     name = "numba"
     parallel = attr.ib(default=True, type=bool)
     fastmath = attr.ib(default=True, type=bool)
+    nogil = attr.ib(default=True, type=bool)
+    printer = EnhancedNumPyPrinter()
 
     def _convert_inputs(self):
         self.ndim = len(self.system.independent_variables)
@@ -116,10 +123,10 @@ class NumbaCompiler(Compiler):
             self._full_exprs.extend(exprs)
         template = Template(
             """
-@numba.jit(nopython=True, parallel={{parallel}}, fastmath={{fastmath}})
+@numba.jit(nopython=True, parallel={{parallel}}, fastmath={{fastmath}}, nogil={{nogil}})
 def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
     N = grid.shape[0]
-    F = np.empty(N)
+    F = numpy.empty(N)
     for i in numba.prange(N):
         didx, {% for item in var_unpacking %}{{ item }}, {% endfor %}domain, flatidx = grid[i]
         {% for i, expr in exprs %}
@@ -133,9 +140,10 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
         self._F_routine_str = template.render(
             var_names=var_names,
             var_unpacking=var_unpacking,
-            exprs=enumerate(self._full_exprs),
+            exprs=enumerate([self.printer.doprint(expr) for expr in self._full_exprs]),
             parallel=self.parallel,
             fastmath=self.fastmath,
+            nogil=self.nogil
         )
 
         # the routine will be added to the class scope
@@ -213,10 +221,10 @@ def compute_F_vector({% for item in var_names %}{{ item }}, {% endfor %}grid):
 
         template = Template(
             """
-@numba.jit(nopython=True, parallel=True, fastmath=True)
+@numba.jit(nopython=True, parallel={{parallel}}, fastmath={{fastmath}}, nogil={{nogil}})
 def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}subgrids, data_size):
     N = len(subgrids)
-    data = np.zeros(data_size)
+    data = numpy.zeros(data_size)
     cursor = 0
     jacs_lenght = {{ jacs_len }}
 
@@ -248,8 +256,11 @@ def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}s
         self._J_routine_str = template.render(
             var_names=var_names,
             var_unpacking=var_unpacking,
-            full_jacs=self._full_jacs,
+            full_jacs=[[self.printer.doprint(jac) for jac in jacs] for jacs in self._full_jacs],
             jacs_len=[len(jacs) for jacs in self._full_jacs],
+            parallel=self.parallel,
+            fastmath=self.fastmath,
+            nogil=self.nogil
         )
 
         # the routine will be added to the class scope
@@ -267,26 +278,26 @@ def compute_jacobian_values({% for item in var_names %}{{ item }}, {% endfor %}s
             cols_list = []
             for grid, jac_cols in zip(subgrids, self._full_jacs_cols):
                 for col_func in jac_cols:
-                    cols_ = np.zeros((grid.shape[0], self.ndim + 1), dtype="int32")
+                    cols_ = numpy.zeros((grid.shape[0], self.ndim + 1), dtype="int32")
                     cols = col_func(*grid[:, 1:-2].T, *sizes)
-                    cols = np.stack(
-                        [np.broadcast_to(col, cols_.shape[:-1]) for col in cols]
+                    cols = numpy.stack(
+                        [numpy.broadcast_to(col, cols_.shape[:-1]) for col in cols]
                     )
 
                     flat_cols = self.grid_builder.get_flat_from_idxs(cols.T, sizes)
 
                     rows_list.extend(grid[:, -1].reshape((-1,)))
                     cols_list.extend(flat_cols.reshape((-1,)))
-            rows = np.array(rows_list)
-            cols = np.array(cols_list)
+            rows = numpy.array(rows_list)
+            cols = numpy.array(cols_list)
 
-            perm = np.argsort(cols)
+            perm = numpy.argsort(cols)
             perm_rows = rows[perm]
             perm_cols = cols[perm]
-            count = np.zeros((system_size + 1), dtype="int32")
-            uq, cnt = np.unique(perm_cols, False, False, True)
+            count = numpy.zeros((system_size + 1), dtype="int32")
+            uq, cnt = numpy.unique(perm_cols, False, False, True)
             count[uq + 1] = cnt
-            indptr = np.cumsum(count)
+            indptr = numpy.cumsum(count)
             return rows, cols, perm_rows, indptr, perm, (system_size, system_size)
 
         self.compute_jacobian_coordinates = compute_jacobian_coordinates
