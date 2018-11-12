@@ -92,3 +92,11 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# setup and co generation are automated
+setup.py
+requirements.txt
+constraints.txt
+
+# .lock is automated
+pyproject.lock

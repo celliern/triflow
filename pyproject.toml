@@ -25,6 +25,7 @@ numpy = "^1"
 scipy = "^1"
 sympy = "^1.3"
 theano = {version = "^1", optional = true}
+numba = {version = "^0.40", optional = true}
 
 # pipeline for data and display
 streamz = "^0.3"
@@ -67,8 +68,8 @@ python-Levenshtein = "^0.12.0"
 
 
 [tool.poetry.extras]
-jupyter = ["jupyter", "ipywidgets", "bokeh"]
-theano = ["theano"]
+# jupyter = ["jupyter", "ipywidgets", "bokeh"]
+# theano = ["theano"]
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
@@ -87,3 +88,4 @@ matplotlib = "^3"
 python-coveralls = "^2"
 pytest-cov = "^2"
 ipykernel = "^5.1"
+poetry-setup = "^0.3.5"
