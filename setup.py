@@ -69,15 +69,15 @@ setup(
         'boltons (>=18.0,<19.0)',
         'fuzzywuzzy (>=0.17.0,<0.18.0)',
         'python-Levenshtein (>=0.12.0,<0.13.0)',
-        'pylama (>=7)',
-        'isort (>=4)',
-        'black (>=18)',
-        'pytest (>=3)',
+        'pylama',
+        'isort',
+        'black',
+        'pytest',
         'sphinx',
-        'matplotlib (>=3)',
-        'python-coveralls (>=2)',
-        'pytest-cov (>=2)',
-        'ipykernel (>=5.1)',
+        'matplotlib',
+        'python-coveralls',
+        'pytest-cov',
+        'ipykernel',
     ],  # Optional
     # https://setuptools.readthedocs.io/en/latest/setuptools.html#dependencies-that-aren-t-in-pypi
     dependency_links=[],  # Optional

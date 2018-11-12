@@ -68,18 +68,18 @@ python-Levenshtein = "^0.12.0"
 
 [tool.poetry.dev-dependencies]
 # linting & formatting
-pylama = ">=7"
-isort = ">=4"
-black = ">=18"
+pylama = "*"
+isort = "*"
+black = "*"
 
 # tests
-pytest = ">=3"
+pytest = "*"
 
 # doc generation
 sphinx = "*"
-matplotlib = ">=3"
+matplotlib = "*"
 
 # coverage
-python-coveralls = ">=2"
-pytest-cov = ">=2"
-ipykernel = ">=5.1"
+python-coveralls = "*"
+pytest-cov = "*"
+ipykernel = "*"
