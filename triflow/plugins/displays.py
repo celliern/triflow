@@ -24,8 +24,8 @@ class TriflowDisplay:
     def _repr_mimebundle_(self, *args, **kwargs):
         return self.hv_curve._repr_mimebundle_(*args, **kwargs)
 
-    def connect(self, stream):
-        stream.sink(self._plot_pipe.send)
+    def connect(self, stream, n=1):
+        stream.partition(n).pluck(-1).sink(self._plot_pipe.send)
 
     @property
     def hv_curve(self):
@@ -42,7 +42,7 @@ class TriflowDisplay:
         self._dynmap * other
 
     @staticmethod
-    def display_fields(simul, keys="all"):
+    def display_fields(simul, keys="all", n=1):
         def plot_function(data):
             nonlocal keys
             curves = []
@@ -60,12 +60,12 @@ class TriflowDisplay:
             return Layout(curves)
 
         display = TriflowDisplay(simul, plot_function)
-        display.connect(simul.stream)
+        display.connect(simul.stream, n)
         return display
 
     @staticmethod
     def display_probe(simul, function,
-                      xlabel=None, ylabel=None, buffer=None):
+                      xlabel=None, ylabel=None, buffer=None, n=1):
         history = deque([], buffer)
         if not xlabel:
             xlabel = str(uuid4())[:6]
@@ -81,5 +81,5 @@ class TriflowDisplay:
             return Curve(history, kdims=xlabel, vdims=ylabel)
 
         display = TriflowDisplay(simul, plot_function)
-        display.connect(simul.stream)
+        display.connect(simul.stream, n)
         return display
