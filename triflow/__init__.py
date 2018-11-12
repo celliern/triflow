@@ -16,7 +16,9 @@ from .plugins.displays import TriflowDisplay as Display  # noqa
 import logging
 from logging import NullHandler
 
-logging.getLogger(__name__).addHandler(NullHandler())
+log = logging.getLogger(__name__)
+log.handlers = []
+log.addHandler(logging.NullHandler())
 
 retrieve_container = Container.retrieve
 display_fields = Display.display_fields
