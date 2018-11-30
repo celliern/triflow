@@ -143,8 +143,9 @@ class ROW_general(TemporalScheme):
         solver="auto",
         recompute_target=True,
         iteratif_atol=1e-3,
+        initial_dt=None
     ):
-        self._internal_dt = None
+        self._internal_dt = 1E-6 if initial_dt is None else initial_dt
         self._model = model
         self._alpha = alpha
         self._gamma = gamma
@@ -260,13 +261,9 @@ class ROW_general(TemporalScheme):
         except (TypeError, ValueError):
             pass
         if not self._recompute_target:
-            dt = self._internal_dt = (
-                1e-6 if self._internal_dt is None else self._internal_dt
-            )
+            dt = self._internal_dt
         else:
-            dt = self._internal_dt = min(
-                (1e-6 if self._internal_dt is None else self._internal_dt), dt
-            )
+            dt = self._internal_dt = min(self._internal_dt, dt)
         while True:
             self._err = None
             while self._err is None or self._err > self._tol:

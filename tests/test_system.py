@@ -219,6 +219,7 @@ def test_apply_scheme():
     )
     assert (xy_applied - yx_applied).expand() == 0
 
+
 def test_upwind():
     x = IndependentVariable("x")
     U = DependentVariable("U(x)")
@@ -233,14 +234,29 @@ def test_upwind():
     assert (ap * up + am * um - pde.fdiff).expand() == 0
 
     pde = PDEquation("upwind(c, U, x, 2)", ["U(x)"], parameters=["c"])
-    up = (-U.discrete[x.idx + 2] + 4 * U.discrete[x.idx + 1] - 3 * U.discrete[x.idx]) / (2 * x.step)
-    um = (3 * U.discrete[x.idx] - 4 * U.discrete[x.idx - 1] + U.discrete[x.idx - 2]) / (2 * x.step)
+    up = (
+        -U.discrete[x.idx + 2] + 4 * U.discrete[x.idx + 1] - 3 * U.discrete[x.idx]
+    ) / (2 * x.step)
+    um = (3 * U.discrete[x.idx] - 4 * U.discrete[x.idx - 1] + U.discrete[x.idx - 2]) / (
+        2 * x.step
+    )
     assert (ap * up + am * um - pde.fdiff).expand() == 0
 
     pde = PDEquation("upwind(c, U, x, 3)", ["U(x)"], parameters=["c"])
-    up = (-U.discrete[x.idx + 2] + 6 * U.discrete[x.idx + 1] - 3 * U.discrete[x.idx] - 2 * U.discrete[x.idx - 1]) / (6 * x.step)
-    um = (2 * U.discrete[x.idx + 1] + 3 * U.discrete[x.idx] - 6 * U.discrete[x.idx - 1] + U.discrete[x.idx - 2]) / (6 * x.step)
+    up = (
+        -U.discrete[x.idx + 2]
+        + 6 * U.discrete[x.idx + 1]
+        - 3 * U.discrete[x.idx]
+        - 2 * U.discrete[x.idx - 1]
+    ) / (6 * x.step)
+    um = (
+        2 * U.discrete[x.idx + 1]
+        + 3 * U.discrete[x.idx]
+        - 6 * U.discrete[x.idx - 1]
+        + U.discrete[x.idx - 2]
+    ) / (6 * x.step)
     assert (ap * up + am * um - pde.fdiff).expand() == 0
+
 
 def test_pdesys():
     pass

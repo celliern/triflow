@@ -91,7 +91,7 @@ class NumpyCompiler(Compiler):
                 expr.n(),
                 modules=[
                     {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
-                    "numpy",
+                    "scipy",
                 ],
             )
             for expr in self._full_exprs
@@ -165,7 +165,7 @@ class NumpyCompiler(Compiler):
                         grid,
                         modules=[
                             {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
-                            "numpy",
+                            "scipy",
                         ],
                     )
                     for grid in grids
@@ -182,7 +182,7 @@ class NumpyCompiler(Compiler):
                         diff,
                         modules=[
                             {"amax": np_Max, "amin": np_Min, "Heaviside": np_Heaviside},
-                            "numpy",
+                            "scipy",
                         ],
                     )
                     for diff in diffs
