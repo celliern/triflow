@@ -30,17 +30,40 @@ class Model:
 
       Parameters
       ----------
-      evolution_equations : iterable of str or str
+      evolution_equations : Union[Sequence[str], str]
           the right hand sides of the partial differential equations written
           as :math:`\\frac{\\partial U}{\\partial t} = F(U)`, where the spatial
           derivative can be written as `dxxU` or `dx(U, 2)` or with the sympy
           notation `Derivative(U, x, x)`
-      dependent_variables : iterable of str or str
+      dependent_variables : Union[Sequence[str], str]
           the dependent variables with the same order as the temporal
-          derivative of the previous arg.
-      parameters : iterable of str or str, optional, default None
+          derivative of the previous arg. 
+      parameters : Optional[Union[Sequence[str], str]]
           list of the parameters. Can be feed with a scalar of an array with
           the same size. They can be derivated in space as well.
+      boundary_conditions : Optional[Union[str, Dict[str, Dict[str, Tuple[str, str]]]]]
+           Can be either "noflux" (default behavior), "periodic", or a dictionary that
+           follow this structure :
+           {dependent_var: {indep_var: (left_boundary, right_boundary)}}, the boundaries
+           being written as residual (rhs - lhs = 0).
+           For example, an hybrid Dirichlet / Neumann flux will be written as
+           {"U": {"x": (dxU - 2, U - 3)}}. If a boundary is None, a nul flux will be
+           applied.
+      auxiliary_definitions : Optional[Dict[str, str]]
+           Substitution dictionnary, useful to write complexe systems. The key of this
+           dictionnary will be substitued everywhere in the evolution equations as well
+           as in boundary conditions.
+      compiler: str, default to "numpy"
+           A registered compiler that will take the discretized system and expose the evolution
+           equations routine ``F`` as well as an optional Jacobian routine ``J``. If the later is
+           not provided by the compiler, the implicit methods will not be available.
+           TODO: make an efficient jacobian approximation for that case, given the bandwidth.
+           For now, there is the ``numpy`` compiler, that provide efficient (but not optimal)
+           computation with minimal dependencies, and ``numba`` compiler that provide a LLVM based
+           routine that allow faster parallel computation at the costs of a (sometime long) warm-up.
+           The numba one is less tested and stable, but provide a potential huge speed-up for explicit
+           methods.
+      compiler_kwargs: Optional[Dict] : supplementary arguments provided to the compiler.
 
       Methods
       -------
@@ -60,6 +83,25 @@ class Model:
       >>> model = Model(["k1 * dxxU - c1 * dxV",
       ...                "k2 * dxxV - c2 * dxU",],
       ...                ["U", "V"], ["k1", "k2", "c1", "c2"])
+
+      A 2D pure advection model, without / with upwind scheme.
+
+      >>> from triflow import Model
+      >>> model = Model("c_x * dxU + c_y * dyU", "U(x, y)",
+      ...               ["c_x", "c_y"])
+      >>> model = Model("upwind(c_x, U, x, 2) + upwind(c_y, U, y, 2)",
+      ...               "U(x, y)",
+      ...               ["c_x", "c_y"])
+
+
+      A 2D diffusion model, with hybrid boundary conditions (Dirichlet, Neuman, Robin and No-flux).
+
+      >>> from triflow import Model
+      >>> model = Model("dxxU + dyyU", "U(x, y)",
+      ...               boundary_conditions={"U": {"x": ("U - 3", "dxU + 5")
+      ...                                          "y": ("dyU - (U - 3)", None)}
+      ...                                          })
+
       """  # noqa
 
     def __init__(
