@@ -40,7 +40,7 @@ def np_Max(args):
 
 
 def np_Heaviside(a):
-    return np.where(a < 0, 1, 1)
+    return np.where(a < 0, 0, 1)
 
 
 @register_compiler

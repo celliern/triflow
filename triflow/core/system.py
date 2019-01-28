@@ -352,7 +352,7 @@ class PDEquation:
 
             deriv_left = left_deriv(ivar, dvar)
             deriv_right = right_deriv(ivar, dvar)
-            discretized_deriv = am * deriv_left + ap * deriv_right
+            discretized_deriv = ap * deriv_left + am * deriv_right
             return discretized_deriv
 
         fdiff = fdiff.replace(Function("upwind"), upwind)
