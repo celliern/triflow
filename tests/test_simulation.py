@@ -23,8 +23,8 @@ def heat_model():
 
 @pytest.mark.parametrize("scheme", [
     schemes.ROS2, schemes.ROS3PRL, schemes.ROS3PRw, schemes.RODASPR,
-    schemes.Theta, schemes.scipy_ode,
-    ft.partial(schemes.scipy_ode, integrator="vode", method="bdf")
+    schemes.Theta, schemes.scipy_ivp,
+    ft.partial(schemes.scipy_ivp, integrator="vode", method="bdf")
 ])
 def test_simul_heat_eq(heat_model, scheme):
     x, dx = np.linspace(0, 10, 50, retstep=True, endpoint=False)
