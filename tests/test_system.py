@@ -8,11 +8,10 @@ import numpy as np
 import pytest
 from sympy import Idx, IndexedBase, Symbol, Function, sympify, Min, Max
 from triflow.core.system import (
-    DependentVariable,
-    IndependentVariable,
+    DVar as DependentVariable,
+    IVar as IndependentVariable,
     PDEquation,
     _build_sympy_namespace,
-    _apply_centered_scheme,
 )
 
 
@@ -182,42 +181,42 @@ def test_build_sympy_namespace():
     assert "dy" in ns.keys()
 
 
-def test_apply_scheme():
-    x = IndependentVariable("x")
-    y = IndependentVariable("y")
-    U = DependentVariable("U(x, y)")
-    pde = PDEquation("dxxU + dyyU", ["U(x, y)"])
+# def test_apply_scheme():
+#     x = IndependentVariable("x")
+#     y = IndependentVariable("y")
+#     U = DependentVariable("U(x, y)")
+#     pde = PDEquation("dxxU + dyyU", ["U(x, y)"])
 
-    x_applied = _apply_centered_scheme(
-        2, x, U.symbol(x.symbol, y.symbol).diff(x.symbol, 2), 2, pde.symbolic_equation
-    )
-    y_applied = _apply_centered_scheme(
-        2, y, U.symbol(x.symbol, y.symbol).diff(y.symbol, 2), 2, pde.symbolic_equation
-    )
+#     x_applied = _apply_centered_scheme(
+#         2, x, U.symbol(x.symbol, y.symbol).diff(x.symbol, 2), 2, pde.symbolic_equation
+#     )
+#     y_applied = _apply_centered_scheme(
+#         2, y, U.symbol(x.symbol, y.symbol).diff(y.symbol, 2), 2, pde.symbolic_equation
+#     )
 
-    assert (
-        y_applied
-        - sympify(
-            "Derivative(U(x, y), (x, 2)) - 2*U(x, y)/dy**2 + "
-            "U(x, -dy + y)/dy**2 + U(x, dy + y)/dy**2"
-        )
-    ).expand() == 0
+#     assert (
+#         y_applied
+#         - sympify(
+#             "Derivative(U(x, y), (x, 2)) - 2*U(x, y)/dy**2 + "
+#             "U(x, -dy + y)/dy**2 + U(x, dy + y)/dy**2"
+#         )
+#     ).expand() == 0
 
-    assert (
-        x_applied
-        - sympify(
-            "Derivative(U(x, y), (y, 2)) - 2*U(x, y)/dx**2 + "
-            "U(-dx + x, y)/dx**2 + U(dx + x, y)/dx**2"
-        )
-    ).expand() == 0
+#     assert (
+#         x_applied
+#         - sympify(
+#             "Derivative(U(x, y), (y, 2)) - 2*U(x, y)/dx**2 + "
+#             "U(-dx + x, y)/dx**2 + U(dx + x, y)/dx**2"
+#         )
+#     ).expand() == 0
 
-    xy_applied = _apply_centered_scheme(
-        2, y, U.symbol(x.symbol, y.symbol).diff(y.symbol, 2), 2, x_applied
-    )
-    yx_applied = _apply_centered_scheme(
-        2, x, U.symbol(x.symbol, y.symbol).diff(x.symbol, 2), 2, y_applied
-    )
-    assert (xy_applied - yx_applied).expand() == 0
+#     xy_applied = _apply_centered_scheme(
+#         2, y, U.symbol(x.symbol, y.symbol).diff(y.symbol, 2), 2, x_applied
+#     )
+#     yx_applied = _apply_centered_scheme(
+#         2, x, U.symbol(x.symbol, y.symbol).diff(x.symbol, 2), 2, y_applied
+#     )
+#     assert (xy_applied - yx_applied).expand() == 0
 
 
 def test_upwind():
@@ -231,7 +230,7 @@ def test_upwind():
     pde = PDEquation("upwind(c, U, x, 1)", ["U(x)"], parameters=["c"])
     up = (U.discrete[x.idx + 1] - U.discrete[x.idx]) / x.step
     um = (U.discrete[x.idx] - U.discrete[x.idx - 1]) / x.step
-    assert (ap * up + am * um - pde.fdiff).expand() == 0
+    assert (ap * um + am * up - pde.fdiff).expand() == 0
 
     pde = PDEquation("upwind(c, U, x, 2)", ["U(x)"], parameters=["c"])
     up = (
@@ -240,7 +239,7 @@ def test_upwind():
     um = (3 * U.discrete[x.idx] - 4 * U.discrete[x.idx - 1] + U.discrete[x.idx - 2]) / (
         2 * x.step
     )
-    assert (ap * up + am * um - pde.fdiff).expand() == 0
+    assert (ap * um + am * up - pde.fdiff).expand() == 0
 
     pde = PDEquation("upwind(c, U, x, 3)", ["U(x)"], parameters=["c"])
     up = (
@@ -255,7 +254,7 @@ def test_upwind():
         - 6 * U.discrete[x.idx - 1]
         + U.discrete[x.idx - 2]
     ) / (6 * x.step)
-    assert (ap * up + am * um - pde.fdiff).expand() == 0
+    assert (ap * um + am * up - pde.fdiff).expand() == 0
 
 
 def test_pdesys():
