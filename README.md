@@ -1,5 +1,7 @@
 # Triflow
 
+**The software changed his name to scikit-fdiff. It lives now in [gitlab](https://gitlab.com/celliern/scikit-fdiff/), and have an [updated documentation](https://scikit-fdiff.readthedocs.io/en/latest/). New features are simplified installation, 2D and 3D solving and arbitrary boundary condition. It is under review in the [Journal of Open Source Software](http://joss.theoj.org/papers/5e93e199cb128c2f833d04ffea4bdf86), and a DOI will be available very soon. This repository will still be hosted there to avoid breaking compatbility with your work in progress, but I strongly invitate you to use the new tool, as it is more robust and offer better capability.**
+
 [![DOI](https://zenodo.org/badge/71994260.svg)](https://zenodo.org/badge/latestdoi/71994260)
 
 |   Master   |  Dev   |
